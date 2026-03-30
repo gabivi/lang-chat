@@ -309,7 +309,7 @@
 
     <div class="action-btns">
       <button class="btn btn-outline-primary" onclick="suggestTopics()">
-        &#128172; Skip &amp; suggest topics
+        &#128172; Skip small talk and suggest topics
       </button>
       <button class="btn btn-outline-danger" onclick="endConversation()">
         &#9723; End chat
@@ -330,6 +330,7 @@ let language        = 'en';
 let avatarGender    = 'female';
 let recognition     = null;
 let ttsVoice        = null;
+let ttsGenderMatch  = true;   // false = voice gender differs from avatar; adjust pitch
 let listening       = false;
 let ttsQueue        = [];
 let ttsBusy         = false;
@@ -572,14 +573,23 @@ function populateVoiceDropdown() {
   ttsVoice  = pool[bestIdx];
 }
 
-// Read the selected voice from the dropdown
+// Read the selected voice from the dropdown; detect if gender actually matches
 function applyVoiceSelection() {
   const voices = window.speechSynthesis.getVoices();
   const code   = language === 'he' ? 'he' : 'en';
   const pool   = voices.filter(v => v.lang.startsWith(code));
   const idx    = parseInt(document.getElementById('voiceSelect').value, 10);
   ttsVoice     = pool[idx] || pool[0] || voices[0] || null;
-  console.log('[TTS] voice applied:', ttsVoice ? ttsVoice.name : 'none');
+
+  // Check if the chosen voice actually matches the avatar gender
+  if (ttsVoice) {
+    const wantRe   = avatarGender === 'female' ? FEMALE_RE : MALE_RE;
+    const rejectRe = avatarGender === 'female' ? MALE_RE   : FEMALE_RE;
+    if (wantRe.test(ttsVoice.name))        ttsGenderMatch = true;
+    else if (rejectRe.test(ttsVoice.name)) ttsGenderMatch = false;  // wrong gender voice
+    else                                   ttsGenderMatch = true;    // neutral — assume ok
+  }
+  console.log('[TTS] voice:', ttsVoice?.name, '| gender match:', ttsGenderMatch);
 }
 
 function initTTS(lang, gender) {
@@ -644,9 +654,15 @@ function drainTTS() {
   setTimeout(() => {
     const utt = new SpeechSynthesisUtterance(text);
     if (ttsVoice) utt.voice = ttsVoice;
-    utt.lang  = language === 'he' ? 'he-IL' : 'en-US';
-    utt.rate  = 0.92;
-    utt.pitch = 1.05;
+    utt.lang = language === 'he' ? 'he-IL' : 'en-US';
+    utt.rate = 0.92;
+    // If no matching-gender voice exists, shift pitch to approximate the right gender:
+    // female avatar with male voice → higher pitch; male avatar with female voice → lower
+    if (!ttsGenderMatch) {
+      utt.pitch = avatarGender === 'female' ? 1.7 : 0.6;
+    } else {
+      utt.pitch = avatarGender === 'female' ? 1.1 : 0.9;
+    }
     utt.onend   = drainTTS;
     utt.onerror = drainTTS;
     window.speechSynthesis.speak(utt);
