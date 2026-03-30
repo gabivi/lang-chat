@@ -171,11 +171,10 @@
       <span id="langFallbackMsg"></span>
     </div>
 
-    <p class="fw-semibold mb-1" data-i18n="voiceLabel">Speaking voice:</p>
-    <select id="voiceSelect" class="form-select mb-1" style="font-size:1rem;border-radius:12px;">
+    <select id="voiceSelect" style="display:none;">
       <option value="">Loading voices…</option>
     </select>
-    <div id="voiceNote"></div>
+    <div id="voiceNote" style="display:none;"></div>
 
     <button class="btn btn-primary btn-big mt-2" onclick="startConversation()" data-i18n="startBtn">Start Chatting</button>
     <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()" data-i18n="backBtn">← Back</button>
@@ -550,7 +549,15 @@ function addBubble(speaker, text) {
 }
 function setStatus(msg) { document.getElementById('statusBar').textContent = msg; }
 function goWelcome() { document.getElementById('nameInput').value = ''; show('screenWelcome'); }
-function goSetup()   { show('screenSetup'); }
+function goSetup() {
+  // Sync setup-screen buttons to current JS state before showing the screen
+  document.querySelectorAll('[data-group="lang"]').forEach(b =>
+    b.classList.toggle('selected', b.dataset.value === language));
+  document.querySelectorAll('[data-group="gender"]').forEach(b =>
+    b.classList.toggle('selected', b.dataset.value === avatarGender));
+  show('screenSetup');
+  if (voicesReady) populateVoiceDropdown();
+}
 
 function setAvatarSpeaking(on) {
   const f = document.getElementById('avatarFace');
@@ -691,31 +698,24 @@ function populateVoiceDropdown() {
 }
 
 function fillSelect(pool) {
-  const voices   = window.speechSynthesis.getVoices();
   const sel      = document.getElementById('voiceSelect');
   const wantRe   = avatarGender === 'female' ? FEMALE_RE : MALE_RE;
   const rejectRe = avatarGender === 'female' ? MALE_RE   : FEMALE_RE;
   sel.innerHTML  = '';
 
-  let bestIdx = 0;
   pool.forEach((v, i) => {
     const opt = document.createElement('option');
     opt.value = i;
-    const tag = FEMALE_RE.test(v.name) ? ' ♀' : MALE_RE.test(v.name) ? ' ♂' : ' ?';
-    opt.textContent = v.name + tag;
+    opt.textContent = v.name;
     sel.appendChild(opt);
-    if (i === 0 || (wantRe.test(v.name) && !wantRe.test(pool[bestIdx].name))) bestIdx = i;
   });
 
-  if (!wantRe.test(pool[bestIdx].name)) {
-    const n = pool.findIndex(v => !rejectRe.test(v.name));
-    if (n >= 0) bestIdx = n;
-  }
-  sel.value = bestIdx;
-
-  const note    = document.getElementById('voiceNote');
-  const hasMatch = pool.some(v => wantRe.test(v.name));
-  if (note) { note.style.display = hasMatch ? 'none' : 'block'; note.textContent = hasMatch ? '' : t('pitchNote'); }
+  // Collect all matching-gender voices; fall back to neutral, then any
+  const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+  const matching = pool.map((v,i)=>i).filter(i =>  wantRe.test(pool[i].name));
+  const neutral  = pool.map((v,i)=>i).filter(i => !wantRe.test(pool[i].name) && !rejectRe.test(pool[i].name));
+  const chosen   = matching.length ? rand(matching) : neutral.length ? rand(neutral) : 0;
+  sel.value = chosen;
 }
 
 function applyVoiceSelection() {
