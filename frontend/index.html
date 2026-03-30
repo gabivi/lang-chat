@@ -506,10 +506,10 @@ ${stubbleSVG}
 // ════════════════════════════════════════════════════
 let userId          = null;
 let userName        = '';
-let userGender      = 'female';   // the USER's own gender
+let userGender      = localStorage.getItem('cc_userGender')   || 'female';
 let conversationId  = null;
-let language        = 'he';
-let avatarGender    = 'female';   // the AVATAR's gender
+let language        = localStorage.getItem('cc_language')     || 'he';
+let avatarGender    = localStorage.getItem('cc_avatarGender') || 'female';
 let recognition     = null;
 let ttsVoice        = null;
 let ttsGenderMatch  = true;
@@ -527,10 +527,17 @@ function show(id) {
   document.getElementById(id).classList.add('active');
 }
 
+function savePrefs() {
+  localStorage.setItem('cc_userGender',   userGender);
+  localStorage.setItem('cc_language',     language);
+  localStorage.setItem('cc_avatarGender', avatarGender);
+}
+
 function pickUser(el) {
   document.querySelectorAll('[data-group="ugender"]').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   userGender = el.dataset.value;
+  savePrefs();
   applyUI();
 }
 
@@ -542,6 +549,7 @@ function pickUILang(el) {
   document.querySelectorAll('[data-group="lang"]').forEach(b => {
     b.classList.toggle('selected', b.dataset.value === language);
   });
+  savePrefs();
   applyUI();
 }
 
@@ -551,6 +559,7 @@ function pick(el) {
   el.classList.add('selected');
   if (group === 'lang')   language     = el.dataset.value;
   if (group === 'gender') avatarGender = el.dataset.value;
+  savePrefs();
   applyUI();
   if (voicesReady) populateVoiceDropdown();
 }
@@ -883,6 +892,15 @@ async function endConversation() {
 // ════════════════════════════════════════════════════
 //  Init
 // ════════════════════════════════════════════════════
+// Sync all button groups to loaded/default state
+['uilang','lang','gender','ugender'].forEach(group => {
+  const match = group === 'uilang' || group === 'lang' ? language
+              : group === 'gender'  ? avatarGender
+              : userGender;
+  document.querySelectorAll(`[data-group="${group}"]`).forEach(b =>
+    b.classList.toggle('selected', b.dataset.value === match));
+});
+
 document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key==='Enter') doIdentify(); });
 if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
 applyUI();
