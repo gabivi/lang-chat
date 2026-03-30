@@ -459,7 +459,23 @@ async function resumeConversation(convId, avatarName, gender, lang) {
 
   initTTS(lang, gender);
   show('screenChat');
-  setStatus('Tap the microphone to continue.');
+  setStatus('Starting…');
+
+  // Send resume command so the avatar greets them as a returning person
+  try {
+    const res  = await fetch(`/conversations/${convId}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: '__RESUME__' }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      addBubble('avatar', data.text);
+      speak(data.text);
+    }
+  } catch (e) { /* silent */ }
+
+  setStatus('Tap the microphone to speak.');
 }
 
 // ════════════════════════════════════════════════════════
@@ -520,15 +536,25 @@ function loadVoices() {
 function pickVoice(lang, gender) {
   const voices = window.speechSynthesis.getVoices();
   const code   = lang === 'he' ? 'he' : 'en';
-  const hints  = gender === 'female' ? FEMALE_HINTS : MALE_HINTS;
   const pool   = voices.filter(v => v.lang.startsWith(code));
 
-  ttsVoice = pool.find(v => hints.some(h => v.name.toLowerCase().includes(h)))
-          || pool[0]
-          || voices[0]
-          || null;
+  if (gender === 'female') {
+    ttsVoice = pool.find(v => {
+      const n = v.name.toLowerCase();
+      return FEMALE_HINTS.some(h => n.includes(h));
+    });
+  } else {
+    // IMPORTANT: 'male' is a substring of 'female' — must exclude female voices first
+    ttsVoice = pool.find(v => {
+      const n = v.name.toLowerCase();
+      if (n.includes('female')) return false;          // skip female voices
+      return MALE_HINTS.some(h => n.includes(h));
+    });
+  }
 
-  console.log(`[TTS] lang=${lang} gender=${gender} → voice: ${ttsVoice ? ttsVoice.name : 'none'}`);
+  ttsVoice = ttsVoice || pool[0] || voices[0] || null;
+  console.log('[TTS] available voices:', pool.map(v => v.name));
+  console.log(`[TTS] picked for gender=${gender}: ${ttsVoice ? ttsVoice.name : 'none'}`);
 }
 
 function initTTS(lang, gender) {
@@ -718,6 +744,7 @@ async function sendMessage(text) {
 //  Action buttons
 // ════════════════════════════════════════════════════════
 async function suggestTopics() {
+  stopSpeaking();
   await sendMessage('__CHANGE_TOPIC__');
 }
 
