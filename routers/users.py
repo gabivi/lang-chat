@@ -9,7 +9,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 
 class IdentifyRequest(BaseModel):
-    name: str
+    name:   str
+    gender: str = "unknown"   # "male" | "female" | "unknown"
 
 
 @router.post("/identify")
@@ -22,10 +23,14 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.name.ilike(name)).first()
     is_new = user is None
     if is_new:
-        user = User(name=name)
+        user = User(name=name, gender=payload.gender)
         db.add(user)
         db.commit()
         db.refresh(user)
+    elif payload.gender != "unknown":
+        # Update gender if it was unknown before
+        user.gender = payload.gender
+        db.commit()
 
     # Last 5 conversations with message count
     convs = (
@@ -51,6 +56,7 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
     return {
         "id":            user.id,
         "name":          user.name,
+        "gender":        user.gender,
         "is_new":        is_new,
         "conversations": conversations,
     }

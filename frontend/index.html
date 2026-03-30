@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Companion Chat</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <style>
     :root { --accent:#5b7fa6; --accent-light:#e8f0fa; }
     body  { background:#f7f9fc; font-family:'Segoe UI',sans-serif; font-size:1.15rem; }
@@ -12,159 +12,157 @@
     .screen { display:none; }
     .screen.active { display:block; }
 
-    .card-main {
-      max-width:540px; margin:30px auto;
-      border-radius:20px; box-shadow:0 6px 32px rgba(0,0,0,.10);
-      background:#fff; padding:2rem 1.8rem;
-    }
+    .card-main { max-width:540px; margin:24px auto; border-radius:20px;
+      box-shadow:0 6px 32px rgba(0,0,0,.10); background:#fff; padding:1.8rem 1.6rem; }
 
-    .btn-big { font-size:1.2rem; padding:.7rem 1.4rem; border-radius:14px; width:100%; margin-bottom:.7rem; }
+    .btn-big { font-size:1.2rem; padding:.7rem 1.4rem; border-radius:14px; width:100%; margin-bottom:.65rem; }
     .btn-primary { background:var(--accent); border-color:var(--accent); }
     .btn-primary:hover { background:#4a6d94; border-color:#4a6d94; }
 
     #nameInput { font-size:1.25rem; padding:.6rem 1rem; border-radius:12px; text-align:center; }
 
-    .conv-item { cursor:pointer; border-radius:12px; padding:.75rem 1rem; margin-bottom:.5rem;
-                 background:var(--accent-light); transition:background .15s; }
+    .conv-item { cursor:pointer; border-radius:12px; padding:.7rem .9rem; margin-bottom:.45rem;
+      background:var(--accent-light); transition:background .15s; }
     .conv-item:hover { background:#d1dff5; }
-    .conv-title { font-weight:600; font-size:1.05rem; }
-    .conv-meta  { font-size:.85rem; color:#666; }
+    .conv-title { font-weight:600; font-size:1rem; }
+    .conv-meta  { font-size:.82rem; color:#666; }
 
-    .choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; margin-bottom:1rem; }
-    .choice-btn  { border:2px solid #ccc; border-radius:14px; padding:.9rem; background:#fff;
-                   font-size:1.1rem; cursor:pointer; transition:all .15s; text-align:center; }
+    .choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; margin-bottom:.9rem; }
+    .choice-btn  { border:2px solid #ccc; border-radius:14px; padding:.85rem; background:#fff;
+      font-size:1.05rem; cursor:pointer; transition:all .15s; text-align:center; }
     .choice-btn.selected { border-color:var(--accent); background:var(--accent-light);
-                           color:var(--accent); font-weight:600; }
+      color:var(--accent); font-weight:600; }
 
     /* ── Avatar face ── */
     #avatarWrap {
-      width:110px; height:110px; border-radius:50%; overflow:hidden;
-      margin:0 auto .75rem; box-shadow:0 3px 12px rgba(0,0,0,.18);
-      background:#e8d5c0;
+      width:130px; height:130px; border-radius:50%; overflow:hidden;
+      margin:0 auto .7rem; box-shadow:0 4px 16px rgba(0,0,0,.22); background:#e8d0b8;
     }
     #avatarWrap svg { width:100%; height:100%; display:block; }
 
-    /* Idle: gentle breathing */
     @keyframes breathe {
       0%,100% { transform:translateY(0) scale(1); }
-      50%      { transform:translateY(-1.5px) scale(1.008); }
+      50%      { transform:translateY(-1.5px) scale(1.007); }
     }
-    /* Speaking: head micro-bob */
     @keyframes headbob {
       0%,100% { transform:translateY(0) rotate(0deg); }
-      30%      { transform:translateY(-2px) rotate(.6deg); }
-      70%      { transform:translateY(1px) rotate(-.4deg); }
+      30%      { transform:translateY(-2px) rotate(.5deg); }
+      70%      { transform:translateY(1px) rotate(-.35deg); }
     }
-    /* Eye blink */
     @keyframes blink {
-      0%,92%  { transform:scaleY(0); }
-      94%,98% { transform:scaleY(1); }
+      0%,90%  { transform:scaleY(0); }
+      93%,97% { transform:scaleY(1); }
       100%    { transform:scaleY(0); }
     }
-    /* Mouth open-close while speaking */
     @keyframes mouththing {
-      0%,100% { transform:scaleY(.15); }
+      0%,100% { transform:scaleY(.1); }
       50%     { transform:scaleY(1); }
     }
-
-    .face-root { animation:breathe 3.5s ease-in-out infinite; transform-origin:50% 60%; }
-    .face-root.speaking { animation:headbob .35s ease-in-out infinite; }
-
-    .eyelid { transform-origin:50% 100%; transform:scaleY(0);
-              animation:blink 4s ease-in-out infinite; }
-    .eyelid.r { animation-delay:.06s; }
-
-    /* closed mouth visible by default, open hidden */
-    .mouth-open { transform-origin:50% 0%; transform:scaleY(.15); }
+    .face-root { animation:breathe 3.8s ease-in-out infinite; transform-origin:50% 55%; }
+    .face-root.speaking { animation:headbob .38s ease-in-out infinite; }
+    .eyelid   { transform-origin:50% 100%; transform:scaleY(0); animation:blink 4.2s ease-in-out infinite; }
+    .eyelid.r { animation-delay:.07s; animation-duration:4.6s; }
+    .mouth-open { transform-origin:50% 0%; transform:scaleY(.1); }
     .face-root.speaking .mouth-closed { opacity:0; }
-    .face-root.speaking .mouth-open   { animation:mouththing .22s ease-in-out infinite alternate; }
+    .face-root.speaking .mouth-open   { animation:mouththing .24s ease-in-out infinite alternate; }
 
     /* ── Chat screen ── */
-    #avatarName { text-align:center; font-size:1.3rem; font-weight:600;
-                  color:var(--accent); margin-bottom:.8rem; }
-
-    #transcript { height:300px; overflow-y:auto; border:1px solid #dde3ee;
-                  border-radius:14px; padding:.9rem; background:#fafbfe; margin-bottom:.8rem; }
-
-    .bubble { max-width:85%; padding:.5rem .85rem; border-radius:14px;
-              margin-bottom:.55rem; line-height:1.45; font-size:1.05rem; }
+    #avatarName { text-align:center; font-size:1.25rem; font-weight:600;
+      color:var(--accent); margin-bottom:.7rem; }
+    #transcript { height:290px; overflow-y:auto; border:1px solid #dde3ee;
+      border-radius:14px; padding:.85rem; background:#fafbfe; margin-bottom:.75rem; }
+    .bubble { max-width:85%; padding:.48rem .82rem; border-radius:14px;
+      margin-bottom:.5rem; line-height:1.45; font-size:1.02rem; }
     .bubble-avatar { background:var(--accent-light); color:#1a2a40; margin-right:auto; }
     .bubble-user   { background:var(--accent); color:#fff; margin-left:auto; text-align:right; }
     [dir="rtl"] .bubble-avatar { margin-left:auto; margin-right:0; text-align:right; }
     [dir="rtl"] .bubble-user   { margin-right:auto; margin-left:0; text-align:left; }
 
-    #micBtn {
-      width:80px; height:80px; border-radius:50%; border:none;
-      background:var(--accent); color:#fff; font-size:2rem;
+    #micBtn { width:78px; height:78px; border-radius:50%; border:none;
+      background:var(--accent); color:#fff; font-size:1.9rem;
       display:flex; align-items:center; justify-content:center;
-      margin:0 auto .6rem; box-shadow:0 4px 14px rgba(0,0,0,.2);
-      cursor:pointer; transition:background .15s;
-    }
+      margin:0 auto .55rem; box-shadow:0 4px 14px rgba(0,0,0,.2);
+      cursor:pointer; transition:background .15s; }
     #micBtn:hover { background:#4a6d94; }
     #micBtn.listening { background:#e05a5a; animation:pulse 1s infinite; }
     @keyframes pulse {
       0%,100% { box-shadow:0 0 0 0 rgba(224,90,90,.5); }
       50%     { box-shadow:0 0 0 12px rgba(224,90,90,0); }
     }
+    #micLabel  { text-align:center; color:#888; font-size:.93rem; margin-bottom:.38rem; min-height:1.4em; }
+    #statusBar { text-align:center; font-size:.88rem; color:#aaa; min-height:1.2em; }
+    #stopBtn   { display:none; margin:.22rem auto .08rem; background:#e05a5a; color:#fff;
+      border:none; border-radius:10px; padding:.28rem 1rem; font-size:.9rem; cursor:pointer; }
+    .action-btns { display:flex; gap:.45rem; margin-top:.45rem; }
+    .action-btns .btn { flex:1; font-size:.93rem; border-radius:12px; padding:.48rem; }
 
-    #micLabel  { text-align:center; color:#888; font-size:.95rem; margin-bottom:.4rem; min-height:1.4em; }
-    #statusBar { text-align:center; font-size:.9rem; color:#aaa; min-height:1.2em; }
+    .app-title    { text-align:center; color:var(--accent); font-size:1.7rem;
+      font-weight:700; margin-bottom:1.3rem; }
+    .app-subtitle { text-align:center; color:#888; font-size:.98rem;
+      margin-top:-.75rem; margin-bottom:1.4rem; }
 
-    #stopBtn { display:none; margin:.25rem auto .1rem; background:#e05a5a; color:#fff;
-               border:none; border-radius:10px; padding:.3rem 1.1rem; font-size:.92rem; cursor:pointer; }
-
-    .action-btns { display:flex; gap:.5rem; margin-top:.5rem; }
-    .action-btns .btn { flex:1; font-size:.95rem; border-radius:12px; padding:.5rem; }
-
-    .app-title    { text-align:center; color:var(--accent); font-size:1.75rem; font-weight:700; margin-bottom:1.4rem; }
-    .app-subtitle { text-align:center; color:#888; font-size:1rem; margin-top:-.8rem; margin-bottom:1.5rem; }
-
-    #voiceNote { font-size:.82rem; color:#e07030; margin-top:-.5rem; margin-bottom:.8rem; display:none; }
+    #voiceNote { font-size:.8rem; color:#c06820; margin-top:-.4rem; margin-bottom:.7rem; display:none; }
+    #langFallback { display:none; background:#fff3cd; border:1px solid #ffc107;
+      border-radius:12px; padding:.8rem 1rem; margin-bottom:.9rem; font-size:.95rem; }
+    #langFallback button { margin-top:.4rem; font-size:.9rem; }
   </style>
 </head>
 <body>
 
-<!-- ═══════════  SCREEN 1 — Welcome  ═══════════ -->
+<!-- ══════════  SCREEN 1 — Welcome  ══════════ -->
 <div id="screenWelcome" class="screen active">
   <div class="card-main">
     <div class="app-title" data-i18n="appTitle">Companion Chat</div>
     <div class="app-subtitle" data-i18n="appSubtitle">A friendly conversation, just for you</div>
+
     <label class="form-label fw-semibold" for="nameInput" data-i18n="nameLabel">What is your name?</label>
     <input id="nameInput" type="text" class="form-control mb-3"
-           data-i18n-placeholder="namePlaceholder" placeholder="Type your name here…"
-           autocomplete="off" autocorrect="off" spellcheck="false" />
+           placeholder="Type your name here…" data-i18n-ph="namePlaceholder"
+           autocomplete="off" autocorrect="off" spellcheck="false"/>
+
+    <p class="fw-semibold mb-2" data-i18n="genderLabel">How should we address you?</p>
+    <div class="choice-grid" id="userGenderGrid">
+      <div class="choice-btn selected" data-group="ugender" data-value="female" onclick="pickUser(this)" data-i18n="female">Female</div>
+      <div class="choice-btn"          data-group="ugender" data-value="male"   onclick="pickUser(this)" data-i18n="male">Male</div>
+    </div>
+
     <button class="btn btn-primary btn-big" onclick="doIdentify()" data-i18n="continueBtn">Continue →</button>
     <div id="welcomeError" class="text-danger text-center mt-2" style="display:none;"></div>
   </div>
 </div>
 
-<!-- ═══════════  SCREEN 2 — Resume  ═══════════ -->
+<!-- ══════════  SCREEN 2 — Resume  ══════════ -->
 <div id="screenResume" class="screen">
   <div class="card-main">
     <div class="app-title"><span data-i18n="welcomeBack">Welcome back</span>, <span id="resumeName"></span>!</div>
     <p class="text-center text-muted mb-3" data-i18n="resumePrompt">Would you like to continue a previous conversation?</p>
     <div id="convList" class="mb-3"></div>
     <hr/>
-    <button class="btn btn-primary btn-big" onclick="goSetup()" data-i18n="newConvBtn">+ Start a new conversation</button>
+    <button class="btn btn-primary btn-big"         onclick="goSetup()"   data-i18n="newConvBtn">+ Start a new conversation</button>
     <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()" data-i18n="notMeBtn">← Not me</button>
   </div>
 </div>
 
-<!-- ═══════════  SCREEN 3 — Setup  ═══════════ -->
+<!-- ══════════  SCREEN 3 — Setup  ══════════ -->
 <div id="screenSetup" class="screen">
   <div class="card-main">
     <div class="app-title" data-i18n="setupTitle">Let's set up your chat</div>
 
     <p class="fw-semibold mb-2" data-i18n="chooseLanguage">Choose language:</p>
-    <div class="choice-grid mb-2">
+    <div class="choice-grid">
       <div class="choice-btn selected" data-group="lang" data-value="en" onclick="pick(this)">🇬🇧 English</div>
       <div class="choice-btn"          data-group="lang" data-value="he" onclick="pick(this)">🇮🇱 עברית</div>
     </div>
 
     <p class="fw-semibold mb-2" data-i18n="chooseCompanion">Choose companion:</p>
-    <div class="choice-grid mb-2">
+    <div class="choice-grid">
       <div class="choice-btn selected" data-group="gender" data-value="female" onclick="pick(this)" data-i18n="female">Female</div>
       <div class="choice-btn"          data-group="gender" data-value="male"   onclick="pick(this)" data-i18n="male">Male</div>
+    </div>
+
+    <div id="langFallback">
+      <span id="langFallbackMsg"></span><br/>
+      <button class="btn btn-warning btn-sm" onclick="switchToEnglish()" data-i18n="switchBtn">Switch to English avatar</button>
     </div>
 
     <p class="fw-semibold mb-1" data-i18n="voiceLabel">Speaking voice:</p>
@@ -173,24 +171,21 @@
     </select>
     <div id="voiceNote"></div>
 
-    <button class="btn btn-primary btn-big" onclick="startConversation()" data-i18n="startBtn">Start Chatting</button>
+    <button class="btn btn-primary btn-big mt-2" onclick="startConversation()" data-i18n="startBtn">Start Chatting</button>
     <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()" data-i18n="backBtn">← Back</button>
   </div>
 </div>
 
-<!-- ═══════════  SCREEN 4 — Chat  ═══════════ -->
+<!-- ══════════  SCREEN 4 — Chat  ══════════ -->
 <div id="screenChat" class="screen">
   <div class="card-main">
     <div id="avatarWrap"></div>
     <div id="avatarName">…</div>
-
     <div id="transcript"></div>
-
     <div id="micLabel" data-i18n="micLabel">Tap the microphone to speak</div>
     <button id="micBtn" onclick="toggleMic()">🎤</button>
     <button id="stopBtn" onclick="stopSpeaking()">⏹ <span data-i18n="stopBtn">Stop</span></button>
     <div id="statusBar">&nbsp;</div>
-
     <div class="action-btns">
       <button class="btn btn-outline-primary" onclick="suggestTopics()" data-i18n="suggestBtn">Skip small talk and suggest topics</button>
       <button class="btn btn-outline-danger"  onclick="endConversation()" data-i18n="endBtn">End chat</button>
@@ -199,233 +194,299 @@
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════
-//  UI translations
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
+//  Translations
+// ════════════════════════════════════════════════════
 const T = {
   en: {
-    appTitle:      'Companion Chat',
-    appSubtitle:   'A friendly conversation, just for you',
-    nameLabel:     'What is your name?',
-    namePlaceholder:'Type your name here…',
-    continueBtn:   'Continue →',
-    welcomeBack:   'Welcome back',
-    resumePrompt:  'Would you like to continue a previous conversation?',
-    newConvBtn:    '+ Start a new conversation',
-    notMeBtn:      '← Not me',
-    setupTitle:    "Let's set up your chat",
-    chooseLanguage:'Choose language:',
+    appTitle:'Companion Chat', appSubtitle:'A friendly conversation, just for you',
+    nameLabel:'What is your name?', namePlaceholder:'Type your name here…',
+    genderLabel:'How should we address you?',
+    continueBtn:'Continue →',
+    welcomeBack:'Welcome back', resumePrompt:'Would you like to continue a previous conversation?',
+    newConvBtn:'+ Start a new conversation', notMeBtn:'← Not me',
+    setupTitle:"Let's set up your chat", chooseLanguage:'Choose language:',
     chooseCompanion:'Choose companion:',
-    voiceLabel:    'Speaking voice:',
-    female:        'Female',
-    male:          'Male',
-    startBtn:      'Start Chatting',
-    backBtn:       '← Back',
-    micLabel:      'Tap the microphone to speak',
-    listening:     'Listening…',
-    thinking:      'Thinking…',
-    stopBtn:       'Stop',
-    suggestBtn:    'Skip small talk and suggest topics',
-    endBtn:        'End chat',
-    noSpeech:      'No speech detected. Try again.',
-    serverError:   'Could not connect to server.',
-    starting:      'Starting…',
-    pitchNote:     'No female voice found — using pitch adjustment.',
+    female:'Female', male:'Male',
+    voiceLabel:'Speaking voice:', startBtn:'Start Chatting', backBtn:'← Back',
+    switchBtn:'Switch to English avatar',
+    micLabel:'Tap the microphone to speak', listening:'Listening…', thinking:'Thinking…',
+    stopBtn:'Stop', suggestBtn:'Skip small talk and suggest topics', endBtn:'End chat',
+    noSpeech:'No speech detected. Try again.', serverError:'Could not connect to server.',
+    starting:'Starting…',
+    pitchNote:'No female voice found — using pitch adjustment.',
+    noVoiceWarning:'No Hebrew voice found on this device.',
   },
   he: {
-    appTitle:      'שיחת חברותא',
-    appSubtitle:   'שיחה חברית, רק בשבילך',
-    nameLabel:     'מה שמך?',
-    namePlaceholder:'הקלד/י את שמך כאן…',
-    continueBtn:   'המשך ←',
-    welcomeBack:   'ברוך/ה שובך/ת',
-    resumePrompt:  'האם תרצה/י להמשיך שיחה קודמת?',
-    newConvBtn:    '+ התחל/י שיחה חדשה',
-    notMeBtn:      '← זה/זאת לא אני',
-    setupTitle:    'הגדרת השיחה שלך',
-    chooseLanguage:'בחר/י שפה:',
+    appTitle:'שיחת חברותא', appSubtitle:'שיחה חברית, רק בשבילך',
+    nameLabel:'מה שמך?', namePlaceholder:'הקלד/י את שמך כאן…',
+    genderLabel:'כיצד לפנות אליך?',
+    continueBtn:'המשך ←',
+    welcomeBack:'ברוך/ה שובך/ת', resumePrompt:'האם תרצה/י להמשיך שיחה קודמת?',
+    newConvBtn:'+ התחל/י שיחה חדשה', notMeBtn:'← זה/זאת לא אני',
+    setupTitle:'הגדרת השיחה שלך', chooseLanguage:'בחר/י שפה:',
     chooseCompanion:'בחר/י מלווה:',
-    voiceLabel:    'קול הדובר:',
-    female:        'נקבה',
-    male:          'זכר',
-    startBtn:      'התחל/י לשוחח',
-    backBtn:       'חזור ←',
-    micLabel:      'לחץ/י על המיקרופון לדיבור',
-    listening:     'מקשיב/ה…',
-    thinking:      'חושב/ת…',
-    stopBtn:       'עצור',
-    suggestBtn:    'דלג/י על שיחת חולין והצע/י נושאים',
-    endBtn:        'סיים/י שיחה',
-    noSpeech:      'לא זוהה דיבור. נסה/י שוב.',
-    serverError:   'לא ניתן להתחבר לשרת.',
-    starting:      'מתחיל/ה…',
-    pitchNote:     'לא נמצא קול נשי — משתמש/ת בהתאמת גובה קול.',
+    female:'נקבה', male:'זכר',
+    voiceLabel:'קול הדובר:', startBtn:'התחל/י לשוחח', backBtn:'חזור ←',
+    switchBtn:'עבור/י לאווטאר אנגלי',
+    micLabel:'לחץ/י על המיקרופון לדיבור', listening:'מקשיב/ה…', thinking:'חושב/ת…',
+    stopBtn:'עצור', suggestBtn:'דלג/י על שיחת חולין והצע/י נושאים', endBtn:'סיים/י שיחה',
+    noSpeech:'לא זוהה דיבור. נסה/י שוב.', serverError:'לא ניתן להתחבר לשרת.',
+    starting:'מתחיל/ה…',
+    pitchNote:'לא נמצא קול נשי — משתמש/ת בהתאמת גובה קול.',
+    noVoiceWarning:'לא נמצא קול עברי במכשיר זה.',
   }
 };
-
-function t(key) { return (T[language] || T.en)[key] || key; }
+function t(k) { return (T[language]||T.en)[k] || k; }
 
 function applyUI() {
   const isHe = language === 'he';
   document.documentElement.lang = language;
   document.documentElement.dir  = isHe ? 'rtl' : 'ltr';
-
   document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.dataset.i18n;
-    if (T[language] && T[language][key]) el.textContent = T[language][key];
+    const v = (T[language]||T.en)[el.dataset.i18n];
+    if (v) el.textContent = v;
   });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.dataset.i18nPlaceholder;
-    if (T[language] && T[language][key]) el.placeholder = T[language][key];
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const v = (T[language]||T.en)[el.dataset.i18nPh];
+    if (v) el.placeholder = v;
   });
 }
 
-// ══════════════════════════════════════════════════════
-//  Avatar SVG faces
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
+//  Realistic SVG face builder
+// ════════════════════════════════════════════════════
 function buildFace(gender, lang) {
-  // Skin tones
-  const skin  = lang === 'he'
-    ? (gender === 'female' ? '#d4956e' : '#c07850')   // olive
-    : (gender === 'female' ? '#f0c090' : '#d89060');   // fair/medium
-  const skinD = lang === 'he'
-    ? (gender === 'female' ? '#c07850' : '#a86030')
-    : (gender === 'female' ? '#d8a070' : '#b87040');
+  const isFem = gender === 'female';
+  const isHe  = lang === 'he';
+  const uid   = 'g' + (Date.now() % 9999);   // unique gradient IDs
 
-  // Hair colours
-  const hair = lang === 'he'
-    ? (gender === 'female' ? '#2a1a10' : '#3a2818')   // dark
-    : (gender === 'female' ? '#8a7060' : '#6a6060');   // gray-brown / gray
+  // Skin palette [highlight, base, shadow, accent]
+  const sk = isHe
+    ? (isFem ? ['#f0c090','#d09068','#a86030','#b87040'] : ['#e0a870','#c07848','#904820','#a05828'])
+    : (isFem ? ['#feecd8','#f5c898','#d89060','#e0a870'] : ['#f0c898','#d8a060','#b07838','#c08848']);
 
-  // Eye colour
-  const iris = lang === 'he' ? '#3a2010' : '#5a7a90';
+  // Hair palette [base, shadow, highlight]
+  const hr = isHe
+    ? (isFem ? ['#1a1008','#0c0806','#3a2818'] : ['#2a2018','#141008','#4a3828'])
+    : (isFem ? ['#807060','#504030','#c0a888'] : ['#9a9898','#606060','#d0ccc8']);
 
-  const isFemale = gender === 'female';
+  // Iris [inner, outer, edge]
+  const ir = isHe
+    ? ['#5a3018','#2a1008','#0c0806']
+    : (isFem ? ['#90b8d0','#3a7090','#0a2840'] : ['#808840','#484820','#202010']);
 
-  // ── Female face ──
-  if (isFemale) return `
-<svg id="avatarFace" class="face-root" viewBox="0 0 100 115" xmlns="http://www.w3.org/2000/svg">
-  <!-- neck -->
-  <rect x="36" y="92" width="28" height="18" rx="9" fill="${skinD}"/>
-  <!-- hair back -->
-  <ellipse cx="50" cy="42" rx="38" ry="38" fill="${hair}"/>
-  <!-- face -->
-  <ellipse cx="50" cy="58" rx="34" ry="38" fill="${skin}"/>
-  <!-- hair sides -->
-  <path d="M16,44 Q10,62 16,76 Q20,80 24,74 Q19,60 20,44Z" fill="${hair}"/>
-  <path d="M84,44 Q90,62 84,76 Q80,80 76,74 Q81,60 80,44Z" fill="${hair}"/>
-  <!-- hair top -->
-  <path d="M16,44 Q22,18 50,14 Q78,18 84,44 Q68,32 50,30 Q32,32 16,44Z" fill="${hair}"/>
-  <!-- hair bun -->
-  <ellipse cx="50" cy="16" rx="14" ry="10" fill="${hair}"/>
-  <!-- ears -->
-  <ellipse cx="16" cy="60" rx="6" ry="8" fill="${skinD}"/>
-  <ellipse cx="84" cy="60" rx="6" ry="8" fill="${skinD}"/>
-  <!-- eyebrows arched -->
-  <path d="M28,42 Q35,37 42,40" stroke="${hair}" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M58,40 Q65,37 72,42" stroke="${hair}" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <!-- eye whites -->
-  <ellipse cx="34" cy="50" rx="7" ry="5" fill="white"/>
-  <ellipse cx="66" cy="50" rx="7" ry="5" fill="white"/>
-  <!-- irises -->
-  <circle cx="34" cy="50" r="3.5" fill="${iris}"/>
-  <circle cx="66" cy="50" r="3.5" fill="${iris}"/>
-  <!-- pupils -->
-  <circle cx="34" cy="50" r="1.8" fill="#111"/>
-  <circle cx="66" cy="50" r="1.8" fill="#111"/>
-  <!-- shine -->
-  <circle cx="32.5" cy="48.5" r=".9" fill="white"/>
-  <circle cx="64.5" cy="48.5" r=".9" fill="white"/>
-  <!-- eyelids (blink) -->
-  <ellipse class="eyelid"   cx="34" cy="47" rx="7" ry="5.5" fill="${skin}"/>
-  <ellipse class="eyelid r" cx="66" cy="47" rx="7" ry="5.5" fill="${skin}"/>
-  <!-- nose -->
-  <path d="M50,60 Q47,68 48,71 Q50,73 52,71 Q53,68 50,60Z" fill="${skinD}" opacity=".45"/>
-  <path d="M45,71 Q50,74 55,71" stroke="${skinD}" stroke-width="1.2" fill="none" opacity=".6"/>
-  <!-- smile lines (age) -->
-  <path d="M28,68 Q26,74 30,80" stroke="${skinD}" stroke-width=".9" fill="none" opacity=".4"/>
-  <path d="M72,68 Q74,74 70,80" stroke="${skinD}" stroke-width=".9" fill="none" opacity=".4"/>
-  <!-- forehead line -->
-  <path d="M32,30 Q50,26 68,30" stroke="${skinD}" stroke-width=".7" fill="none" opacity=".25"/>
-  <!-- cheeks -->
-  <ellipse cx="22" cy="66" rx="9" ry="6" fill="#ff8080" opacity=".13"/>
-  <ellipse cx="78" cy="66" rx="9" ry="6" fill="#ff8080" opacity=".13"/>
-  <!-- mouth -->
-  <g class="mouth-closed">
-    <path d="M38,83 Q44,80 50,81 Q56,80 62,83 Q56,87 50,88 Q44,87 38,83Z" fill="#c06878"/>
-    <path d="M38,83 Q50,80 62,83" stroke="#a05060" stroke-width=".6" fill="none"/>
-  </g>
-  <g class="mouth-open" style="transform-box:fill-box;transform-origin:50% 0%">
-    <ellipse cx="50" cy="86" rx="11" ry="7" fill="#7a1a28"/>
-    <path d="M39,84 Q50,82 61,84 Q50,86 39,84Z" fill="#f0f0f0"/>
-  </g>
-</svg>`;
+  const lip = isFem ? '#c86878' : '#a85858';
+  const liH = isFem ? '#e08898' : '#c07070';
 
-  // ── Male face ──
-  return `
-<svg id="avatarFace" class="face-root" viewBox="0 0 100 115" xmlns="http://www.w3.org/2000/svg">
-  <!-- neck -->
-  <rect x="33" y="93" width="34" height="18" rx="10" fill="${skinD}"/>
-  <!-- head shape (squarer jaw) -->
-  <path d="M16,50 Q14,80 20,94 Q34,104 50,104 Q66,104 80,94 Q86,80 84,50
-           Q80,20 50,18 Q20,20 16,50Z" fill="${skin}"/>
-  <!-- hair top -->
-  <path d="M16,50 Q18,22 50,18 Q82,22 84,50 Q70,38 50,36 Q30,38 16,50Z" fill="${hair}"/>
-  <!-- gray temples -->
-  <path d="M16,50 Q17,42 20,38 Q22,46 20,58Z" fill="#c0b8b0"/>
-  <path d="M84,50 Q83,42 80,38 Q78,46 80,58Z" fill="#c0b8b0"/>
-  <!-- ears -->
-  <ellipse cx="15" cy="62" rx="6" ry="8.5" fill="${skinD}"/>
-  <ellipse cx="85" cy="62" rx="6" ry="8.5" fill="${skinD}"/>
-  <!-- eyebrows (thicker) -->
-  <path d="M26,46 Q34,41 43,44" stroke="${hair}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-  <path d="M57,44 Q66,41 74,46" stroke="${hair}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-  <!-- eye whites -->
-  <ellipse cx="34" cy="54" rx="7.5" ry="5.5" fill="white"/>
-  <ellipse cx="66" cy="54" rx="7.5" ry="5.5" fill="white"/>
-  <!-- irises -->
-  <circle cx="34" cy="54" r="3.8" fill="${iris}"/>
-  <circle cx="66" cy="54" r="3.8" fill="${iris}"/>
-  <!-- pupils -->
-  <circle cx="34" cy="54" r="2" fill="#111"/>
-  <circle cx="66" cy="54" r="2" fill="#111"/>
-  <!-- shine -->
-  <circle cx="32.5" cy="52.5" r="1" fill="white"/>
-  <circle cx="64.5" cy="52.5" r="1" fill="white"/>
-  <!-- eyelids (blink) -->
-  <ellipse class="eyelid"   cx="34" cy="51" rx="7.5" ry="6" fill="${skin}"/>
-  <ellipse class="eyelid r" cx="66" cy="51" rx="7.5" ry="6" fill="${skin}"/>
-  <!-- nose (broader) -->
-  <path d="M50,64 Q46,73 47,77 Q50,80 53,77 Q54,73 50,64Z" fill="${skinD}" opacity=".5"/>
-  <path d="M44,77 Q50,81 56,77" stroke="${skinD}" stroke-width="1.5" fill="none" opacity=".65"/>
-  <!-- stubble -->
-  <path d="M34,90 Q50,95 66,90" stroke="${skinD}" stroke-width="3.5" fill="none" opacity=".2" stroke-dasharray="2,2"/>
-  <!-- wrinkles -->
-  <path d="M26,66 Q24,72 28,78" stroke="${skinD}" stroke-width="1" fill="none" opacity=".35"/>
-  <path d="M74,66 Q76,72 72,78" stroke="${skinD}" stroke-width="1" fill="none" opacity=".35"/>
-  <!-- forehead lines -->
-  <path d="M28,38 Q50,34 72,38" stroke="${skinD}" stroke-width=".8" fill="none" opacity=".28"/>
-  <path d="M32,32 Q50,28 68,32" stroke="${skinD}" stroke-width=".6" fill="none" opacity=".2"/>
-  <!-- mouth -->
-  <g class="mouth-closed">
-    <path d="M36,87 Q44,84 50,85 Q56,84 64,87 Q56,92 50,93 Q44,92 36,87Z" fill="#b06060"/>
-    <path d="M36,87 Q50,84 64,87" stroke="#904050" stroke-width=".7" fill="none"/>
-  </g>
-  <g class="mouth-open" style="transform-box:fill-box;transform-origin:50% 0%">
-    <ellipse cx="50" cy="90" rx="12" ry="7" fill="#7a1a1a"/>
-    <path d="M38,88 Q50,86 62,88 Q50,91 38,88Z" fill="#e8e8e8"/>
-  </g>
+  // Female hair (long/bun) vs male (short)
+  const hairSVG = isFem ? `
+    <ellipse cx="80" cy="24" rx="24" ry="16" fill="${hr[0]}"/>
+    <ellipse cx="80" cy="22" rx="19" ry="11" fill="${hr[2]}" opacity=".5"/>
+    <path d="M20,84 Q22,40 44,26 Q62,14 80,12 Q98,14 116,26 Q138,40 140,84
+             Q122,62 96,55 Q88,52 80,52 Q72,52 64,55 Q38,62 20,84Z" fill="${hr[0]}"/>
+    <path d="M20,84 Q14,106 16,132 Q18,148 26,158 Q23,135 24,110 Q23,92 26,80Z" fill="${hr[0]}"/>
+    <path d="M140,84 Q146,106 144,132 Q142,148 134,158 Q137,135 136,110 Q137,92 134,80Z" fill="${hr[0]}"/>
+    <path d="M56,16 Q80,10 104,16 Q88,26 80,26 Q72,26 56,16Z" fill="${hr[2]}" opacity=".55"/>
+  ` : `
+    <path d="M20,82 Q24,42 46,26 Q64,14 80,12 Q96,14 114,26 Q136,42 140,82
+             Q122,62 96,55 Q88,52 80,52 Q72,52 64,55 Q38,62 20,82Z" fill="${hr[0]}"/>
+    <path d="M38,58 Q46,44 60,38" stroke="${sk[0]}" stroke-width="7" fill="none" stroke-linecap="round" opacity=".55"/>
+    <path d="M122,58 Q114,44 100,38" stroke="${sk[0]}" stroke-width="7" fill="none" stroke-linecap="round" opacity=".55"/>
+    <path d="M58,16 Q80,10 102,16 Q88,26 80,26 Q72,26 58,16Z" fill="${hr[2]}" opacity=".45"/>
+    <path d="M22,80 Q22,90 26,105" stroke="#c8c0b8" stroke-width="6" fill="none" opacity=".45"/>
+    <path d="M138,80 Q138,90 134,105" stroke="#c8c0b8" stroke-width="6" fill="none" opacity=".45"/>
+  `;
+
+  // Eyebrows
+  const browSVG = isFem ? `
+    <path d="M44,80 Q58,72 72,77" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <path d="M88,77 Q102,72 116,80" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <path d="M46,79 Q60,73 70,76" stroke="${hr[2]}" stroke-width="1" fill="none" opacity=".4"/>
+    <path d="M90,76 Q100,73 114,79" stroke="${hr[2]}" stroke-width="1" fill="none" opacity=".4"/>
+  ` : `
+    <path d="M42,80 Q58,73 74,77" stroke="${hr[1]}" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M86,77 Q102,73 118,80" stroke="${hr[1]}" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M44,78 Q60,73 72,76" stroke="${hr[2]}" stroke-width="1.2" fill="none" opacity=".4"/>
+    <path d="M88,76 Q100,73 116,78" stroke="${hr[2]}" stroke-width="1.2" fill="none" opacity=".4"/>
+  `;
+
+  // Eyelashes (female only)
+  const lashSVG = isFem ? `
+    <line x1="46" y1="91" x2="43" y2="85" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="50" y1="88" x2="48" y2="83" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="55" y1="87" x2="54" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="60" y1="87" x2="60" y2="81" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="65" y1="87" x2="66" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="70" y1="89" x2="72" y2="84" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="74" y1="91" x2="77" y2="86" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="86" y1="91" x2="83" y2="86" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="90" y1="89" x2="88" y2="84" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="95" y1="87" x2="94" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="100" y1="87" x2="100" y2="81" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="105" y1="87" x2="106" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="110" y1="88" x2="112" y2="83" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="114" y1="91" x2="117" y2="86" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+  ` : '';
+
+  // Stubble (male only)
+  const stubbleSVG = !isFem ? `
+    <path d="M52,155 Q80,163 108,155" stroke="${sk[2]}" stroke-width="4.5" fill="none" opacity=".14" stroke-dasharray="1.5,2.2"/>
+    <path d="M60,164 Q80,170 100,164" stroke="${sk[2]}" stroke-width="3.5" fill="none" opacity=".11" stroke-dasharray="1,2"/>
+  ` : '';
+
+  // Face outline (female=oval, male=squarer jaw)
+  const faceD = isFem
+    ? 'M22,88 Q16,115 18,142 Q22,168 42,180 Q58,190 80,191 Q102,190 118,180 Q138,168 142,142 Q144,115 138,88'
+    : 'M20,88 Q14,118 16,146 Q18,166 36,178 Q52,188 80,190 Q108,188 124,178 Q142,166 144,146 Q146,118 140,88';
+
+  return `<svg id="avatarFace" class="face-root" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <radialGradient id="${uid}s" cx="38%" cy="26%" r="72%" gradientUnits="objectBoundingBox">
+    <stop offset="0%"   stop-color="${sk[0]}"/>
+    <stop offset="48%"  stop-color="${sk[1]}"/>
+    <stop offset="100%" stop-color="${sk[2]}"/>
+  </radialGradient>
+  <radialGradient id="${uid}i" cx="30%" cy="26%" r="70%">
+    <stop offset="0%"   stop-color="${ir[0]}"/>
+    <stop offset="55%"  stop-color="${ir[1]}"/>
+    <stop offset="100%" stop-color="${ir[2]}"/>
+  </radialGradient>
+  <radialGradient id="${uid}lip" cx="50%" cy="30%" r="70%">
+    <stop offset="0%"   stop-color="${liH}"/>
+    <stop offset="100%" stop-color="${lip}"/>
+  </radialGradient>
+  <filter id="${uid}blur"><feGaussianBlur stdDeviation=".55"/></filter>
+</defs>
+
+<!-- Ground shadow -->
+<ellipse cx="80" cy="198" rx="46" ry="4.5" fill="rgba(0,0,0,.17)"/>
+
+<!-- Neck -->
+<path d="M56,170 Q58,185 68,190 Q80,195 92,190 Q102,185 104,170 Q94,178 80,179 Q66,178 56,170Z"
+      fill="url(#${uid}s)"/>
+
+<!-- Shoulders -->
+<path d="M8,200 Q36,180 56,170 Q68,175 80,176 Q92,175 104,170 Q124,180 152,200Z"
+      fill="${sk[2]}" opacity=".5"/>
+
+<!-- Hair (back layer) -->
+<ellipse cx="80" cy="74" rx="64" ry="66" fill="${hr[0]}"/>
+
+<!-- Face shape -->
+<path d="${faceD} Q20,88 20,88Z" fill="url(#${uid}s)"/>
+
+${hairSVG}
+
+<!-- Ears -->
+<path d="M18,106 Q10,115 10,126 Q10,137 18,143 Q22,132 22,120 Q22,108 18,106Z" fill="${sk[1]}"/>
+<path d="M18,109 Q14,116 14,125 Q14,134 18,140" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".5"/>
+<path d="M142,106 Q150,115 150,126 Q150,137 142,143 Q138,132 138,120 Q138,108 142,106Z" fill="${sk[1]}"/>
+<path d="M142,109 Q146,116 146,125 Q146,134 142,140" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".5"/>
+
+${browSVG}
+
+<!-- Eye area shadows (depth) -->
+<ellipse cx="60" cy="94" rx="18" ry="12" fill="${sk[3]}" opacity=".2" filter="url(#${uid}blur)"/>
+<ellipse cx="100" cy="94" rx="18" ry="12" fill="${sk[3]}" opacity=".2" filter="url(#${uid}blur)"/>
+
+<!-- Sclera (eye whites) -->
+<ellipse cx="60" cy="96" rx="15" ry="10" fill="#fafaf8"/>
+<ellipse cx="100" cy="96" rx="15" ry="10" fill="#fafaf8"/>
+
+<!-- Eyelid crease shadow -->
+<path d="M45,90 Q60,85 75,90 Q60,96 45,90Z" fill="${sk[3]}" opacity=".28"/>
+<path d="M85,90 Q100,85 115,90 Q100,96 85,90Z" fill="${sk[3]}" opacity=".28"/>
+
+<!-- Iris -->
+<circle cx="60" cy="96" r="7.5" fill="url(#${uid}i)"/>
+<circle cx="100" cy="96" r="7.5" fill="url(#${uid}i)"/>
+<!-- Iris limbal ring -->
+<circle cx="60" cy="96" r="7.5" fill="none" stroke="${ir[2]}" stroke-width="1" opacity=".6"/>
+<circle cx="100" cy="96" r="7.5" fill="none" stroke="${ir[2]}" stroke-width="1" opacity=".6"/>
+
+<!-- Pupils -->
+<circle cx="60" cy="96" r="3.8" fill="#060810"/>
+<circle cx="100" cy="96" r="3.8" fill="#060810"/>
+
+<!-- Corneal highlights -->
+<ellipse cx="57" cy="93" rx="2.2" ry="1.7" fill="white"/>
+<circle  cx="63" cy="99" r=".8"  fill="white" opacity=".55"/>
+<ellipse cx="97" cy="93" rx="2.2" ry="1.7" fill="white"/>
+<circle  cx="103" cy="99" r=".8" fill="white" opacity=".55"/>
+
+<!-- Upper eyelid line -->
+<path d="M45,93 Q60,87 75,93" stroke="#1a1010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M85,93 Q100,87 115,93" stroke="#1a1010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+
+${lashSVG}
+
+<!-- Lower eyelid -->
+<path d="M46,103 Q60,108 74,103" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".5"/>
+<path d="M86,103 Q100,108 114,103" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".5"/>
+
+<!-- Blink eyelids -->
+<ellipse class="eyelid"   cx="60"  cy="93" rx="15" ry="11" fill="${sk[1]}"/>
+<ellipse class="eyelid r" cx="100" cy="93" rx="15" ry="11" fill="${sk[1]}"/>
+
+<!-- NOSE -->
+<path d="M80,108 Q76,122 76,128 Q80,133 84,128 Q84,122 80,108Z" fill="${sk[2]}" opacity=".3"/>
+<ellipse cx="73" cy="128" rx="7"   ry="4.5" fill="${sk[2]}" opacity=".22"/>
+<ellipse cx="87" cy="128" rx="7"   ry="4.5" fill="${sk[2]}" opacity=".22"/>
+<path d="M68,127 Q76,132 80,130 Q84,132 92,127" stroke="${sk[2]}" stroke-width="1.6" fill="none" opacity=".48"/>
+<!-- Nose bridge highlight -->
+<path d="M80,108 Q82,115 81,122" stroke="white" stroke-width="1.2" fill="none" opacity=".18"/>
+
+<!-- MOUTH -->
+<g class="mouth-closed">
+  <path d="M56,147 Q67,139 80,140 Q93,139 104,147 Q93,152 80,153 Q67,152 56,147Z"
+        fill="url(#${uid}lip)"/>
+  <path d="M64,141 Q75,136 80,140 Q85,136 96,141"
+        stroke="${liH}" stroke-width=".9" fill="none" opacity=".5"/>
+  <path d="M56,147 Q80,144 104,147 Q80,144 56,147"
+        fill="none" stroke="#803848" stroke-width=".8"/>
+  <path d="M56,147 Q67,158 80,160 Q93,158 104,147 Q93,152 80,153 Q67,152 56,147Z"
+        fill="${lip}" opacity=".9"/>
+  <path d="M66,155 Q80,159 94,155" stroke="white" stroke-width="1.5" fill="none" opacity=".18"/>
+</g>
+<g class="mouth-open" style="transform-box:fill-box;transform-origin:50% 0%">
+  <path d="M58,145 Q68,138 80,139 Q92,138 102,145" stroke="#803040" stroke-width="1.1" fill="none"/>
+  <path d="M58,145 Q66,162 80,164 Q94,162 102,145 Q92,150 80,150 Q68,150 58,145Z" fill="#68101e"/>
+  <path d="M62,145 Q80,142 98,145 Q80,149 62,145Z" fill="#f0eeec"/>
+  <ellipse cx="80" cy="159" rx="11" ry="5" fill="#c04050" opacity=".85"/>
+</g>
+
+${stubbleSVG}
+
+<!-- Cheek blush -->
+<ellipse cx="33" cy="120" rx="17" ry="11" fill="#ff8070" opacity="${isFem ? '.11' : '.07'}"
+         filter="url(#${uid}blur)"/>
+<ellipse cx="127" cy="120" rx="17" ry="11" fill="#ff8070" opacity="${isFem ? '.11' : '.07'}"
+         filter="url(#${uid}blur)"/>
+
+<!-- Nasolabial folds (age character) -->
+<path d="M38,114 Q36,126 40,138" stroke="${sk[2]}" stroke-width="1.3" fill="none" opacity=".26"/>
+<path d="M122,114 Q124,126 120,138" stroke="${sk[2]}" stroke-width="1.3" fill="none" opacity=".26"/>
+
+<!-- Under-eye lines -->
+<path d="M45,105 Q60,111 75,105" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".2"/>
+<path d="M85,105 Q100,111 115,105" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".2"/>
+
+<!-- Forehead lines -->
+<path d="M46,62 Q80,56 114,62" stroke="${sk[2]}" stroke-width=".9" fill="none" opacity=".18"/>
+<path d="M52,54 Q80,48 108,54" stroke="${sk[2]}" stroke-width=".7" fill="none" opacity=".14"/>
 </svg>`;
 }
 
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 //  State
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 let userId          = null;
 let userName        = '';
+let userGender      = 'female';   // the USER's own gender
 let conversationId  = null;
 let language        = 'en';
-let avatarGender    = 'female';
+let avatarGender    = 'female';   // the AVATAR's gender
 let recognition     = null;
 let ttsVoice        = null;
 let ttsGenderMatch  = true;
@@ -435,12 +496,18 @@ let ttsBusy         = false;
 let finalTranscript = '';
 let voicesReady     = false;
 
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 //  Helpers
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+}
+
+function pickUser(el) {
+  document.querySelectorAll('[data-group="ugender"]').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  userGender = el.dataset.value;
 }
 
 function pick(el) {
@@ -456,23 +523,15 @@ function pick(el) {
 function setDir(lang) {
   document.getElementById('transcript').dir = lang === 'he' ? 'rtl' : 'ltr';
 }
-
-function scrollTranscript() {
-  const t = document.getElementById('transcript');
-  t.scrollTop = t.scrollHeight;
-}
-
+function scrollT() { const t = document.getElementById('transcript'); t.scrollTop = t.scrollHeight; }
 function addBubble(speaker, text) {
-  const t   = document.getElementById('transcript');
-  const div = document.createElement('div');
-  div.className = `bubble bubble-${speaker}`;
-  div.textContent = text;
-  t.appendChild(div);
-  scrollTranscript();
+  const t = document.getElementById('transcript');
+  const d = document.createElement('div');
+  d.className = `bubble bubble-${speaker}`;
+  d.textContent = text;
+  t.appendChild(d); scrollT();
 }
-
 function setStatus(msg) { document.getElementById('statusBar').textContent = msg; }
-
 function goWelcome() { document.getElementById('nameInput').value = ''; show('screenWelcome'); }
 function goSetup()   { show('screenSetup'); }
 
@@ -481,137 +540,143 @@ function setAvatarSpeaking(on) {
   if (f) f.classList.toggle('speaking', on);
 }
 
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 //  Screen 1 — Identify
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 async function doIdentify() {
   const name  = document.getElementById('nameInput').value.trim();
   const errEl = document.getElementById('welcomeError');
   errEl.style.display = 'none';
   if (!name) { errEl.textContent = t('nameLabel'); errEl.style.display = 'block'; return; }
-
   try {
     const res  = await fetch('/users/identify', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name}),
+      body: JSON.stringify({name, gender: userGender}),
     });
     const data = await res.json();
-    userId   = data.id;
-    userName = data.name;
-
+    userId = data.id; userName = data.name;
     if (!data.is_new && data.conversations.length > 0) {
       document.getElementById('resumeName').textContent = data.name;
       renderConvList(data.conversations);
       show('screenResume');
-    } else {
-      goSetup();
-    }
-  } catch (e) {
-    errEl.textContent = t('serverError');
-    errEl.style.display = 'block';
-  }
+    } else { goSetup(); }
+  } catch(e) { errEl.textContent = t('serverError'); errEl.style.display = 'block'; }
 }
 
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 //  Screen 2 — Resume
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 function renderConvList(convs) {
   const el = document.getElementById('convList');
   el.innerHTML = '';
   convs.forEach(c => {
-    const div = document.createElement('div');
-    div.className = 'conv-item';
-    div.innerHTML = `<div class="conv-title">${c.title}</div>
+    const d = document.createElement('div');
+    d.className = 'conv-item';
+    d.innerHTML = `<div class="conv-title">${c.title}</div>
       <div class="conv-meta">${c.avatar_name} &bull; ${c.message_count} msgs &bull; ${c.updated_at}</div>`;
-    div.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
-    el.appendChild(div);
+    d.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
+    el.appendChild(d);
   });
 }
 
 async function resumeConversation(convId, avatarName, gender, lang) {
-  conversationId = convId;
-  language       = lang;
-  avatarGender   = gender;
-  applyUI();
-  setDir(lang);
-
+  conversationId = convId; language = lang; avatarGender = gender;
+  applyUI(); setDir(lang);
   document.getElementById('avatarWrap').innerHTML = buildFace(gender, lang);
   document.getElementById('avatarName').textContent = avatarName;
-  document.getElementById('transcript').innerHTML   = '';
-
+  document.getElementById('transcript').innerHTML = '';
   try {
-    const res  = await fetch(`/conversations/${convId}`);
-    const data = await res.json();
-    data.messages.forEach(m => addBubble(m.speaker === 'user' ? 'user' : 'avatar', m.text));
+    const r = await fetch(`/conversations/${convId}`);
+    const d = await r.json();
+    d.messages.forEach(m => addBubble(m.speaker === 'user' ? 'user' : 'avatar', m.text));
   } catch(e) {}
-
   initTTS(lang, gender);
   show('screenChat');
   setStatus(t('starting'));
-
   try {
-    const res  = await fetch(`/conversations/${convId}/chat`, {
+    const r = await fetch(`/conversations/${convId}/chat`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({text:'__RESUME__'}),
     });
-    const data = await res.json();
-    if (res.ok) { addBubble('avatar', data.text); speak(data.text); }
+    const d = await r.json();
+    if (r.ok) { addBubble('avatar', d.text); speak(d.text); }
   } catch(e) {}
-
   setStatus(t('micLabel'));
 }
 
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 //  Screen 3 → 4 — Start new conversation
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 async function startConversation() {
-  applyUI();
-  setDir(language);
+  applyUI(); setDir(language);
   document.getElementById('avatarWrap').innerHTML = buildFace(avatarGender, language);
   document.getElementById('avatarName').textContent = '…';
-  document.getElementById('transcript').innerHTML   = '';
-  show('screenChat');
-  setStatus(t('starting'));
-
+  document.getElementById('transcript').innerHTML = '';
+  show('screenChat'); setStatus(t('starting'));
   try {
     const res  = await fetch('/conversations', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({user_id:userId, language, avatar_gender:avatarGender}),
+      body: JSON.stringify({
+        user_id: userId, language, avatar_gender: avatarGender,
+        user_gender: userGender,
+      }),
     });
     const data = await res.json();
     if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
-
     conversationId = data.conversation_id;
     document.getElementById('avatarName').textContent = data.avatar_name;
-
     initTTS(language, avatarGender);
     addBubble('avatar', data.greeting);
     speak(data.greeting);
     setStatus(t('micLabel'));
-  } catch(e) {
-    setStatus(t('serverError'));
-  }
+  } catch(e) { setStatus(t('serverError')); }
 }
 
-// ══════════════════════════════════════════════════════
-//  TTS — Web Speech Synthesis
-// ══════════════════════════════════════════════════════
-const FEMALE_RE = /female|\b(samantha|karen|moira|tessa|fiona|victoria|zira|hazel|eva|susan|helena|anna|carmit|amelie|alice|kate|serena|veena|aria|jenny|clara|ava|emma|ivy|joanna|kendra|kimberly|salli|lotte|marlene|carla|bianca|celine|lea|penelope|lucia|naja|mia|astrid|haila|tamar|yonit)\b/i;
+// ════════════════════════════════════════════════════
+//  TTS
+// ════════════════════════════════════════════════════
+const FEMALE_RE = /female|\b(samantha|karen|moira|tessa|fiona|victoria|zira|hazel|eva|susan|helena|anna|carmit|amelie|alice|kate|serena|veena|aria|jenny|clara|ava|emma|ivy|joanna|kendra|kimberly|salli|lotte|marlene|carla|bianca|celine|lea|penelope|naja|mia|astrid|haila|tamar|yonit)\b/i;
 const MALE_RE   = /\bmale\b|\b(david|alex|fred|lee|tom|jorge|luca|daniel|mark|james|aaron|arthur|rishi|oliver|guy|reed|roger|eric|brian|matthew|joey|andrew|hans|mathieu|giorgio|filiz|takumi|enrique|miguel|geraint|russel|justin|kevin|stephen|asaf)\b/i;
 
 function loadVoices() {
-  if (window.speechSynthesis.getVoices().length > 0) {
-    voicesReady = true;
-    populateVoiceDropdown();
-  }
+  if (window.speechSynthesis.getVoices().length > 0) { voicesReady = true; populateVoiceDropdown(); }
+}
+
+function switchToEnglish() {
+  language = 'en';
+  document.querySelectorAll('[data-group="lang"]').forEach(b => {
+    b.classList.toggle('selected', b.dataset.value === 'en');
+  });
+  applyUI();
+  populateVoiceDropdown();
 }
 
 function populateVoiceDropdown() {
-  const voices = window.speechSynthesis.getVoices();
-  const code   = language === 'he' ? 'he' : 'en';
-  const pool   = voices.filter(v => v.lang.startsWith(code));
-  if (!pool.length) return;
+  const voices  = window.speechSynthesis.getVoices();
+  const code    = language === 'he' ? 'he' : 'en';
+  const pool    = voices.filter(v => v.lang.startsWith(code));
 
+  const fallbackEl = document.getElementById('langFallback');
+  const fallbackMsg = document.getElementById('langFallbackMsg');
+
+  if (pool.length === 0) {
+    // No voices at all for this language — show fallback option
+    if (fallbackEl) {
+      fallbackMsg.textContent = t('noVoiceWarning');
+      fallbackEl.style.display = 'block';
+    }
+    // Use English voices as backup
+    const enPool = voices.filter(v => v.lang.startsWith('en'));
+    fillSelect(enPool);
+    return;
+  }
+
+  if (fallbackEl) fallbackEl.style.display = 'none';
+  fillSelect(pool);
+}
+
+function fillSelect(pool) {
+  const voices   = window.speechSynthesis.getVoices();
   const sel      = document.getElementById('voiceSelect');
   const wantRe   = avatarGender === 'female' ? FEMALE_RE : MALE_RE;
   const rejectRe = avatarGender === 'female' ? MALE_RE   : FEMALE_RE;
@@ -627,35 +692,31 @@ function populateVoiceDropdown() {
     if (i === 0 || (wantRe.test(v.name) && !wantRe.test(pool[bestIdx].name))) bestIdx = i;
   });
 
-  // If no positive gender match, prefer one that isn't the opposite gender
   if (!wantRe.test(pool[bestIdx].name)) {
-    const neutral = pool.findIndex(v => !rejectRe.test(v.name));
-    if (neutral >= 0) bestIdx = neutral;
+    const n = pool.findIndex(v => !rejectRe.test(v.name));
+    if (n >= 0) bestIdx = n;
   }
   sel.value = bestIdx;
 
-  // Show note if voice doesn't match desired gender
-  const note = document.getElementById('voiceNote');
-  if (note) {
-    const hasMatch = pool.some(v => wantRe.test(v.name));
-    note.style.display = hasMatch ? 'none' : 'block';
-    note.textContent   = hasMatch ? '' : t('pitchNote');
-  }
+  const note    = document.getElementById('voiceNote');
+  const hasMatch = pool.some(v => wantRe.test(v.name));
+  if (note) { note.style.display = hasMatch ? 'none' : 'block'; note.textContent = hasMatch ? '' : t('pitchNote'); }
 }
 
 function applyVoiceSelection() {
   const voices = window.speechSynthesis.getVoices();
   const code   = language === 'he' ? 'he' : 'en';
-  const pool   = voices.filter(v => v.lang.startsWith(code));
+  let pool     = voices.filter(v => v.lang.startsWith(code));
+  if (pool.length === 0) pool = voices.filter(v => v.lang.startsWith('en'));  // fallback
+
   const idx    = parseInt(document.getElementById('voiceSelect').value, 10);
   ttsVoice     = pool[isNaN(idx) ? 0 : idx] || pool[0] || voices[0] || null;
-
   if (ttsVoice) {
     const wantRe   = avatarGender === 'female' ? FEMALE_RE : MALE_RE;
     const rejectRe = avatarGender === 'female' ? MALE_RE   : FEMALE_RE;
     ttsGenderMatch = wantRe.test(ttsVoice.name) || !rejectRe.test(ttsVoice.name);
   }
-  console.log('[TTS]', ttsVoice?.name, '| match:', ttsGenderMatch);
+  console.log('[TTS]', ttsVoice?.name, '| genderMatch:', ttsGenderMatch);
 }
 
 function initTTS(lang, gender) {
@@ -663,7 +724,6 @@ function initTTS(lang, gender) {
   if (voicesReady) applyVoiceSelection();
 }
 
-// Remove emoji/symbols so TTS doesn't read "grinning face" etc.
 function stripForTTS(text) {
   return text
     .replace(/\p{Emoji_Presentation}/gu, '')
@@ -676,13 +736,9 @@ function speak(text) {
   if (!text) return;
   text = stripForTTS(text);
   if (!text) return;
-  const doSpeak = () => {
-    if (!ttsVoice) applyVoiceSelection();
-    ttsQueue.push(text);
-    if (!ttsBusy) drainTTS();
-  };
-  if (voicesReady) doSpeak();
-  else window.speechSynthesis.onvoiceschanged = () => { voicesReady = true; populateVoiceDropdown(); doSpeak(); };
+  const go = () => { if (!ttsVoice) applyVoiceSelection(); ttsQueue.push(text); if (!ttsBusy) drainTTS(); };
+  if (voicesReady) go();
+  else window.speechSynthesis.onvoiceschanged = () => { voicesReady = true; populateVoiceDropdown(); go(); };
 }
 
 function stopSpeaking() {
@@ -703,84 +759,69 @@ function drainTTS() {
   document.getElementById('stopBtn').style.display = 'block';
   setAvatarSpeaking(true);
   const text = ttsQueue.shift();
-
   setTimeout(() => {
     const utt = new SpeechSynthesisUtterance(text);
     if (ttsVoice) utt.voice = ttsVoice;
     utt.lang  = language === 'he' ? 'he-IL' : 'en-US';
     utt.rate  = 0.92;
     utt.pitch = ttsGenderMatch
-      ? (avatarGender === 'female' ? 1.1 : 0.9)
-      : (avatarGender === 'female' ? 1.7 : 0.55);   // pitch-shift when no matching voice
+      ? (avatarGender === 'female' ? 1.1 : 0.88)
+      : (avatarGender === 'female' ? 1.7  : 0.55);
     utt.onend = utt.onerror = drainTTS;
     window.speechSynthesis.speak(utt);
   }, 50);
 }
 
-// Chrome TTS pause bug workaround
 setInterval(() => { if (ttsBusy && window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 8000);
 
-// ══════════════════════════════════════════════════════
-//  STT — Web Speech Recognition
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
+//  STT
+// ════════════════════════════════════════════════════
 function toggleMic() { listening ? stopListening() : startListening(); }
 
 function startListening() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { setStatus('Speech recognition not supported in this browser.'); return; }
-
-  stopSpeaking();   // stop avatar before listening
-
+  if (!SR) { setStatus('Speech recognition not supported.'); return; }
+  stopSpeaking();
   recognition = new SR();
-  recognition.lang           = language === 'he' ? 'he-IL' : 'en-US';
-  recognition.interimResults = true;
-  recognition.continuous     = false;
-  finalTranscript            = '';
+  recognition.lang = language === 'he' ? 'he-IL' : 'en-US';
+  recognition.interimResults = true; recognition.continuous = false;
+  finalTranscript = '';
 
   recognition.onstart = () => {
     listening = true;
     document.getElementById('micBtn').classList.add('listening');
     document.getElementById('micLabel').textContent = t('listening');
   };
-
   recognition.onresult = e => {
     let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const tx = e.results[i][0].transcript;
-      if (e.results[i].isFinal) finalTranscript += tx;
-      else interim += tx;
+      if (e.results[i].isFinal) finalTranscript += tx; else interim += tx;
     }
     document.getElementById('micLabel').textContent = finalTranscript + interim || t('listening');
   };
-
   recognition.onend = () => {
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micLabel').textContent = t('micLabel');
-    const text = finalTranscript.trim();
-    finalTranscript = '';
-    if (text) sendMessage(text);
-    else setStatus(t('noSpeech'));
+    const text = finalTranscript.trim(); finalTranscript = '';
+    if (text) sendMessage(text); else setStatus(t('noSpeech'));
   };
-
-  recognition.onerror = e => {
+  recognition.onerror = () => {
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micLabel').textContent = t('micLabel');
-    setStatus(t('micLabel'));
   };
-
   recognition.start();
 }
-
 function stopListening() { if (recognition) recognition.stop(); }
 
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 //  Send message
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 async function sendMessage(text) {
-  addBubble('user', text);
-  setStatus(t('thinking'));
+  addBubble('user', text); setStatus(t('thinking'));
   try {
     const res  = await fetch(`/conversations/${conversationId}/chat`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -788,23 +829,14 @@ async function sendMessage(text) {
     });
     const data = await res.json();
     if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
-    addBubble('avatar', data.text);
-    speak(data.text);
-    setStatus(t('micLabel'));
+    addBubble('avatar', data.text); speak(data.text); setStatus(t('micLabel'));
   } catch(e) { setStatus(t('serverError')); }
 }
 
-// ══════════════════════════════════════════════════════
-//  Action buttons
-// ══════════════════════════════════════════════════════
-async function suggestTopics() {
-  stopSpeaking();
-  await sendMessage('__CHANGE_TOPIC__');
-}
+async function suggestTopics() { stopSpeaking(); await sendMessage('__CHANGE_TOPIC__'); }
 
 async function endConversation() {
   await sendMessage('__END__');
-  setStatus(t('micLabel'));
   document.getElementById('micBtn').disabled = true;
   document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = true);
   setTimeout(() => {
@@ -814,17 +846,12 @@ async function endConversation() {
   }, 6000);
 }
 
-// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
 //  Init
-// ══════════════════════════════════════════════════════
-document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') doIdentify(); });
-
-if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = loadVoices;
-  loadVoices();
-}
-
-applyUI();   // apply default English labels on load
+// ════════════════════════════════════════════════════
+document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key==='Enter') doIdentify(); });
+if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
+applyUI();
 </script>
 </body>
 </html>
