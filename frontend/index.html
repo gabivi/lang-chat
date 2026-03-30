@@ -518,43 +518,40 @@ async function startConversation() {
 //  TTS — Web Speech Synthesis
 // ════════════════════════════════════════════════════════
 
-// Voice name hints per gender (covers Windows, macOS, Chrome online voices)
-// IMPORTANT: only include names that actually indicate gender
-const FEMALE_HINTS = ['female','samantha','karen','moira','tessa','fiona','victoria',
-                      'zira','eva','susan','helena','anna','carmit','amelie','alice',
-                      'hazel','kate','serena','veena','google uk english female'];
-const MALE_HINTS   = ['male','daniel','alex','fred','lee','tom','jorge','luca',
-                      'google uk english male','david','mark','james','aaron','arthur',
-                      'rishi','oliver'];
-
 // Just mark voices as available — does NOT pick a voice (avoids default-gender race)
 function loadVoices() {
   if (window.speechSynthesis.getVoices().length > 0) voicesReady = true;
 }
 
-// Always pass lang AND gender explicitly — never rely on globals for voice selection
+// Regex patterns that identify voice gender from the voice name.
+// \bmale\b uses word-boundary so it NEVER matches inside "female".
+// Covers: Windows (David/Zira/Mark/Hazel/Aria/Jenny/Guy/Andrew/Emma/Ava/Brian),
+//         macOS (Samantha/Alex/Karen/Daniel/Moira/Tessa/Fiona/Victoria/Fred/Tom),
+//         Chrome online (Google UK English Female / Male),
+//         AWS Polly, Azure, etc.
+const FEMALE_RE = /female|\b(samantha|karen|moira|tessa|fiona|victoria|zira|hazel|eva|susan|helena|anna|carmit|amelie|alice|kate|serena|veena|aria|jenny|clara|ava|emma|ivy|joanna|kendra|kimberly|salli|nicole|lotte|marlene|carla|bianca|celine|lea|penelope|lucia|naja|mia|liv|elin|astrid)\b/i;
+const MALE_RE   = /\bmale\b|\b(david|alex|fred|lee|tom|jorge|luca|daniel|mark|james|aaron|arthur|rishi|oliver|guy|reed|roger|eric|brian|matthew|joey|andrew|hans|mathieu|giorgio|filiz|takumi|enrique|miguel|ricardo|geraint|russel|justin|kevin|stephen|ayanda)\b/i;
+
+// Always pass lang AND gender explicitly
 function pickVoice(lang, gender) {
   const voices = window.speechSynthesis.getVoices();
   const code   = lang === 'he' ? 'he' : 'en';
   const pool   = voices.filter(v => v.lang.startsWith(code));
 
-  if (gender === 'female') {
-    ttsVoice = pool.find(v => {
-      const n = v.name.toLowerCase();
-      return FEMALE_HINTS.some(h => n.includes(h));
-    });
-  } else {
-    // IMPORTANT: 'male' is a substring of 'female' — must exclude female voices first
-    ttsVoice = pool.find(v => {
-      const n = v.name.toLowerCase();
-      if (n.includes('female')) return false;          // skip female voices
-      return MALE_HINTS.some(h => n.includes(h));
-    });
-  }
+  const wantRe   = gender === 'female' ? FEMALE_RE : MALE_RE;
+  const rejectRe = gender === 'female' ? MALE_RE   : FEMALE_RE;
 
-  ttsVoice = ttsVoice || pool[0] || voices[0] || null;
-  console.log('[TTS] available voices:', pool.map(v => v.name));
-  console.log(`[TTS] picked for gender=${gender}: ${ttsVoice ? ttsVoice.name : 'none'}`);
+  // 1. Voice that positively matches desired gender
+  ttsVoice = pool.find(v => wantRe.test(v.name));
+  // 2. Voice that at least doesn't match opposite gender
+  if (!ttsVoice) ttsVoice = pool.find(v => !rejectRe.test(v.name));
+  // 3. Absolute fallback
+  if (!ttsVoice) ttsVoice = pool[0] || voices[0] || null;
+
+  // Log all available voices so user can report if none matched
+  console.log('[TTS] all voices for lang=' + code + ':',
+    pool.map(v => v.name + (FEMALE_RE.test(v.name) ? ' [F]' : MALE_RE.test(v.name) ? ' [M]' : ' [?]')));
+  console.log('[TTS] gender=' + gender + ' → selected: ' + (ttsVoice ? ttsVoice.name : 'NONE'));
 }
 
 function initTTS(lang, gender) {
