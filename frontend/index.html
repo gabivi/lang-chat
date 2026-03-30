@@ -161,8 +161,7 @@
     </div>
 
     <div id="langFallback">
-      <span id="langFallbackMsg"></span><br/>
-      <button class="btn btn-warning btn-sm" onclick="switchToEnglish()" data-i18n="switchBtn">Switch to English avatar</button>
+      <span id="langFallbackMsg"></span>
     </div>
 
     <p class="fw-semibold mb-1" data-i18n="voiceLabel">Speaking voice:</p>
@@ -659,15 +658,13 @@ function populateVoiceDropdown() {
   const fallbackEl = document.getElementById('langFallback');
   const fallbackMsg = document.getElementById('langFallbackMsg');
 
-  if (pool.length === 0) {
-    // No voices at all for this language — show fallback option
+  if (pool.length === 0 && language !== 'en') {
+    // No voices for this language — auto-switch to English avatar (face, name, and voice together)
+    switchToEnglish();   // sets language='en', re-populates dropdown with English voices
     if (fallbackEl) {
-      fallbackMsg.textContent = t('noVoiceWarning');
+      fallbackMsg.textContent = t('noVoiceWarning');  // t() now uses language='en'
       fallbackEl.style.display = 'block';
     }
-    // Use English voices as backup
-    const enPool = voices.filter(v => v.lang.startsWith('en'));
-    fillSelect(enPool);
     return;
   }
 
