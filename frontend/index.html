@@ -112,6 +112,13 @@
 <!-- ══════════  SCREEN 1 — Welcome  ══════════ -->
 <div id="screenWelcome" class="screen active">
   <div class="card-main">
+    <div style="text-align:center;margin-bottom:.6rem;">
+      <div class="choice-grid" style="max-width:200px;margin:0 auto;">
+        <div class="choice-btn" data-group="uilang" data-value="en" onclick="pickUILang(this)">🇬🇧 English</div>
+        <div class="choice-btn selected" data-group="uilang" data-value="he" onclick="pickUILang(this)">🇮🇱 עברית</div>
+      </div>
+    </div>
+
     <div class="app-title" data-i18n="appTitle">Companion Chat</div>
     <div class="app-subtitle" data-i18n="appSubtitle">A friendly conversation, just for you</div>
 
@@ -484,7 +491,7 @@ let userId          = null;
 let userName        = '';
 let userGender      = 'female';   // the USER's own gender
 let conversationId  = null;
-let language        = 'en';
+let language        = 'he';
 let avatarGender    = 'female';   // the AVATAR's gender
 let recognition     = null;
 let ttsVoice        = null;
@@ -507,6 +514,17 @@ function pickUser(el) {
   document.querySelectorAll('[data-group="ugender"]').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   userGender = el.dataset.value;
+}
+
+function pickUILang(el) {
+  document.querySelectorAll('[data-group="uilang"]').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  language = el.dataset.value;
+  // Also sync the conversation language button on the setup screen
+  document.querySelectorAll('[data-group="lang"]').forEach(b => {
+    b.classList.toggle('selected', b.dataset.value === language);
+  });
+  applyUI();
 }
 
 function pick(el) {
