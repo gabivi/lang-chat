@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Companion Chat</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --accent: #5b7fa6;
+      --accent-light: #e8f0fa;
+      --avatar-bg: #f0f4fb;
+    }
+
+    body {
+      background: #f7f9fc;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 1.15rem;
+    }
+
+    /* ── screens ─────────────────────────────────────────────── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── card wrapper ─────────────────────────────────────────── */
+    .card-main {
+      max-width: 540px;
+      margin: 40px auto;
+      border-radius: 20px;
+      box-shadow: 0 6px 32px rgba(0,0,0,.10);
+      background: #fff;
+      padding: 2.2rem 2rem;
+    }
+
+    /* ── big buttons ─────────────────────────────────────────── */
+    .btn-big {
+      font-size: 1.25rem;
+      padding: .75rem 1.5rem;
+      border-radius: 14px;
+      width: 100%;
+      margin-bottom: .75rem;
+    }
+    .btn-primary   { background: var(--accent); border-color: var(--accent); }
+    .btn-primary:hover { background: #4a6d94; border-color: #4a6d94; }
+
+    /* ── name input ─────────────────────────────────────────── */
+    #nameInput {
+      font-size: 1.3rem;
+      padding: .65rem 1rem;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    /* ── conversation list ─────────────────────────────────── */
+    .conv-item {
+      cursor: pointer;
+      border-radius: 12px;
+      padding: .8rem 1rem;
+      margin-bottom: .5rem;
+      background: var(--accent-light);
+      transition: background .15s;
+    }
+    .conv-item:hover { background: #d1dff5; }
+    .conv-title { font-weight: 600; font-size: 1.05rem; }
+    .conv-meta  { font-size: .85rem; color: #666; }
+
+    /* ── setup screen ────────────────────────────────────────── */
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+      margin-bottom: 1.2rem;
+    }
+    .choice-btn {
+      border: 2px solid #ccc;
+      border-radius: 14px;
+      padding: 1rem;
+      background: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all .15s;
+      text-align: center;
+    }
+    .choice-btn.selected {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── chat screen ─────────────────────────────────────────── */
+    #avatarIcon {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      background: var(--avatar-bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+      margin: 0 auto 1rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,.12);
+    }
+    #avatarName {
+      text-align: center;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    #transcript {
+      height: 320px;
+      overflow-y: auto;
+      border: 1px solid #dde3ee;
+      border-radius: 14px;
+      padding: 1rem;
+      background: #fafbfe;
+      margin-bottom: 1rem;
+    }
+
+    .bubble {
+      max-width: 85%;
+      padding: .55rem .9rem;
+      border-radius: 14px;
+      margin-bottom: .6rem;
+      line-height: 1.45;
+      font-size: 1.05rem;
+    }
+    .bubble-avatar {
+      background: var(--accent-light);
+      color: #1a2a40;
+      margin-right: auto;
+    }
+    .bubble-user {
+      background: var(--accent);
+      color: #fff;
+      margin-left: auto;
+      text-align: right;
+    }
+    /* RTL bubbles */
+    [dir="rtl"] .bubble-avatar { margin-left: auto; margin-right: 0; text-align: right; }
+    [dir="rtl"] .bubble-user   { margin-right: auto; margin-left: 0; text-align: left; }
+
+    #micBtn {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 2rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto .75rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,.2);
+      transition: background .15s, transform .1s;
+      cursor: pointer;
+    }
+    #micBtn:hover { background: #4a6d94; }
+    #micBtn.listening {
+      background: #e05a5a;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(224,90,90,.5); }
+      50%      { box-shadow: 0 0 0 12px rgba(224,90,90,0); }
+    }
+
+    #micLabel {
+      text-align: center;
+      color: #888;
+      font-size: .95rem;
+      margin-bottom: .5rem;
+      min-height: 1.4em;
+    }
+
+    #statusBar {
+      text-align: center;
+      font-size: .9rem;
+      color: #aaa;
+      min-height: 1.2em;
+    }
+
+    .action-btns {
+      display: flex;
+      gap: .6rem;
+      margin-top: .6rem;
+    }
+    .action-btns .btn {
+      flex: 1;
+      font-size: 1rem;
+      border-radius: 12px;
+      padding: .55rem;
+    }
+
+    /* ── title ──────────────────────────────────────────────── */
+    .app-title {
+      text-align: center;
+      color: var(--accent);
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+    .app-subtitle {
+      text-align: center;
+      color: #888;
+      font-size: 1rem;
+      margin-top: -.8rem;
+      margin-bottom: 1.6rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 1 — Welcome / Name entry
+═══════════════════════════════════════════════════ -->
+<div id="screenWelcome" class="screen active">
+  <div class="card-main">
+    <div class="app-title">&#128515; Companion Chat</div>
+    <div class="app-subtitle">A friendly conversation, just for you</div>
+
+    <label class="form-label fw-semibold" for="nameInput" style="font-size:1.1rem;">
+      What is your name?
+    </label>
+    <input id="nameInput" type="text" class="form-control mb-3"
+           placeholder="Type your name here…"
+           autocomplete="off" autocorrect="off" spellcheck="false" />
+    <button class="btn btn-primary btn-big" onclick="doIdentify()">Continue &#8594;</button>
+    <div id="welcomeError" class="text-danger text-center mt-2" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 2 — Returning user: resume or new
+═══════════════════════════════════════════════════ -->
+<div id="screenResume" class="screen">
+  <div class="card-main">
+    <div class="app-title">Welcome back, <span id="resumeName"></span>!</div>
+
+    <p class="text-center text-muted mb-3">Would you like to continue a previous conversation?</p>
+    <div id="convList" class="mb-3"></div>
+
+    <hr />
+    <button class="btn btn-primary btn-big" onclick="goSetup()">
+      &#43; Start a new conversation
+    </button>
+    <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()">
+      &#8592; Not me
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 3 — Setup: language + avatar
+═══════════════════════════════════════════════════ -->
+<div id="screenSetup" class="screen">
+  <div class="card-main">
+    <div class="app-title">Let's set up your chat</div>
+
+    <p class="fw-semibold mb-2" style="font-size:1.1rem;">Choose language:</p>
+    <div class="choice-grid mb-3">
+      <div class="choice-btn selected" data-group="lang" data-value="en" onclick="pick(this)">
+        &#127468;&#127463; English
+      </div>
+      <div class="choice-btn" data-group="lang" data-value="he" onclick="pick(this)">
+        &#127470;&#127473; &#1506;&#1489;&#1512;&#1497;&#1514;
+      </div>
+    </div>
+
+    <p class="fw-semibold mb-2" style="font-size:1.1rem;">Choose companion:</p>
+    <div class="choice-grid mb-4">
+      <div class="choice-btn selected" data-group="gender" data-value="female" onclick="pick(this)">
+        &#128105; Female
+      </div>
+      <div class="choice-btn" data-group="gender" data-value="male" onclick="pick(this)">
+        &#128104; Male
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-big" onclick="startConversation()">
+      &#128172; Start Chatting
+    </button>
+    <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()">
+      &#8592; Back
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 4 — Chat
+═══════════════════════════════════════════════════ -->
+<div id="screenChat" class="screen">
+  <div class="card-main">
+    <div id="avatarIcon">&#128512;</div>
+    <div id="avatarName">…</div>
+
+    <div id="transcript"></div>
+
+    <div id="micLabel">Tap the microphone to speak</div>
+    <button id="micBtn" onclick="toggleMic()">&#127908;</button>
+    <div id="statusBar">&nbsp;</div>
+
+    <div class="action-btns">
+      <button class="btn btn-outline-primary" onclick="changeTopic()">
+        &#128260; Change topic
+      </button>
+      <button class="btn btn-outline-danger" onclick="endConversation()">
+        &#128683; End chat
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ════════════════════════════════════════════════════════
+//  State
+// ════════════════════════════════════════════════════════
+let userId         = null;
+let userName       = '';
+let conversationId = null;
+let language       = 'en';
+let avatarGender   = 'female';
+let recognition    = null;
+let ttsVoice       = null;
+let listening      = false;
+let ttsQueue       = [];
+let ttsBusy        = false;
+
+// ════════════════════════════════════════════════════════
+//  Helpers
+// ════════════════════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function pick(el) {
+  const group = el.dataset.group;
+  document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  if (group === 'lang')   language     = el.dataset.value;
+  if (group === 'gender') avatarGender = el.dataset.value;
+}
+
+function setDir(lang) {
+  document.documentElement.lang = lang;
+  document.getElementById('transcript').dir = lang === 'he' ? 'rtl' : 'ltr';
+}
+
+function avatarEmoji(gender) {
+  return gender === 'male' ? '&#128104;' : '&#128105;';
+}
+
+function scrollTranscript() {
+  const t = document.getElementById('transcript');
+  t.scrollTop = t.scrollHeight;
+}
+
+function addBubble(speaker, text) {
+  const t = document.getElementById('transcript');
+  const div = document.createElement('div');
+  div.className = `bubble bubble-${speaker}`;
+  div.textContent = text;
+  t.appendChild(div);
+  scrollTranscript();
+}
+
+function setStatus(msg) {
+  document.getElementById('statusBar').textContent = msg;
+}
+
+function goWelcome() {
+  document.getElementById('nameInput').value = '';
+  show('screenWelcome');
+}
+
+function goSetup() {
+  show('screenSetup');
+}
+
+// ════════════════════════════════════════════════════════
+//  Screen 1 — Identify
+// ════════════════════════════════════════════════════════
+async function doIdentify() {
+  const name = document.getElementById('nameInput').value.trim();
+  const errEl = document.getElementById('welcomeError');
+  errEl.style.display = 'none';
+
+  if (!name) {
+    errEl.textContent = 'Please enter your name.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res  = await fetch('/users/identify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    userId   = data.id;
+    userName = data.name;
+
+    if (!data.is_new && data.conversations.length > 0) {
+      // Returning user with past conversations
+      document.getElementById('resumeName').textContent = data.name;
+      renderConvList(data.conversations);
+      show('screenResume');
+    } else {
+      goSetup();
+    }
+  } catch (e) {
+    errEl.textContent = 'Could not connect to server. Please try again.';
+    errEl.style.display = 'block';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  Screen 2 — Resume conversation list
+// ════════════════════════════════════════════════════════
+function renderConvList(convs) {
+  const el = document.getElementById('convList');
+  el.innerHTML = '';
+  convs.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'conv-item';
+    div.innerHTML = `
+      <div class="conv-title">${c.title}</div>
+      <div class="conv-meta">${c.avatar_name} &bull; ${langLabel(c.language)} &bull; ${c.message_count} messages &bull; ${c.updated_at}</div>
+    `;
+    div.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
+    el.appendChild(div);
+  });
+}
+
+function langLabel(l) { return l === 'he' ? 'Hebrew' : 'English'; }
+
+async function resumeConversation(convId, avatarName, gender, lang) {
+  conversationId = convId;
+  language       = lang;
+  avatarGender   = gender;
+  setDir(lang);
+  document.getElementById('avatarIcon').innerHTML = avatarEmoji(gender);
+  document.getElementById('avatarName').textContent = avatarName;
+
+  // Load history
+  try {
+    const res  = await fetch(`/conversations/${convId}`);
+    const data = await res.json();
+    document.getElementById('transcript').innerHTML = '';
+    data.messages.forEach(m => addBubble(m.speaker === 'user' ? 'user' : 'avatar', m.text));
+  } catch (e) { /* show empty transcript */ }
+
+  initTTS(lang);
+  show('screenChat');
+  setStatus('Tap the microphone to continue.');
+}
+
+// ════════════════════════════════════════════════════════
+//  Screen 3 → Screen 4 — Start new conversation
+// ════════════════════════════════════════════════════════
+async function startConversation() {
+  setDir(language);
+  document.getElementById('avatarIcon').innerHTML = avatarEmoji(avatarGender);
+  document.getElementById('avatarName').textContent = '…';
+  document.getElementById('transcript').innerHTML = '';
+  show('screenChat');
+  setStatus('Starting…');
+
+  try {
+    const res  = await fetch('/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, language, avatar_gender: avatarGender }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setStatus(data.detail || 'Error starting conversation.');
+      return;
+    }
+
+    conversationId = data.conversation_id;
+    document.getElementById('avatarName').textContent = data.avatar_name;
+
+    initTTS(language);
+    addBubble('avatar', data.greeting);
+    speak(data.greeting);
+    setStatus('Tap the microphone to speak.');
+  } catch (e) {
+    setStatus('Could not connect to server.');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  TTS — Web Speech Synthesis
+// ════════════════════════════════════════════════════════
+function initTTS(lang) {
+  ttsVoice = null;
+  const voices = window.speechSynthesis.getVoices();
+  pickVoice(voices, lang);
+  // Chrome loads voices asynchronously
+  if (!ttsVoice && window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      const v2 = window.speechSynthesis.getVoices();
+      pickVoice(v2, lang);
+    };
+  }
+}
+
+function pickVoice(voices, lang) {
+  const code = lang === 'he' ? 'he' : 'en';
+  // Prefer a natural voice if available
+  ttsVoice = voices.find(v => v.lang.startsWith(code) && v.localService) ||
+             voices.find(v => v.lang.startsWith(code)) ||
+             null;
+}
+
+function speak(text) {
+  if (!text) return;
+  ttsQueue.push(text);
+  if (!ttsBusy) drainTTS();
+}
+
+function drainTTS() {
+  if (!ttsQueue.length) { ttsBusy = false; return; }
+  ttsBusy = true;
+  const text = ttsQueue.shift();
+  const utt  = new SpeechSynthesisUtterance(text);
+  if (ttsVoice) utt.voice = ttsVoice;
+  utt.lang  = language === 'he' ? 'he-IL' : 'en-US';
+  utt.rate  = 0.92;
+  utt.pitch = 1.05;
+  utt.onend = drainTTS;
+  utt.onerror = drainTTS;
+  window.speechSynthesis.speak(utt);
+}
+
+// ════════════════════════════════════════════════════════
+//  STT — Web Speech Recognition
+// ════════════════════════════════════════════════════════
+function toggleMic() {
+  if (listening) {
+    stopListening();
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    setStatus('Speech recognition is not supported in this browser.');
+    return;
+  }
+
+  // Stop TTS while user speaks
+  window.speechSynthesis.cancel();
+  ttsBusy = false; ttsQueue = [];
+
+  recognition = new SpeechRecognition();
+  recognition.lang        = language === 'he' ? 'he-IL' : 'en-US';
+  recognition.interimResults = true;
+  recognition.continuous  = false;
+
+  recognition.onstart = () => {
+    listening = true;
+    document.getElementById('micBtn').classList.add('listening');
+    document.getElementById('micLabel').textContent = 'Listening…';
+  };
+
+  recognition.onresult = (e) => {
+    const interim = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('micLabel').textContent = interim;
+  };
+
+  recognition.onend = () => {
+    listening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.getElementById('micLabel').textContent = 'Tap the microphone to speak';
+
+    const finalText = Array.from(recognition.results || [])
+      .filter(r => r.isFinal)
+      .map(r => r[0].transcript)
+      .join('');
+
+    if (finalText.trim()) {
+      sendMessage(finalText.trim());
+    } else {
+      setStatus('No speech detected. Try again.');
+    }
+  };
+
+  recognition.onerror = (e) => {
+    listening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.getElementById('micLabel').textContent = 'Tap the microphone to speak';
+    setStatus(`Microphone error: ${e.error}`);
+  };
+
+  recognition.start();
+}
+
+function stopListening() {
+  if (recognition) recognition.stop();
+}
+
+// ════════════════════════════════════════════════════════
+//  Send message to backend
+// ════════════════════════════════════════════════════════
+async function sendMessage(text) {
+  addBubble('user', text);
+  setStatus('Thinking…');
+
+  try {
+    const res  = await fetch(`/conversations/${conversationId}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setStatus(data.detail || 'Error.');
+      return;
+    }
+
+    addBubble('avatar', data.text);
+    speak(data.text);
+    setStatus('Tap the microphone to speak.');
+  } catch (e) {
+    setStatus('Could not reach server.');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  Action buttons
+// ════════════════════════════════════════════════════════
+async function changeTopic() {
+  await sendMessage('__CHANGE_TOPIC__');
+}
+
+async function endConversation() {
+  await sendMessage('__END__');
+  setStatus('Goodbye! You can close this tab or go back.');
+  document.getElementById('micBtn').disabled = true;
+  document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = true);
+
+  setTimeout(() => {
+    document.getElementById('micBtn').disabled = false;
+    document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = false);
+    goWelcome();
+  }, 6000);
+}
+
+// ════════════════════════════════════════════════════════
+//  Enter key on name field
+// ════════════════════════════════════════════════════════
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doIdentify();
+});
+
+// Pre-load voices
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+}
+</script>
+</body>
+</html>
