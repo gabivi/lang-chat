@@ -242,7 +242,25 @@ const T = {
     noVoiceWarning:'לא נמצא קול עברי במכשיר זה.',
   }
 };
-function t(k) { return (T[language]||T.en)[k] || k; }
+// Resolve gendered Hebrew text: "התחל/י" → "התחל" (male) / "התחלי" (female)
+function genderizeHe(text) {
+  if (language !== 'he' || userGender === 'unknown') return text;
+  if (userGender === 'male') {
+    return text
+      .replace(/זה\/זאת/g, 'זה')
+      .replace(/ך\/ת/g, 'ך')
+      .replace(/ה\/י/g, 'ה')   // נסה/י → נסה
+      .replace(/\/[יהת]/g, ''); // remove /suffix
+  }
+  // female
+  return text
+    .replace(/זה\/זאת/g, 'זאת')
+    .replace(/ך\/ת/g, 'ת')
+    .replace(/ה\/י/g, 'י')     // נסה/י → נסי
+    .replace(/\/([יהת])/g, '$1'); // keep suffix
+}
+
+function t(k) { return genderizeHe((T[language]||T.en)[k] || k); }
 
 function applyUI() {
   const isHe = language === 'he';
@@ -250,11 +268,11 @@ function applyUI() {
   document.documentElement.dir  = isHe ? 'rtl' : 'ltr';
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const v = (T[language]||T.en)[el.dataset.i18n];
-    if (v) el.textContent = v;
+    if (v) el.textContent = genderizeHe(v);
   });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     const v = (T[language]||T.en)[el.dataset.i18nPh];
-    if (v) el.placeholder = v;
+    if (v) el.placeholder = genderizeHe(v);
   });
 }
 
@@ -513,6 +531,7 @@ function pickUser(el) {
   document.querySelectorAll('[data-group="ugender"]').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   userGender = el.dataset.value;
+  applyUI();
 }
 
 function pickUILang(el) {
