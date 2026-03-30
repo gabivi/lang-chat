@@ -303,11 +303,11 @@
     <div id="statusBar">&nbsp;</div>
 
     <div class="action-btns">
-      <button class="btn btn-outline-primary" onclick="changeTopic()">
-        &#128260; Change topic
+      <button class="btn btn-outline-primary" onclick="suggestTopics()">
+        &#128172; Suggest topics
       </button>
       <button class="btn btn-outline-danger" onclick="endConversation()">
-        &#128683; End chat
+        &#9723; End chat
       </button>
     </div>
   </div>
@@ -457,7 +457,7 @@ async function resumeConversation(convId, avatarName, gender, lang) {
     data.messages.forEach(m => addBubble(m.speaker === 'user' ? 'user' : 'avatar', m.text));
   } catch (e) { /* show empty transcript */ }
 
-  initTTS(lang);
+  initTTS(lang, gender);
   show('screenChat');
   setStatus('Tap the microphone to continue.');
 }
@@ -489,7 +489,7 @@ async function startConversation() {
     conversationId = data.conversation_id;
     document.getElementById('avatarName').textContent = data.avatar_name;
 
-    initTTS(language);
+    initTTS(language, avatarGender);
     addBubble('avatar', data.greeting);
     speak(data.greeting);
     setStatus('Tap the microphone to speak.');
@@ -511,31 +511,34 @@ const MALE_HINTS   = ['male','daniel','alex','fred','lee','tom','jorge','luca',
                       'google uk english male','david','mark','james','aaron','arthur',
                       'rishi','oliver'];
 
+// Just mark voices as available — does NOT pick a voice (avoids default-gender race)
 function loadVoices() {
+  if (window.speechSynthesis.getVoices().length > 0) voicesReady = true;
+}
+
+// Always pass lang AND gender explicitly — never rely on globals for voice selection
+function pickVoice(lang, gender) {
   const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) {
-    voicesReady = true;
-    pickVoice(voices, language);
+  const code   = lang === 'he' ? 'he' : 'en';
+  const hints  = gender === 'female' ? FEMALE_HINTS : MALE_HINTS;
+  const pool   = voices.filter(v => v.lang.startsWith(code));
+
+  ttsVoice = pool.find(v => hints.some(h => v.name.toLowerCase().includes(h)))
+          || pool[0]
+          || voices[0]
+          || null;
+
+  console.log(`[TTS] lang=${lang} gender=${gender} → voice: ${ttsVoice ? ttsVoice.name : 'none'}`);
+}
+
+function initTTS(lang, gender) {
+  language     = lang;
+  avatarGender = gender;   // keep global in sync
+  ttsVoice     = null;
+  if (voicesReady) {
+    pickVoice(lang, gender);
   }
-}
-
-function pickVoice(voices, lang) {
-  const code  = lang === 'he' ? 'he' : 'en';
-  const hints = avatarGender === 'female' ? FEMALE_HINTS : MALE_HINTS;
-  const pool  = voices.filter(v => v.lang.startsWith(code));
-
-  // 1. Exact gender match in pool
-  ttsVoice = pool.find(v => hints.some(h => v.name.toLowerCase().includes(h)));
-  // 2. Any voice for the language
-  if (!ttsVoice) ttsVoice = pool[0] || null;
-  // 3. Absolute fallback
-  if (!ttsVoice) ttsVoice = voices[0] || null;
-}
-
-function initTTS(lang) {
-  language = lang;
-  ttsVoice = null;
-  loadVoices();
+  // else pickVoice is called inside speak() once voices load
 }
 
 // Remove emoji and symbols before speaking — TTS reads them as "grinning face" etc.
@@ -552,16 +555,19 @@ function speak(text) {
   if (!text) return;
   text = stripForTTS(text);
   if (!text) return;
-  if (voicesReady) {
+
+  const doSpeak = () => {
+    if (!ttsVoice) pickVoice(language, avatarGender);
     ttsQueue.push(text);
     if (!ttsBusy) drainTTS();
+  };
+
+  if (voicesReady) {
+    doSpeak();
   } else {
-    const prev = window.speechSynthesis.onvoiceschanged;
     window.speechSynthesis.onvoiceschanged = () => {
-      loadVoices();
-      if (prev) prev();
-      ttsQueue.push(text);
-      if (!ttsBusy) drainTTS();
+      voicesReady = true;
+      doSpeak();
     };
   }
 }
@@ -711,7 +717,7 @@ async function sendMessage(text) {
 // ════════════════════════════════════════════════════════
 //  Action buttons
 // ════════════════════════════════════════════════════════
-async function changeTopic() {
+async function suggestTopics() {
   await sendMessage('__CHANGE_TOPIC__');
 }
 
@@ -735,10 +741,10 @@ document.getElementById('nameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') doIdentify();
 });
 
-// Pre-load voices as early as possible
+// Mark voices as available as early as possible (voice selection happens in initTTS)
 if (window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = loadVoices;
-  loadVoices();   // already available in Firefox; triggers onvoiceschanged in Chrome
+  loadVoices();
 }
 </script>
 </body>
