@@ -6,323 +6,421 @@
   <title>Companion Chat</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
-    :root {
-      --accent: #5b7fa6;
-      --accent-light: #e8f0fa;
-      --avatar-bg: #f0f4fb;
-    }
+    :root { --accent:#5b7fa6; --accent-light:#e8f0fa; }
+    body  { background:#f7f9fc; font-family:'Segoe UI',sans-serif; font-size:1.15rem; }
 
-    body {
-      background: #f7f9fc;
-      font-family: 'Segoe UI', sans-serif;
-      font-size: 1.15rem;
-    }
+    .screen { display:none; }
+    .screen.active { display:block; }
 
-    /* ── screens ─────────────────────────────────────────────── */
-    .screen { display: none; }
-    .screen.active { display: block; }
-
-    /* ── card wrapper ─────────────────────────────────────────── */
     .card-main {
-      max-width: 540px;
-      margin: 40px auto;
-      border-radius: 20px;
-      box-shadow: 0 6px 32px rgba(0,0,0,.10);
-      background: #fff;
-      padding: 2.2rem 2rem;
+      max-width:540px; margin:30px auto;
+      border-radius:20px; box-shadow:0 6px 32px rgba(0,0,0,.10);
+      background:#fff; padding:2rem 1.8rem;
     }
 
-    /* ── big buttons ─────────────────────────────────────────── */
-    .btn-big {
-      font-size: 1.25rem;
-      padding: .75rem 1.5rem;
-      border-radius: 14px;
-      width: 100%;
-      margin-bottom: .75rem;
-    }
-    .btn-primary   { background: var(--accent); border-color: var(--accent); }
-    .btn-primary:hover { background: #4a6d94; border-color: #4a6d94; }
+    .btn-big { font-size:1.2rem; padding:.7rem 1.4rem; border-radius:14px; width:100%; margin-bottom:.7rem; }
+    .btn-primary { background:var(--accent); border-color:var(--accent); }
+    .btn-primary:hover { background:#4a6d94; border-color:#4a6d94; }
 
-    /* ── name input ─────────────────────────────────────────── */
-    #nameInput {
-      font-size: 1.3rem;
-      padding: .65rem 1rem;
-      border-radius: 12px;
-      text-align: center;
-    }
+    #nameInput { font-size:1.25rem; padding:.6rem 1rem; border-radius:12px; text-align:center; }
 
-    /* ── conversation list ─────────────────────────────────── */
-    .conv-item {
-      cursor: pointer;
-      border-radius: 12px;
-      padding: .8rem 1rem;
-      margin-bottom: .5rem;
-      background: var(--accent-light);
-      transition: background .15s;
-    }
-    .conv-item:hover { background: #d1dff5; }
-    .conv-title { font-weight: 600; font-size: 1.05rem; }
-    .conv-meta  { font-size: .85rem; color: #666; }
+    .conv-item { cursor:pointer; border-radius:12px; padding:.75rem 1rem; margin-bottom:.5rem;
+                 background:var(--accent-light); transition:background .15s; }
+    .conv-item:hover { background:#d1dff5; }
+    .conv-title { font-weight:600; font-size:1.05rem; }
+    .conv-meta  { font-size:.85rem; color:#666; }
 
-    /* ── setup screen ────────────────────────────────────────── */
-    .choice-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: .75rem;
-      margin-bottom: 1.2rem;
+    .choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; margin-bottom:1rem; }
+    .choice-btn  { border:2px solid #ccc; border-radius:14px; padding:.9rem; background:#fff;
+                   font-size:1.1rem; cursor:pointer; transition:all .15s; text-align:center; }
+    .choice-btn.selected { border-color:var(--accent); background:var(--accent-light);
+                           color:var(--accent); font-weight:600; }
+
+    /* ── Avatar face ── */
+    #avatarWrap {
+      width:110px; height:110px; border-radius:50%; overflow:hidden;
+      margin:0 auto .75rem; box-shadow:0 3px 12px rgba(0,0,0,.18);
+      background:#e8d5c0;
     }
-    .choice-btn {
-      border: 2px solid #ccc;
-      border-radius: 14px;
-      padding: 1rem;
-      background: #fff;
-      font-size: 1.1rem;
-      cursor: pointer;
-      transition: all .15s;
-      text-align: center;
+    #avatarWrap svg { width:100%; height:100%; display:block; }
+
+    /* Idle: gentle breathing */
+    @keyframes breathe {
+      0%,100% { transform:translateY(0) scale(1); }
+      50%      { transform:translateY(-1.5px) scale(1.008); }
     }
-    .choice-btn.selected {
-      border-color: var(--accent);
-      background: var(--accent-light);
-      color: var(--accent);
-      font-weight: 600;
+    /* Speaking: head micro-bob */
+    @keyframes headbob {
+      0%,100% { transform:translateY(0) rotate(0deg); }
+      30%      { transform:translateY(-2px) rotate(.6deg); }
+      70%      { transform:translateY(1px) rotate(-.4deg); }
+    }
+    /* Eye blink */
+    @keyframes blink {
+      0%,92%  { transform:scaleY(0); }
+      94%,98% { transform:scaleY(1); }
+      100%    { transform:scaleY(0); }
+    }
+    /* Mouth open-close while speaking */
+    @keyframes mouththing {
+      0%,100% { transform:scaleY(.15); }
+      50%     { transform:scaleY(1); }
     }
 
-    /* ── chat screen ─────────────────────────────────────────── */
-    #avatarIcon {
-      width: 96px; height: 96px;
-      border-radius: 50%;
-      background: var(--avatar-bg);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 3rem;
-      margin: 0 auto 1rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,.12);
-    }
-    #avatarName {
-      text-align: center;
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: var(--accent);
-      margin-bottom: 1rem;
-    }
+    .face-root { animation:breathe 3.5s ease-in-out infinite; transform-origin:50% 60%; }
+    .face-root.speaking { animation:headbob .35s ease-in-out infinite; }
 
-    #transcript {
-      height: 320px;
-      overflow-y: auto;
-      border: 1px solid #dde3ee;
-      border-radius: 14px;
-      padding: 1rem;
-      background: #fafbfe;
-      margin-bottom: 1rem;
-    }
+    .eyelid { transform-origin:50% 100%; transform:scaleY(0);
+              animation:blink 4s ease-in-out infinite; }
+    .eyelid.r { animation-delay:.06s; }
 
-    .bubble {
-      max-width: 85%;
-      padding: .55rem .9rem;
-      border-radius: 14px;
-      margin-bottom: .6rem;
-      line-height: 1.45;
-      font-size: 1.05rem;
-    }
-    .bubble-avatar {
-      background: var(--accent-light);
-      color: #1a2a40;
-      margin-right: auto;
-    }
-    .bubble-user {
-      background: var(--accent);
-      color: #fff;
-      margin-left: auto;
-      text-align: right;
-    }
-    /* RTL bubbles */
-    [dir="rtl"] .bubble-avatar { margin-left: auto; margin-right: 0; text-align: right; }
-    [dir="rtl"] .bubble-user   { margin-right: auto; margin-left: 0; text-align: left; }
+    /* closed mouth visible by default, open hidden */
+    .mouth-open { transform-origin:50% 0%; transform:scaleY(.15); }
+    .face-root.speaking .mouth-closed { opacity:0; }
+    .face-root.speaking .mouth-open   { animation:mouththing .22s ease-in-out infinite alternate; }
+
+    /* ── Chat screen ── */
+    #avatarName { text-align:center; font-size:1.3rem; font-weight:600;
+                  color:var(--accent); margin-bottom:.8rem; }
+
+    #transcript { height:300px; overflow-y:auto; border:1px solid #dde3ee;
+                  border-radius:14px; padding:.9rem; background:#fafbfe; margin-bottom:.8rem; }
+
+    .bubble { max-width:85%; padding:.5rem .85rem; border-radius:14px;
+              margin-bottom:.55rem; line-height:1.45; font-size:1.05rem; }
+    .bubble-avatar { background:var(--accent-light); color:#1a2a40; margin-right:auto; }
+    .bubble-user   { background:var(--accent); color:#fff; margin-left:auto; text-align:right; }
+    [dir="rtl"] .bubble-avatar { margin-left:auto; margin-right:0; text-align:right; }
+    [dir="rtl"] .bubble-user   { margin-right:auto; margin-left:0; text-align:left; }
 
     #micBtn {
-      width: 80px; height: 80px;
-      border-radius: 50%;
-      border: none;
-      background: var(--accent);
-      color: #fff;
-      font-size: 2rem;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto .75rem;
-      box-shadow: 0 4px 14px rgba(0,0,0,.2);
-      transition: background .15s, transform .1s;
-      cursor: pointer;
+      width:80px; height:80px; border-radius:50%; border:none;
+      background:var(--accent); color:#fff; font-size:2rem;
+      display:flex; align-items:center; justify-content:center;
+      margin:0 auto .6rem; box-shadow:0 4px 14px rgba(0,0,0,.2);
+      cursor:pointer; transition:background .15s;
     }
-    #micBtn:hover { background: #4a6d94; }
-    #micBtn.listening {
-      background: #e05a5a;
-      animation: pulse 1s infinite;
-    }
+    #micBtn:hover { background:#4a6d94; }
+    #micBtn.listening { background:#e05a5a; animation:pulse 1s infinite; }
     @keyframes pulse {
-      0%,100% { box-shadow: 0 0 0 0 rgba(224,90,90,.5); }
-      50%      { box-shadow: 0 0 0 12px rgba(224,90,90,0); }
+      0%,100% { box-shadow:0 0 0 0 rgba(224,90,90,.5); }
+      50%     { box-shadow:0 0 0 12px rgba(224,90,90,0); }
     }
 
-    #micLabel {
-      text-align: center;
-      color: #888;
-      font-size: .95rem;
-      margin-bottom: .5rem;
-      min-height: 1.4em;
-    }
+    #micLabel  { text-align:center; color:#888; font-size:.95rem; margin-bottom:.4rem; min-height:1.4em; }
+    #statusBar { text-align:center; font-size:.9rem; color:#aaa; min-height:1.2em; }
 
-    #statusBar {
-      text-align: center;
-      font-size: .9rem;
-      color: #aaa;
-      min-height: 1.2em;
-    }
+    #stopBtn { display:none; margin:.25rem auto .1rem; background:#e05a5a; color:#fff;
+               border:none; border-radius:10px; padding:.3rem 1.1rem; font-size:.92rem; cursor:pointer; }
 
-    .action-btns {
-      display: flex;
-      gap: .6rem;
-      margin-top: .6rem;
-    }
-    .action-btns .btn {
-      flex: 1;
-      font-size: 1rem;
-      border-radius: 12px;
-      padding: .55rem;
-    }
+    .action-btns { display:flex; gap:.5rem; margin-top:.5rem; }
+    .action-btns .btn { flex:1; font-size:.95rem; border-radius:12px; padding:.5rem; }
 
-    /* ── title ──────────────────────────────────────────────── */
-    .app-title {
-      text-align: center;
-      color: var(--accent);
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-    }
-    .app-subtitle {
-      text-align: center;
-      color: #888;
-      font-size: 1rem;
-      margin-top: -.8rem;
-      margin-bottom: 1.6rem;
-    }
+    .app-title    { text-align:center; color:var(--accent); font-size:1.75rem; font-weight:700; margin-bottom:1.4rem; }
+    .app-subtitle { text-align:center; color:#888; font-size:1rem; margin-top:-.8rem; margin-bottom:1.5rem; }
+
+    #voiceNote { font-size:.82rem; color:#e07030; margin-top:-.5rem; margin-bottom:.8rem; display:none; }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════
-     SCREEN 1 — Welcome / Name entry
-═══════════════════════════════════════════════════ -->
+<!-- ═══════════  SCREEN 1 — Welcome  ═══════════ -->
 <div id="screenWelcome" class="screen active">
   <div class="card-main">
-    <div class="app-title">&#128515; Companion Chat</div>
-    <div class="app-subtitle">A friendly conversation, just for you</div>
-
-    <label class="form-label fw-semibold" for="nameInput" style="font-size:1.1rem;">
-      What is your name?
-    </label>
+    <div class="app-title" data-i18n="appTitle">Companion Chat</div>
+    <div class="app-subtitle" data-i18n="appSubtitle">A friendly conversation, just for you</div>
+    <label class="form-label fw-semibold" for="nameInput" data-i18n="nameLabel">What is your name?</label>
     <input id="nameInput" type="text" class="form-control mb-3"
-           placeholder="Type your name here…"
+           data-i18n-placeholder="namePlaceholder" placeholder="Type your name here…"
            autocomplete="off" autocorrect="off" spellcheck="false" />
-    <button class="btn btn-primary btn-big" onclick="doIdentify()">Continue &#8594;</button>
+    <button class="btn btn-primary btn-big" onclick="doIdentify()" data-i18n="continueBtn">Continue →</button>
     <div id="welcomeError" class="text-danger text-center mt-2" style="display:none;"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     SCREEN 2 — Returning user: resume or new
-═══════════════════════════════════════════════════ -->
+<!-- ═══════════  SCREEN 2 — Resume  ═══════════ -->
 <div id="screenResume" class="screen">
   <div class="card-main">
-    <div class="app-title">Welcome back, <span id="resumeName"></span>!</div>
-
-    <p class="text-center text-muted mb-3">Would you like to continue a previous conversation?</p>
+    <div class="app-title"><span data-i18n="welcomeBack">Welcome back</span>, <span id="resumeName"></span>!</div>
+    <p class="text-center text-muted mb-3" data-i18n="resumePrompt">Would you like to continue a previous conversation?</p>
     <div id="convList" class="mb-3"></div>
-
-    <hr />
-    <button class="btn btn-primary btn-big" onclick="goSetup()">
-      &#43; Start a new conversation
-    </button>
-    <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()">
-      &#8592; Not me
-    </button>
+    <hr/>
+    <button class="btn btn-primary btn-big" onclick="goSetup()" data-i18n="newConvBtn">+ Start a new conversation</button>
+    <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()" data-i18n="notMeBtn">← Not me</button>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     SCREEN 3 — Setup: language + avatar
-═══════════════════════════════════════════════════ -->
+<!-- ═══════════  SCREEN 3 — Setup  ═══════════ -->
 <div id="screenSetup" class="screen">
   <div class="card-main">
-    <div class="app-title">Let's set up your chat</div>
+    <div class="app-title" data-i18n="setupTitle">Let's set up your chat</div>
 
-    <p class="fw-semibold mb-2" style="font-size:1.1rem;">Choose language:</p>
-    <div class="choice-grid mb-3">
-      <div class="choice-btn selected" data-group="lang" data-value="en" onclick="pick(this)">
-        &#127468;&#127463; English
-      </div>
-      <div class="choice-btn" data-group="lang" data-value="he" onclick="pick(this)">
-        &#127470;&#127473; &#1506;&#1489;&#1512;&#1497;&#1514;
-      </div>
+    <p class="fw-semibold mb-2" data-i18n="chooseLanguage">Choose language:</p>
+    <div class="choice-grid mb-2">
+      <div class="choice-btn selected" data-group="lang" data-value="en" onclick="pick(this)">🇬🇧 English</div>
+      <div class="choice-btn"          data-group="lang" data-value="he" onclick="pick(this)">🇮🇱 עברית</div>
     </div>
 
-    <p class="fw-semibold mb-2" style="font-size:1.1rem;">Choose companion:</p>
-    <div class="choice-grid mb-3">
-      <div class="choice-btn selected" data-group="gender" data-value="female" onclick="pick(this)">
-        &#128105; Female
-      </div>
-      <div class="choice-btn" data-group="gender" data-value="male" onclick="pick(this)">
-        &#128104; Male
-      </div>
+    <p class="fw-semibold mb-2" data-i18n="chooseCompanion">Choose companion:</p>
+    <div class="choice-grid mb-2">
+      <div class="choice-btn selected" data-group="gender" data-value="female" onclick="pick(this)" data-i18n="female">Female</div>
+      <div class="choice-btn"          data-group="gender" data-value="male"   onclick="pick(this)" data-i18n="male">Male</div>
     </div>
 
-    <p class="fw-semibold mb-1" style="font-size:1.1rem;">Speaking voice:</p>
-    <select id="voiceSelect" class="form-select mb-4" style="font-size:1rem; border-radius:12px;">
+    <p class="fw-semibold mb-1" data-i18n="voiceLabel">Speaking voice:</p>
+    <select id="voiceSelect" class="form-select mb-1" style="font-size:1rem;border-radius:12px;">
       <option value="">Loading voices…</option>
     </select>
+    <div id="voiceNote"></div>
 
-    <button class="btn btn-primary btn-big" onclick="startConversation()">
-      &#128172; Start Chatting
-    </button>
-    <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()">
-      &#8592; Back
-    </button>
+    <button class="btn btn-primary btn-big" onclick="startConversation()" data-i18n="startBtn">Start Chatting</button>
+    <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()" data-i18n="backBtn">← Back</button>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     SCREEN 4 — Chat
-═══════════════════════════════════════════════════ -->
+<!-- ═══════════  SCREEN 4 — Chat  ═══════════ -->
 <div id="screenChat" class="screen">
   <div class="card-main">
-    <div id="avatarIcon">&#128512;</div>
+    <div id="avatarWrap"></div>
     <div id="avatarName">…</div>
 
     <div id="transcript"></div>
 
-    <div id="micLabel">Tap the microphone to speak</div>
-    <button id="micBtn" onclick="toggleMic()">&#127908;</button>
-    <button id="stopBtn" onclick="stopSpeaking()" title="Stop speaking"
-            style="display:none; margin:.3rem auto .1rem; background:#e05a5a; color:#fff;
-                   border:none; border-radius:10px; padding:.35rem 1.2rem; font-size:.95rem; cursor:pointer;">
-      &#9646;&#9646; Stop
-    </button>
+    <div id="micLabel" data-i18n="micLabel">Tap the microphone to speak</div>
+    <button id="micBtn" onclick="toggleMic()">🎤</button>
+    <button id="stopBtn" onclick="stopSpeaking()">⏹ <span data-i18n="stopBtn">Stop</span></button>
     <div id="statusBar">&nbsp;</div>
 
     <div class="action-btns">
-      <button class="btn btn-outline-primary" onclick="suggestTopics()">
-        &#128172; Skip small talk and suggest topics
-      </button>
-      <button class="btn btn-outline-danger" onclick="endConversation()">
-        &#9723; End chat
-      </button>
+      <button class="btn btn-outline-primary" onclick="suggestTopics()" data-i18n="suggestBtn">Skip small talk and suggest topics</button>
+      <button class="btn btn-outline-danger"  onclick="endConversation()" data-i18n="endBtn">End chat</button>
     </div>
   </div>
 </div>
 
-
 <script>
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  UI translations
+// ══════════════════════════════════════════════════════
+const T = {
+  en: {
+    appTitle:      'Companion Chat',
+    appSubtitle:   'A friendly conversation, just for you',
+    nameLabel:     'What is your name?',
+    namePlaceholder:'Type your name here…',
+    continueBtn:   'Continue →',
+    welcomeBack:   'Welcome back',
+    resumePrompt:  'Would you like to continue a previous conversation?',
+    newConvBtn:    '+ Start a new conversation',
+    notMeBtn:      '← Not me',
+    setupTitle:    "Let's set up your chat",
+    chooseLanguage:'Choose language:',
+    chooseCompanion:'Choose companion:',
+    voiceLabel:    'Speaking voice:',
+    female:        'Female',
+    male:          'Male',
+    startBtn:      'Start Chatting',
+    backBtn:       '← Back',
+    micLabel:      'Tap the microphone to speak',
+    listening:     'Listening…',
+    thinking:      'Thinking…',
+    stopBtn:       'Stop',
+    suggestBtn:    'Skip small talk and suggest topics',
+    endBtn:        'End chat',
+    noSpeech:      'No speech detected. Try again.',
+    serverError:   'Could not connect to server.',
+    starting:      'Starting…',
+    pitchNote:     'No female voice found — using pitch adjustment.',
+  },
+  he: {
+    appTitle:      'שיחת חברותא',
+    appSubtitle:   'שיחה חברית, רק בשבילך',
+    nameLabel:     'מה שמך?',
+    namePlaceholder:'הקלד/י את שמך כאן…',
+    continueBtn:   'המשך ←',
+    welcomeBack:   'ברוך/ה שובך/ת',
+    resumePrompt:  'האם תרצה/י להמשיך שיחה קודמת?',
+    newConvBtn:    '+ התחל/י שיחה חדשה',
+    notMeBtn:      '← זה/זאת לא אני',
+    setupTitle:    'הגדרת השיחה שלך',
+    chooseLanguage:'בחר/י שפה:',
+    chooseCompanion:'בחר/י מלווה:',
+    voiceLabel:    'קול הדובר:',
+    female:        'נקבה',
+    male:          'זכר',
+    startBtn:      'התחל/י לשוחח',
+    backBtn:       'חזור ←',
+    micLabel:      'לחץ/י על המיקרופון לדיבור',
+    listening:     'מקשיב/ה…',
+    thinking:      'חושב/ת…',
+    stopBtn:       'עצור',
+    suggestBtn:    'דלג/י על שיחת חולין והצע/י נושאים',
+    endBtn:        'סיים/י שיחה',
+    noSpeech:      'לא זוהה דיבור. נסה/י שוב.',
+    serverError:   'לא ניתן להתחבר לשרת.',
+    starting:      'מתחיל/ה…',
+    pitchNote:     'לא נמצא קול נשי — משתמש/ת בהתאמת גובה קול.',
+  }
+};
+
+function t(key) { return (T[language] || T.en)[key] || key; }
+
+function applyUI() {
+  const isHe = language === 'he';
+  document.documentElement.lang = language;
+  document.documentElement.dir  = isHe ? 'rtl' : 'ltr';
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (T[language] && T[language][key]) el.textContent = T[language][key];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    if (T[language] && T[language][key]) el.placeholder = T[language][key];
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  Avatar SVG faces
+// ══════════════════════════════════════════════════════
+function buildFace(gender, lang) {
+  // Skin tones
+  const skin  = lang === 'he'
+    ? (gender === 'female' ? '#d4956e' : '#c07850')   // olive
+    : (gender === 'female' ? '#f0c090' : '#d89060');   // fair/medium
+  const skinD = lang === 'he'
+    ? (gender === 'female' ? '#c07850' : '#a86030')
+    : (gender === 'female' ? '#d8a070' : '#b87040');
+
+  // Hair colours
+  const hair = lang === 'he'
+    ? (gender === 'female' ? '#2a1a10' : '#3a2818')   // dark
+    : (gender === 'female' ? '#8a7060' : '#6a6060');   // gray-brown / gray
+
+  // Eye colour
+  const iris = lang === 'he' ? '#3a2010' : '#5a7a90';
+
+  const isFemale = gender === 'female';
+
+  // ── Female face ──
+  if (isFemale) return `
+<svg id="avatarFace" class="face-root" viewBox="0 0 100 115" xmlns="http://www.w3.org/2000/svg">
+  <!-- neck -->
+  <rect x="36" y="92" width="28" height="18" rx="9" fill="${skinD}"/>
+  <!-- hair back -->
+  <ellipse cx="50" cy="42" rx="38" ry="38" fill="${hair}"/>
+  <!-- face -->
+  <ellipse cx="50" cy="58" rx="34" ry="38" fill="${skin}"/>
+  <!-- hair sides -->
+  <path d="M16,44 Q10,62 16,76 Q20,80 24,74 Q19,60 20,44Z" fill="${hair}"/>
+  <path d="M84,44 Q90,62 84,76 Q80,80 76,74 Q81,60 80,44Z" fill="${hair}"/>
+  <!-- hair top -->
+  <path d="M16,44 Q22,18 50,14 Q78,18 84,44 Q68,32 50,30 Q32,32 16,44Z" fill="${hair}"/>
+  <!-- hair bun -->
+  <ellipse cx="50" cy="16" rx="14" ry="10" fill="${hair}"/>
+  <!-- ears -->
+  <ellipse cx="16" cy="60" rx="6" ry="8" fill="${skinD}"/>
+  <ellipse cx="84" cy="60" rx="6" ry="8" fill="${skinD}"/>
+  <!-- eyebrows arched -->
+  <path d="M28,42 Q35,37 42,40" stroke="${hair}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M58,40 Q65,37 72,42" stroke="${hair}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- eye whites -->
+  <ellipse cx="34" cy="50" rx="7" ry="5" fill="white"/>
+  <ellipse cx="66" cy="50" rx="7" ry="5" fill="white"/>
+  <!-- irises -->
+  <circle cx="34" cy="50" r="3.5" fill="${iris}"/>
+  <circle cx="66" cy="50" r="3.5" fill="${iris}"/>
+  <!-- pupils -->
+  <circle cx="34" cy="50" r="1.8" fill="#111"/>
+  <circle cx="66" cy="50" r="1.8" fill="#111"/>
+  <!-- shine -->
+  <circle cx="32.5" cy="48.5" r=".9" fill="white"/>
+  <circle cx="64.5" cy="48.5" r=".9" fill="white"/>
+  <!-- eyelids (blink) -->
+  <ellipse class="eyelid"   cx="34" cy="47" rx="7" ry="5.5" fill="${skin}"/>
+  <ellipse class="eyelid r" cx="66" cy="47" rx="7" ry="5.5" fill="${skin}"/>
+  <!-- nose -->
+  <path d="M50,60 Q47,68 48,71 Q50,73 52,71 Q53,68 50,60Z" fill="${skinD}" opacity=".45"/>
+  <path d="M45,71 Q50,74 55,71" stroke="${skinD}" stroke-width="1.2" fill="none" opacity=".6"/>
+  <!-- smile lines (age) -->
+  <path d="M28,68 Q26,74 30,80" stroke="${skinD}" stroke-width=".9" fill="none" opacity=".4"/>
+  <path d="M72,68 Q74,74 70,80" stroke="${skinD}" stroke-width=".9" fill="none" opacity=".4"/>
+  <!-- forehead line -->
+  <path d="M32,30 Q50,26 68,30" stroke="${skinD}" stroke-width=".7" fill="none" opacity=".25"/>
+  <!-- cheeks -->
+  <ellipse cx="22" cy="66" rx="9" ry="6" fill="#ff8080" opacity=".13"/>
+  <ellipse cx="78" cy="66" rx="9" ry="6" fill="#ff8080" opacity=".13"/>
+  <!-- mouth -->
+  <g class="mouth-closed">
+    <path d="M38,83 Q44,80 50,81 Q56,80 62,83 Q56,87 50,88 Q44,87 38,83Z" fill="#c06878"/>
+    <path d="M38,83 Q50,80 62,83" stroke="#a05060" stroke-width=".6" fill="none"/>
+  </g>
+  <g class="mouth-open" style="transform-box:fill-box;transform-origin:50% 0%">
+    <ellipse cx="50" cy="86" rx="11" ry="7" fill="#7a1a28"/>
+    <path d="M39,84 Q50,82 61,84 Q50,86 39,84Z" fill="#f0f0f0"/>
+  </g>
+</svg>`;
+
+  // ── Male face ──
+  return `
+<svg id="avatarFace" class="face-root" viewBox="0 0 100 115" xmlns="http://www.w3.org/2000/svg">
+  <!-- neck -->
+  <rect x="33" y="93" width="34" height="18" rx="10" fill="${skinD}"/>
+  <!-- head shape (squarer jaw) -->
+  <path d="M16,50 Q14,80 20,94 Q34,104 50,104 Q66,104 80,94 Q86,80 84,50
+           Q80,20 50,18 Q20,20 16,50Z" fill="${skin}"/>
+  <!-- hair top -->
+  <path d="M16,50 Q18,22 50,18 Q82,22 84,50 Q70,38 50,36 Q30,38 16,50Z" fill="${hair}"/>
+  <!-- gray temples -->
+  <path d="M16,50 Q17,42 20,38 Q22,46 20,58Z" fill="#c0b8b0"/>
+  <path d="M84,50 Q83,42 80,38 Q78,46 80,58Z" fill="#c0b8b0"/>
+  <!-- ears -->
+  <ellipse cx="15" cy="62" rx="6" ry="8.5" fill="${skinD}"/>
+  <ellipse cx="85" cy="62" rx="6" ry="8.5" fill="${skinD}"/>
+  <!-- eyebrows (thicker) -->
+  <path d="M26,46 Q34,41 43,44" stroke="${hair}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+  <path d="M57,44 Q66,41 74,46" stroke="${hair}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+  <!-- eye whites -->
+  <ellipse cx="34" cy="54" rx="7.5" ry="5.5" fill="white"/>
+  <ellipse cx="66" cy="54" rx="7.5" ry="5.5" fill="white"/>
+  <!-- irises -->
+  <circle cx="34" cy="54" r="3.8" fill="${iris}"/>
+  <circle cx="66" cy="54" r="3.8" fill="${iris}"/>
+  <!-- pupils -->
+  <circle cx="34" cy="54" r="2" fill="#111"/>
+  <circle cx="66" cy="54" r="2" fill="#111"/>
+  <!-- shine -->
+  <circle cx="32.5" cy="52.5" r="1" fill="white"/>
+  <circle cx="64.5" cy="52.5" r="1" fill="white"/>
+  <!-- eyelids (blink) -->
+  <ellipse class="eyelid"   cx="34" cy="51" rx="7.5" ry="6" fill="${skin}"/>
+  <ellipse class="eyelid r" cx="66" cy="51" rx="7.5" ry="6" fill="${skin}"/>
+  <!-- nose (broader) -->
+  <path d="M50,64 Q46,73 47,77 Q50,80 53,77 Q54,73 50,64Z" fill="${skinD}" opacity=".5"/>
+  <path d="M44,77 Q50,81 56,77" stroke="${skinD}" stroke-width="1.5" fill="none" opacity=".65"/>
+  <!-- stubble -->
+  <path d="M34,90 Q50,95 66,90" stroke="${skinD}" stroke-width="3.5" fill="none" opacity=".2" stroke-dasharray="2,2"/>
+  <!-- wrinkles -->
+  <path d="M26,66 Q24,72 28,78" stroke="${skinD}" stroke-width="1" fill="none" opacity=".35"/>
+  <path d="M74,66 Q76,72 72,78" stroke="${skinD}" stroke-width="1" fill="none" opacity=".35"/>
+  <!-- forehead lines -->
+  <path d="M28,38 Q50,34 72,38" stroke="${skinD}" stroke-width=".8" fill="none" opacity=".28"/>
+  <path d="M32,32 Q50,28 68,32" stroke="${skinD}" stroke-width=".6" fill="none" opacity=".2"/>
+  <!-- mouth -->
+  <g class="mouth-closed">
+    <path d="M36,87 Q44,84 50,85 Q56,84 64,87 Q56,92 50,93 Q44,92 36,87Z" fill="#b06060"/>
+    <path d="M36,87 Q50,84 64,87" stroke="#904050" stroke-width=".7" fill="none"/>
+  </g>
+  <g class="mouth-open" style="transform-box:fill-box;transform-origin:50% 0%">
+    <ellipse cx="50" cy="90" rx="12" ry="7" fill="#7a1a1a"/>
+    <path d="M38,88 Q50,86 62,88 Q50,91 38,88Z" fill="#e8e8e8"/>
+  </g>
+</svg>`;
+}
+
+// ══════════════════════════════════════════════════════
 //  State
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 let userId          = null;
 let userName        = '';
 let conversationId  = null;
@@ -330,16 +428,16 @@ let language        = 'en';
 let avatarGender    = 'female';
 let recognition     = null;
 let ttsVoice        = null;
-let ttsGenderMatch  = true;   // false = voice gender differs from avatar; adjust pitch
+let ttsGenderMatch  = true;
 let listening       = false;
 let ttsQueue        = [];
 let ttsBusy         = false;
-let finalTranscript = '';   // captures speech during recognition
+let finalTranscript = '';
 let voicesReady     = false;
 
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 //  Helpers
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -351,16 +449,12 @@ function pick(el) {
   el.classList.add('selected');
   if (group === 'lang')   language     = el.dataset.value;
   if (group === 'gender') avatarGender = el.dataset.value;
-  if (voicesReady) populateVoiceDropdown();   // refresh voice list / auto-selection
+  applyUI();
+  if (voicesReady) populateVoiceDropdown();
 }
 
 function setDir(lang) {
-  document.documentElement.lang = lang;
   document.getElementById('transcript').dir = lang === 'he' ? 'rtl' : 'ltr';
-}
-
-function avatarEmoji(gender) {
-  return gender === 'male' ? '&#128104;' : '&#128105;';
 }
 
 function scrollTranscript() {
@@ -369,7 +463,7 @@ function scrollTranscript() {
 }
 
 function addBubble(speaker, text) {
-  const t = document.getElementById('transcript');
+  const t   = document.getElementById('transcript');
   const div = document.createElement('div');
   div.className = `bubble bubble-${speaker}`;
   div.textContent = text;
@@ -377,45 +471,35 @@ function addBubble(speaker, text) {
   scrollTranscript();
 }
 
-function setStatus(msg) {
-  document.getElementById('statusBar').textContent = msg;
+function setStatus(msg) { document.getElementById('statusBar').textContent = msg; }
+
+function goWelcome() { document.getElementById('nameInput').value = ''; show('screenWelcome'); }
+function goSetup()   { show('screenSetup'); }
+
+function setAvatarSpeaking(on) {
+  const f = document.getElementById('avatarFace');
+  if (f) f.classList.toggle('speaking', on);
 }
 
-function goWelcome() {
-  document.getElementById('nameInput').value = '';
-  show('screenWelcome');
-}
-
-function goSetup() {
-  show('screenSetup');
-}
-
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 //  Screen 1 — Identify
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 async function doIdentify() {
-  const name = document.getElementById('nameInput').value.trim();
+  const name  = document.getElementById('nameInput').value.trim();
   const errEl = document.getElementById('welcomeError');
   errEl.style.display = 'none';
-
-  if (!name) {
-    errEl.textContent = 'Please enter your name.';
-    errEl.style.display = 'block';
-    return;
-  }
+  if (!name) { errEl.textContent = t('nameLabel'); errEl.style.display = 'block'; return; }
 
   try {
     const res  = await fetch('/users/identify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name}),
     });
     const data = await res.json();
     userId   = data.id;
     userName = data.name;
 
     if (!data.is_new && data.conversations.length > 0) {
-      // Returning user with past conversations
       document.getElementById('resumeName').textContent = data.name;
       renderConvList(data.conversations);
       show('screenResume');
@@ -423,91 +507,79 @@ async function doIdentify() {
       goSetup();
     }
   } catch (e) {
-    errEl.textContent = 'Could not connect to server. Please try again.';
+    errEl.textContent = t('serverError');
     errEl.style.display = 'block';
   }
 }
 
-// ════════════════════════════════════════════════════════
-//  Screen 2 — Resume conversation list
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  Screen 2 — Resume
+// ══════════════════════════════════════════════════════
 function renderConvList(convs) {
   const el = document.getElementById('convList');
   el.innerHTML = '';
   convs.forEach(c => {
     const div = document.createElement('div');
     div.className = 'conv-item';
-    div.innerHTML = `
-      <div class="conv-title">${c.title}</div>
-      <div class="conv-meta">${c.avatar_name} &bull; ${langLabel(c.language)} &bull; ${c.message_count} messages &bull; ${c.updated_at}</div>
-    `;
+    div.innerHTML = `<div class="conv-title">${c.title}</div>
+      <div class="conv-meta">${c.avatar_name} &bull; ${c.message_count} msgs &bull; ${c.updated_at}</div>`;
     div.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
     el.appendChild(div);
   });
 }
 
-function langLabel(l) { return l === 'he' ? 'Hebrew' : 'English'; }
-
 async function resumeConversation(convId, avatarName, gender, lang) {
   conversationId = convId;
   language       = lang;
   avatarGender   = gender;
+  applyUI();
   setDir(lang);
-  document.getElementById('avatarIcon').innerHTML = avatarEmoji(gender);
-  document.getElementById('avatarName').textContent = avatarName;
 
-  // Load history
+  document.getElementById('avatarWrap').innerHTML = buildFace(gender, lang);
+  document.getElementById('avatarName').textContent = avatarName;
+  document.getElementById('transcript').innerHTML   = '';
+
   try {
     const res  = await fetch(`/conversations/${convId}`);
     const data = await res.json();
-    document.getElementById('transcript').innerHTML = '';
     data.messages.forEach(m => addBubble(m.speaker === 'user' ? 'user' : 'avatar', m.text));
-  } catch (e) { /* show empty transcript */ }
+  } catch(e) {}
 
   initTTS(lang, gender);
   show('screenChat');
-  setStatus('Starting…');
+  setStatus(t('starting'));
 
-  // Send resume command so the avatar greets them as a returning person
   try {
     const res  = await fetch(`/conversations/${convId}/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: '__RESUME__' }),
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text:'__RESUME__'}),
     });
     const data = await res.json();
-    if (res.ok) {
-      addBubble('avatar', data.text);
-      speak(data.text);
-    }
-  } catch (e) { /* silent */ }
+    if (res.ok) { addBubble('avatar', data.text); speak(data.text); }
+  } catch(e) {}
 
-  setStatus('Tap the microphone to speak.');
+  setStatus(t('micLabel'));
 }
 
-// ════════════════════════════════════════════════════════
-//  Screen 3 → Screen 4 — Start new conversation
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  Screen 3 → 4 — Start new conversation
+// ══════════════════════════════════════════════════════
 async function startConversation() {
+  applyUI();
   setDir(language);
-  document.getElementById('avatarIcon').innerHTML = avatarEmoji(avatarGender);
+  document.getElementById('avatarWrap').innerHTML = buildFace(avatarGender, language);
   document.getElementById('avatarName').textContent = '…';
-  document.getElementById('transcript').innerHTML = '';
+  document.getElementById('transcript').innerHTML   = '';
   show('screenChat');
-  setStatus('Starting…');
+  setStatus(t('starting'));
 
   try {
     const res  = await fetch('/conversations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, language, avatar_gender: avatarGender }),
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user_id:userId, language, avatar_gender:avatarGender}),
     });
     const data = await res.json();
-
-    if (!res.ok) {
-      setStatus(data.detail || 'Error starting conversation.');
-      return;
-    }
+    if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
 
     conversationId = data.conversation_id;
     document.getElementById('avatarName').textContent = data.avatar_name;
@@ -515,275 +587,216 @@ async function startConversation() {
     initTTS(language, avatarGender);
     addBubble('avatar', data.greeting);
     speak(data.greeting);
-    setStatus('Tap the microphone to speak.');
-  } catch (e) {
-    setStatus('Could not connect to server.');
+    setStatus(t('micLabel'));
+  } catch(e) {
+    setStatus(t('serverError'));
   }
 }
 
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 //  TTS — Web Speech Synthesis
-// ════════════════════════════════════════════════════════
-
-// Regex patterns that identify voice gender from the voice name.
-// \bmale\b uses word-boundary so it NEVER matches inside "female".
-// Hebrew voices: Microsoft Asaf (male), Microsoft Haila / Tamar / Yonit (female)
-// \bmale\b word-boundary never matches inside "female"
-const FEMALE_RE = /female|\b(samantha|karen|moira|tessa|fiona|victoria|zira|hazel|eva|susan|helena|anna|carmit|amelie|alice|kate|serena|veena|aria|jenny|clara|ava|emma|ivy|joanna|kendra|kimberly|salli|nicole|lotte|marlene|carla|bianca|celine|lea|penelope|lucia|naja|mia|liv|astrid|haila|tamar|yonit)\b/i;
-const MALE_RE   = /\bmale\b|\b(david|alex|fred|lee|tom|jorge|luca|daniel|mark|james|aaron|arthur|rishi|oliver|guy|reed|roger|eric|brian|matthew|joey|andrew|hans|mathieu|giorgio|filiz|takumi|enrique|miguel|ricardo|geraint|russel|justin|kevin|stephen|asaf)\b/i;
+// ══════════════════════════════════════════════════════
+const FEMALE_RE = /female|\b(samantha|karen|moira|tessa|fiona|victoria|zira|hazel|eva|susan|helena|anna|carmit|amelie|alice|kate|serena|veena|aria|jenny|clara|ava|emma|ivy|joanna|kendra|kimberly|salli|lotte|marlene|carla|bianca|celine|lea|penelope|lucia|naja|mia|astrid|haila|tamar|yonit)\b/i;
+const MALE_RE   = /\bmale\b|\b(david|alex|fred|lee|tom|jorge|luca|daniel|mark|james|aaron|arthur|rishi|oliver|guy|reed|roger|eric|brian|matthew|joey|andrew|hans|mathieu|giorgio|filiz|takumi|enrique|miguel|geraint|russel|justin|kevin|stephen|asaf)\b/i;
 
 function loadVoices() {
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) {
+  if (window.speechSynthesis.getVoices().length > 0) {
     voicesReady = true;
     populateVoiceDropdown();
   }
 }
 
-// Fill the voice <select> and auto-highlight best match for current gender
 function populateVoiceDropdown() {
   const voices = window.speechSynthesis.getVoices();
   const code   = language === 'he' ? 'he' : 'en';
   const pool   = voices.filter(v => v.lang.startsWith(code));
   if (!pool.length) return;
 
-  const sel = document.getElementById('voiceSelect');
-  sel.innerHTML = '';
-
+  const sel      = document.getElementById('voiceSelect');
   const wantRe   = avatarGender === 'female' ? FEMALE_RE : MALE_RE;
   const rejectRe = avatarGender === 'female' ? MALE_RE   : FEMALE_RE;
+  sel.innerHTML  = '';
 
   let bestIdx = 0;
   pool.forEach((v, i) => {
     const opt = document.createElement('option');
     opt.value = i;
-    const tag = FEMALE_RE.test(v.name) ? ' ♀' : MALE_RE.test(v.name) ? ' ♂' : '';
+    const tag = FEMALE_RE.test(v.name) ? ' ♀' : MALE_RE.test(v.name) ? ' ♂' : ' ?';
     opt.textContent = v.name + tag;
     sel.appendChild(opt);
-    if (wantRe.test(v.name)) { if (bestIdx === 0 || !wantRe.test(pool[bestIdx].name)) bestIdx = i; }
+    if (i === 0 || (wantRe.test(v.name) && !wantRe.test(pool[bestIdx].name))) bestIdx = i;
   });
 
-  // If no positive match, prefer one that doesn't match opposite gender
+  // If no positive gender match, prefer one that isn't the opposite gender
   if (!wantRe.test(pool[bestIdx].name)) {
     const neutral = pool.findIndex(v => !rejectRe.test(v.name));
     if (neutral >= 0) bestIdx = neutral;
   }
-
   sel.value = bestIdx;
-  ttsVoice  = pool[bestIdx];
+
+  // Show note if voice doesn't match desired gender
+  const note = document.getElementById('voiceNote');
+  if (note) {
+    const hasMatch = pool.some(v => wantRe.test(v.name));
+    note.style.display = hasMatch ? 'none' : 'block';
+    note.textContent   = hasMatch ? '' : t('pitchNote');
+  }
 }
 
-// Read the selected voice from the dropdown; detect if gender actually matches
 function applyVoiceSelection() {
   const voices = window.speechSynthesis.getVoices();
   const code   = language === 'he' ? 'he' : 'en';
   const pool   = voices.filter(v => v.lang.startsWith(code));
   const idx    = parseInt(document.getElementById('voiceSelect').value, 10);
-  ttsVoice     = pool[idx] || pool[0] || voices[0] || null;
+  ttsVoice     = pool[isNaN(idx) ? 0 : idx] || pool[0] || voices[0] || null;
 
-  // Check if the chosen voice actually matches the avatar gender
   if (ttsVoice) {
     const wantRe   = avatarGender === 'female' ? FEMALE_RE : MALE_RE;
     const rejectRe = avatarGender === 'female' ? MALE_RE   : FEMALE_RE;
-    if (wantRe.test(ttsVoice.name))        ttsGenderMatch = true;
-    else if (rejectRe.test(ttsVoice.name)) ttsGenderMatch = false;  // wrong gender voice
-    else                                   ttsGenderMatch = true;    // neutral — assume ok
+    ttsGenderMatch = wantRe.test(ttsVoice.name) || !rejectRe.test(ttsVoice.name);
   }
-  console.log('[TTS] voice:', ttsVoice?.name, '| gender match:', ttsGenderMatch);
+  console.log('[TTS]', ttsVoice?.name, '| match:', ttsGenderMatch);
 }
 
 function initTTS(lang, gender) {
-  language     = lang;
-  avatarGender = gender;
-  ttsVoice     = null;
-  if (voicesReady) {
-    applyVoiceSelection();   // use whatever is in the dropdown
-  }
+  language = lang; avatarGender = gender; ttsVoice = null;
+  if (voicesReady) applyVoiceSelection();
 }
 
-// Remove emoji and symbols before speaking — TTS reads them as "grinning face" etc.
+// Remove emoji/symbols so TTS doesn't read "grinning face" etc.
 function stripForTTS(text) {
   return text
-    .replace(/\p{Emoji_Presentation}/gu, '')   // emoji glyphs
-    .replace(/[\u{FE00}-\u{FE0F}]/gu, '')      // variation selectors
-    .replace(/\u{200D}/gu, '')                  // zero-width joiner
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/\p{Emoji_Presentation}/gu, '')
+    .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
+    .replace(/\u{200D}/gu, '')
+    .replace(/\s+/g, ' ').trim();
 }
 
 function speak(text) {
   if (!text) return;
   text = stripForTTS(text);
   if (!text) return;
-
   const doSpeak = () => {
     if (!ttsVoice) applyVoiceSelection();
     ttsQueue.push(text);
     if (!ttsBusy) drainTTS();
   };
-
-  if (voicesReady) {
-    doSpeak();
-  } else {
-    window.speechSynthesis.onvoiceschanged = () => {
-      voicesReady = true;
-      populateVoiceDropdown();
-      doSpeak();
-    };
-  }
+  if (voicesReady) doSpeak();
+  else window.speechSynthesis.onvoiceschanged = () => { voicesReady = true; populateVoiceDropdown(); doSpeak(); };
 }
 
 function stopSpeaking() {
   window.speechSynthesis.cancel();
-  ttsQueue  = [];
-  ttsBusy   = false;
+  ttsQueue = []; ttsBusy = false;
   document.getElementById('stopBtn').style.display = 'none';
+  setAvatarSpeaking(false);
 }
 
 function drainTTS() {
   if (!ttsQueue.length) {
     ttsBusy = false;
     document.getElementById('stopBtn').style.display = 'none';
+    setAvatarSpeaking(false);
     return;
   }
   ttsBusy = true;
   document.getElementById('stopBtn').style.display = 'block';
+  setAvatarSpeaking(true);
   const text = ttsQueue.shift();
 
-  // Chrome bug workaround: brief timeout after cancel() prevents stuck synthesis
   setTimeout(() => {
     const utt = new SpeechSynthesisUtterance(text);
     if (ttsVoice) utt.voice = ttsVoice;
-    utt.lang = language === 'he' ? 'he-IL' : 'en-US';
-    utt.rate = 0.92;
-    // If no matching-gender voice exists, shift pitch to approximate the right gender:
-    // female avatar with male voice → higher pitch; male avatar with female voice → lower
-    if (!ttsGenderMatch) {
-      utt.pitch = avatarGender === 'female' ? 1.7 : 0.6;
-    } else {
-      utt.pitch = avatarGender === 'female' ? 1.1 : 0.9;
-    }
-    utt.onend   = drainTTS;
-    utt.onerror = drainTTS;
+    utt.lang  = language === 'he' ? 'he-IL' : 'en-US';
+    utt.rate  = 0.92;
+    utt.pitch = ttsGenderMatch
+      ? (avatarGender === 'female' ? 1.1 : 0.9)
+      : (avatarGender === 'female' ? 1.7 : 0.55);   // pitch-shift when no matching voice
+    utt.onend = utt.onerror = drainTTS;
     window.speechSynthesis.speak(utt);
   }, 50);
 }
 
-// Chrome TTS pause bug: synthesis can freeze mid-sentence; resume it every 10s
-setInterval(() => {
-  if (ttsBusy && window.speechSynthesis.paused) {
-    window.speechSynthesis.resume();
-  }
-}, 10000);
+// Chrome TTS pause bug workaround
+setInterval(() => { if (ttsBusy && window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 8000);
 
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 //  STT — Web Speech Recognition
-// ════════════════════════════════════════════════════════
-function toggleMic() {
-  if (listening) {
-    stopListening();
-  } else {
-    startListening();
-  }
-}
+// ══════════════════════════════════════════════════════
+function toggleMic() { listening ? stopListening() : startListening(); }
 
 function startListening() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    setStatus('Speech recognition is not supported in this browser.');
-    return;
-  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { setStatus('Speech recognition not supported in this browser.'); return; }
 
-  // Stop TTS while user speaks
-  window.speechSynthesis.cancel();
-  ttsBusy = false; ttsQueue = [];
+  stopSpeaking();   // stop avatar before listening
 
-  recognition = new SpeechRecognition();
-  recognition.lang        = language === 'he' ? 'he-IL' : 'en-US';
+  recognition = new SR();
+  recognition.lang           = language === 'he' ? 'he-IL' : 'en-US';
   recognition.interimResults = true;
-  recognition.continuous  = false;
+  recognition.continuous     = false;
+  finalTranscript            = '';
 
   recognition.onstart = () => {
     listening = true;
     document.getElementById('micBtn').classList.add('listening');
-    document.getElementById('micLabel').textContent = 'Listening…';
+    document.getElementById('micLabel').textContent = t('listening');
   };
 
-  finalTranscript = '';   // reset before new session
-
-  recognition.onresult = (e) => {
+  recognition.onresult = e => {
     let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) {
-        finalTranscript += t;
-      } else {
-        interim += t;
-      }
+      const tx = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalTranscript += tx;
+      else interim += tx;
     }
-    document.getElementById('micLabel').textContent = finalTranscript + interim || 'Listening…';
+    document.getElementById('micLabel').textContent = finalTranscript + interim || t('listening');
   };
 
   recognition.onend = () => {
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('micLabel').textContent = 'Tap the microphone to speak';
-
+    document.getElementById('micLabel').textContent = t('micLabel');
     const text = finalTranscript.trim();
     finalTranscript = '';
-
-    if (text) {
-      sendMessage(text);
-    } else {
-      setStatus('No speech detected. Try again.');
-    }
+    if (text) sendMessage(text);
+    else setStatus(t('noSpeech'));
   };
 
-  recognition.onerror = (e) => {
+  recognition.onerror = e => {
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('micLabel').textContent = 'Tap the microphone to speak';
-    setStatus(`Microphone error: ${e.error}`);
+    document.getElementById('micLabel').textContent = t('micLabel');
+    setStatus(t('micLabel'));
   };
 
   recognition.start();
 }
 
-function stopListening() {
-  if (recognition) recognition.stop();
-}
+function stopListening() { if (recognition) recognition.stop(); }
 
-// ════════════════════════════════════════════════════════
-//  Send message to backend
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  Send message
+// ══════════════════════════════════════════════════════
 async function sendMessage(text) {
   addBubble('user', text);
-  setStatus('Thinking…');
-
+  setStatus(t('thinking'));
   try {
     const res  = await fetch(`/conversations/${conversationId}/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text}),
     });
     const data = await res.json();
-
-    if (!res.ok) {
-      setStatus(data.detail || 'Error.');
-      return;
-    }
-
+    if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
     addBubble('avatar', data.text);
     speak(data.text);
-    setStatus('Tap the microphone to speak.');
-  } catch (e) {
-    setStatus('Could not reach server.');
-  }
+    setStatus(t('micLabel'));
+  } catch(e) { setStatus(t('serverError')); }
 }
 
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 //  Action buttons
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 async function suggestTopics() {
   stopSpeaking();
   await sendMessage('__CHANGE_TOPIC__');
@@ -791,10 +804,9 @@ async function suggestTopics() {
 
 async function endConversation() {
   await sendMessage('__END__');
-  setStatus('Goodbye! You can close this tab or go back.');
+  setStatus(t('micLabel'));
   document.getElementById('micBtn').disabled = true;
   document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = true);
-
   setTimeout(() => {
     document.getElementById('micBtn').disabled = false;
     document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = false);
@@ -802,18 +814,17 @@ async function endConversation() {
   }, 6000);
 }
 
-// ════════════════════════════════════════════════════════
-//  Enter key on name field
-// ════════════════════════════════════════════════════════
-document.getElementById('nameInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doIdentify();
-});
+// ══════════════════════════════════════════════════════
+//  Init
+// ══════════════════════════════════════════════════════
+document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') doIdentify(); });
 
-// Load voices as early as possible and populate the dropdown
 if (window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = loadVoices;
   loadVoices();
 }
+
+applyUI();   // apply default English labels on load
 </script>
 </body>
 </html>
