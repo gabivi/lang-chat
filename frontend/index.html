@@ -313,16 +313,18 @@
 // ════════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════════
-let userId         = null;
-let userName       = '';
-let conversationId = null;
-let language       = 'en';
-let avatarGender   = 'female';
-let recognition    = null;
-let ttsVoice       = null;
-let listening      = false;
-let ttsQueue       = [];
-let ttsBusy        = false;
+let userId          = null;
+let userName        = '';
+let conversationId  = null;
+let language        = 'en';
+let avatarGender    = 'female';
+let recognition     = null;
+let ttsVoice        = null;
+let listening       = false;
+let ttsQueue        = [];
+let ttsBusy         = false;
+let finalTranscript = '';   // captures speech during recognition
+let voicesReady     = false;
 
 // ════════════════════════════════════════════════════════
 //  Helpers
@@ -494,31 +496,43 @@ async function startConversation() {
 // ════════════════════════════════════════════════════════
 //  TTS — Web Speech Synthesis
 // ════════════════════════════════════════════════════════
-function initTTS(lang) {
-  ttsVoice = null;
+function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
-  pickVoice(voices, lang);
-  // Chrome loads voices asynchronously
-  if (!ttsVoice && window.speechSynthesis.onvoiceschanged !== undefined) {
-    window.speechSynthesis.onvoiceschanged = () => {
-      const v2 = window.speechSynthesis.getVoices();
-      pickVoice(v2, lang);
-    };
+  if (voices.length > 0) {
+    voicesReady = true;
+    pickVoice(voices, language);
   }
 }
 
 function pickVoice(voices, lang) {
   const code = lang === 'he' ? 'he' : 'en';
-  // Prefer a natural voice if available
   ttsVoice = voices.find(v => v.lang.startsWith(code) && v.localService) ||
              voices.find(v => v.lang.startsWith(code)) ||
-             null;
+             voices[0] || null;
 }
 
+function initTTS(lang) {
+  language = lang;   // ensure global is in sync
+  ttsVoice = null;
+  loadVoices();
+}
+
+// speak() — waits for voices if not ready yet, then queues text
 function speak(text) {
   if (!text) return;
-  ttsQueue.push(text);
-  if (!ttsBusy) drainTTS();
+  if (voicesReady) {
+    ttsQueue.push(text);
+    if (!ttsBusy) drainTTS();
+  } else {
+    // Voices not loaded yet — wait, then speak
+    const prev = window.speechSynthesis.onvoiceschanged;
+    window.speechSynthesis.onvoiceschanged = () => {
+      loadVoices();
+      if (prev) prev();
+      ttsQueue.push(text);
+      if (!ttsBusy) drainTTS();
+    };
+  }
 }
 
 function drainTTS() {
@@ -530,7 +544,7 @@ function drainTTS() {
   utt.lang  = language === 'he' ? 'he-IL' : 'en-US';
   utt.rate  = 0.92;
   utt.pitch = 1.05;
-  utt.onend = drainTTS;
+  utt.onend   = drainTTS;
   utt.onerror = drainTTS;
   window.speechSynthesis.speak(utt);
 }
@@ -568,9 +582,19 @@ function startListening() {
     document.getElementById('micLabel').textContent = 'Listening…';
   };
 
+  finalTranscript = '';   // reset before new session
+
   recognition.onresult = (e) => {
-    const interim = Array.from(e.results).map(r => r[0].transcript).join('');
-    document.getElementById('micLabel').textContent = interim;
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finalTranscript += t;
+      } else {
+        interim += t;
+      }
+    }
+    document.getElementById('micLabel').textContent = finalTranscript + interim || 'Listening…';
   };
 
   recognition.onend = () => {
@@ -578,13 +602,11 @@ function startListening() {
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micLabel').textContent = 'Tap the microphone to speak';
 
-    const finalText = Array.from(recognition.results || [])
-      .filter(r => r.isFinal)
-      .map(r => r[0].transcript)
-      .join('');
+    const text = finalTranscript.trim();
+    finalTranscript = '';
 
-    if (finalText.trim()) {
-      sendMessage(finalText.trim());
+    if (text) {
+      sendMessage(text);
     } else {
       setStatus('No speech detected. Try again.');
     }
@@ -659,9 +681,10 @@ document.getElementById('nameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') doIdentify();
 });
 
-// Pre-load voices
-if (typeof window !== 'undefined' && window.speechSynthesis) {
-  window.speechSynthesis.getVoices();
+// Pre-load voices as early as possible
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();   // already available in Firefox; triggers onvoiceschanged in Chrome
 }
 </script>
 </body>
