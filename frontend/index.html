@@ -309,7 +309,7 @@
 
     <div class="action-btns">
       <button class="btn btn-outline-primary" onclick="suggestTopics()">
-        &#128172; Suggest topics
+        &#128172; Skip &amp; suggest topics
       </button>
       <button class="btn btn-outline-danger" onclick="endConversation()">
         &#9723; End chat
@@ -526,8 +526,10 @@ async function startConversation() {
 
 // Regex patterns that identify voice gender from the voice name.
 // \bmale\b uses word-boundary so it NEVER matches inside "female".
-const FEMALE_RE = /female|\b(samantha|karen|moira|tessa|fiona|victoria|zira|hazel|eva|susan|helena|anna|carmit|amelie|alice|kate|serena|veena|aria|jenny|clara|ava|emma|ivy|joanna|kendra|kimberly|salli|nicole|lotte|marlene|carla|bianca|celine|lea|penelope|lucia|naja|mia|liv|astrid)\b/i;
-const MALE_RE   = /\bmale\b|\b(david|alex|fred|lee|tom|jorge|luca|daniel|mark|james|aaron|arthur|rishi|oliver|guy|reed|roger|eric|brian|matthew|joey|andrew|hans|mathieu|giorgio|filiz|takumi|enrique|miguel|ricardo|geraint|russel|justin|kevin|stephen)\b/i;
+// Hebrew voices: Microsoft Asaf (male), Microsoft Haila / Tamar / Yonit (female)
+// \bmale\b word-boundary never matches inside "female"
+const FEMALE_RE = /female|\b(samantha|karen|moira|tessa|fiona|victoria|zira|hazel|eva|susan|helena|anna|carmit|amelie|alice|kate|serena|veena|aria|jenny|clara|ava|emma|ivy|joanna|kendra|kimberly|salli|nicole|lotte|marlene|carla|bianca|celine|lea|penelope|lucia|naja|mia|liv|astrid|haila|tamar|yonit)\b/i;
+const MALE_RE   = /\bmale\b|\b(david|alex|fred|lee|tom|jorge|luca|daniel|mark|james|aaron|arthur|rishi|oliver|guy|reed|roger|eric|brian|matthew|joey|andrew|hans|mathieu|giorgio|filiz|takumi|enrique|miguel|ricardo|geraint|russel|justin|kevin|stephen|asaf)\b/i;
 
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
