@@ -503,11 +503,13 @@ async function startConversation() {
 // ════════════════════════════════════════════════════════
 
 // Voice name hints per gender (covers Windows, macOS, Chrome online voices)
+// IMPORTANT: only include names that actually indicate gender
 const FEMALE_HINTS = ['female','samantha','karen','moira','tessa','fiona','victoria',
                       'zira','eva','susan','helena','anna','carmit','amelie','alice',
-                      'google uk english female','google us english'];
+                      'hazel','kate','serena','veena','google uk english female'];
 const MALE_HINTS   = ['male','daniel','alex','fred','lee','tom','jorge','luca',
-                      'google uk english male','david','mark','james'];
+                      'google uk english male','david','mark','james','aaron','arthur',
+                      'rishi','oliver'];
 
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
@@ -536,7 +538,19 @@ function initTTS(lang) {
   loadVoices();
 }
 
+// Remove emoji and symbols before speaking — TTS reads them as "grinning face" etc.
+function stripForTTS(text) {
+  return text
+    .replace(/\p{Emoji_Presentation}/gu, '')   // emoji glyphs
+    .replace(/[\u{FE00}-\u{FE0F}]/gu, '')      // variation selectors
+    .replace(/\u{200D}/gu, '')                  // zero-width joiner
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function speak(text) {
+  if (!text) return;
+  text = stripForTTS(text);
   if (!text) return;
   if (voicesReady) {
     ttsQueue.push(text);
