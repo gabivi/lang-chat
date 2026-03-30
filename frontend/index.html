@@ -295,6 +295,11 @@
 
     <div id="micLabel">Tap the microphone to speak</div>
     <button id="micBtn" onclick="toggleMic()">&#127908;</button>
+    <button id="stopBtn" onclick="stopSpeaking()" title="Stop speaking"
+            style="display:none; margin:.3rem auto .1rem; background:#e05a5a; color:#fff;
+                   border:none; border-radius:10px; padding:.35rem 1.2rem; font-size:.95rem; cursor:pointer;">
+      &#9646;&#9646; Stop
+    </button>
     <div id="statusBar">&nbsp;</div>
 
     <div class="action-btns">
@@ -496,6 +501,14 @@ async function startConversation() {
 // ════════════════════════════════════════════════════════
 //  TTS — Web Speech Synthesis
 // ════════════════════════════════════════════════════════
+
+// Voice name hints per gender (covers Windows, macOS, Chrome online voices)
+const FEMALE_HINTS = ['female','samantha','karen','moira','tessa','fiona','victoria',
+                      'zira','eva','susan','helena','anna','carmit','amelie','alice',
+                      'google uk english female','google us english'];
+const MALE_HINTS   = ['male','daniel','alex','fred','lee','tom','jorge','luca',
+                      'google uk english male','david','mark','james'];
+
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
   if (voices.length > 0) {
@@ -505,26 +518,30 @@ function loadVoices() {
 }
 
 function pickVoice(voices, lang) {
-  const code = lang === 'he' ? 'he' : 'en';
-  ttsVoice = voices.find(v => v.lang.startsWith(code) && v.localService) ||
-             voices.find(v => v.lang.startsWith(code)) ||
-             voices[0] || null;
+  const code  = lang === 'he' ? 'he' : 'en';
+  const hints = avatarGender === 'female' ? FEMALE_HINTS : MALE_HINTS;
+  const pool  = voices.filter(v => v.lang.startsWith(code));
+
+  // 1. Exact gender match in pool
+  ttsVoice = pool.find(v => hints.some(h => v.name.toLowerCase().includes(h)));
+  // 2. Any voice for the language
+  if (!ttsVoice) ttsVoice = pool[0] || null;
+  // 3. Absolute fallback
+  if (!ttsVoice) ttsVoice = voices[0] || null;
 }
 
 function initTTS(lang) {
-  language = lang;   // ensure global is in sync
+  language = lang;
   ttsVoice = null;
   loadVoices();
 }
 
-// speak() — waits for voices if not ready yet, then queues text
 function speak(text) {
   if (!text) return;
   if (voicesReady) {
     ttsQueue.push(text);
     if (!ttsBusy) drainTTS();
   } else {
-    // Voices not loaded yet — wait, then speak
     const prev = window.speechSynthesis.onvoiceschanged;
     window.speechSynthesis.onvoiceschanged = () => {
       loadVoices();
@@ -535,19 +552,42 @@ function speak(text) {
   }
 }
 
-function drainTTS() {
-  if (!ttsQueue.length) { ttsBusy = false; return; }
-  ttsBusy = true;
-  const text = ttsQueue.shift();
-  const utt  = new SpeechSynthesisUtterance(text);
-  if (ttsVoice) utt.voice = ttsVoice;
-  utt.lang  = language === 'he' ? 'he-IL' : 'en-US';
-  utt.rate  = 0.92;
-  utt.pitch = 1.05;
-  utt.onend   = drainTTS;
-  utt.onerror = drainTTS;
-  window.speechSynthesis.speak(utt);
+function stopSpeaking() {
+  window.speechSynthesis.cancel();
+  ttsQueue  = [];
+  ttsBusy   = false;
+  document.getElementById('stopBtn').style.display = 'none';
 }
+
+function drainTTS() {
+  if (!ttsQueue.length) {
+    ttsBusy = false;
+    document.getElementById('stopBtn').style.display = 'none';
+    return;
+  }
+  ttsBusy = true;
+  document.getElementById('stopBtn').style.display = 'block';
+  const text = ttsQueue.shift();
+
+  // Chrome bug workaround: brief timeout after cancel() prevents stuck synthesis
+  setTimeout(() => {
+    const utt = new SpeechSynthesisUtterance(text);
+    if (ttsVoice) utt.voice = ttsVoice;
+    utt.lang  = language === 'he' ? 'he-IL' : 'en-US';
+    utt.rate  = 0.92;
+    utt.pitch = 1.05;
+    utt.onend   = drainTTS;
+    utt.onerror = drainTTS;
+    window.speechSynthesis.speak(utt);
+  }, 50);
+}
+
+// Chrome TTS pause bug: synthesis can freeze mid-sentence; resume it every 10s
+setInterval(() => {
+  if (ttsBusy && window.speechSynthesis.paused) {
+    window.speechSynthesis.resume();
+  }
+}, 10000);
 
 // ════════════════════════════════════════════════════════
 //  STT — Web Speech Recognition
