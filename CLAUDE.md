@@ -63,7 +63,7 @@ Based on everything in this conversation, here is the full list of requirements 
     - No arguments, debates, politics, violence, religion disputes, or adult content — avatar politely redirects
     - Max 4 sentences per response, no emojis, simple language
     - if mic is open and nothing recording for 15 seconds, accept input given so far
-    - allow getting weather information - per desired location
+    - allow getting weather information and forecast - per desired location
 
     ---
     User Gender in Conversation

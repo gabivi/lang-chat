@@ -11,7 +11,7 @@ load_dotenv()
 
 WEATHER_TOOL = {
     "name": "get_weather",
-    "description": "Get current weather for a given location. Use this whenever the user asks about the weather.",
+    "description": "Get current weather and forecast for a given location. Use this whenever the user asks about the weather or forecast.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -26,7 +26,7 @@ WEATHER_TOOL = {
 
 
 def fetch_weather(location: str) -> str:
-    """Fetch weather data from wttr.in (free, no API key required)."""
+    """Fetch current weather and 3-day forecast from wttr.in (free, no API key required)."""
     try:
         encoded = urllib.parse.quote(location)
         url = f"https://wttr.in/{encoded}?format=j1"
@@ -38,11 +38,23 @@ def fetch_weather(location: str) -> str:
         feels_c = current["FeelsLikeC"]
         desc = current["weatherDesc"][0]["value"]
         humidity = current["humidity"]
-        return (
+        result = (
             f"Weather in {location}: {desc}, {temp_c}°C "
             f"(feels like {feels_c}°C), humidity {humidity}%."
         )
-    except Exception as e:
+        # Add forecast for the next 2 days
+        forecast_days = data.get("weather", [])
+        if len(forecast_days) >= 2:
+            forecasts = []
+            for day in forecast_days[:2]:
+                date = day.get("date", "")
+                max_c = day.get("maxtempC", "")
+                min_c = day.get("mintempC", "")
+                day_desc = day.get("hourly", [{}])[4].get("weatherDesc", [{}])[0].get("value", "")
+                forecasts.append(f"{date}: {day_desc}, {min_c}–{max_c}°C")
+            result += " Forecast: " + "; ".join(forecasts) + "."
+        return result
+    except Exception:
         return f"Sorry, I couldn't retrieve the weather for {location} right now."
 
 
