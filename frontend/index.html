@@ -822,6 +822,18 @@ setInterval(() => { if (ttsBusy && window.speechSynthesis.paused) window.speechS
 // ════════════════════════════════════════════════════
 function toggleMic() { listening ? stopListening() : startListening(); }
 
+let silenceTimer = null;
+const SILENCE_TIMEOUT_MS = 15000;
+
+function resetSilenceTimer() {
+  if (silenceTimer) clearTimeout(silenceTimer);
+  silenceTimer = setTimeout(() => { if (listening) recognition.stop(); }, SILENCE_TIMEOUT_MS);
+}
+
+function clearSilenceTimer() {
+  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+}
+
 function startListening() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { setStatus('Speech recognition not supported.'); return; }
@@ -835,6 +847,7 @@ function startListening() {
     listening = true;
     document.getElementById('micBtn').classList.add('listening');
     document.getElementById('micLabel').textContent = t('listening');
+    resetSilenceTimer();
   };
   recognition.onresult = e => {
     let interim = '';
@@ -843,8 +856,10 @@ function startListening() {
       if (e.results[i].isFinal) finalTranscript += tx; else interim += tx;
     }
     document.getElementById('micLabel').textContent = finalTranscript + interim || t('listening');
+    resetSilenceTimer();
   };
   recognition.onend = () => {
+    clearSilenceTimer();
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micLabel').textContent = t('micLabel');
@@ -852,6 +867,7 @@ function startListening() {
     if (text) sendMessage(text); else setStatus(t('noSpeech'));
   };
   recognition.onerror = () => {
+    clearSilenceTimer();
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micLabel').textContent = t('micLabel');

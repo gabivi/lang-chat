@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pathlib import Path
@@ -9,6 +9,7 @@ from models.user import User
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 FRONTEND = Path(__file__).parent.parent / "frontend"
+ADMIN_PASSWORD = "Gabi1234"
 
 
 @router.get("/", include_in_schema=False)
@@ -17,7 +18,12 @@ def admin_page():
 
 
 @router.get("/conversations")
-def all_conversations(db: Session = Depends(get_db)):
+def all_conversations(
+    db: Session = Depends(get_db),
+    x_admin_password: str = Header(default=None),
+):
+    if x_admin_password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     """Return all conversations with full message content."""
     convs = (
         db.query(Conversation)

@@ -16,6 +16,7 @@ class NewConversationRequest(BaseModel):
     user_id:       int
     language:      str = "en"
     avatar_gender: str = "female"
+    user_gender:   str = "unknown"   # "male" | "female" | "unknown"
 
 
 @router.post("/conversations")
@@ -33,6 +34,12 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
     avatar_name = get_avatar_name(payload.language, payload.avatar_gender)
     title_date  = datetime.now(timezone.utc).strftime("%d/%m/%Y")
 
+    # Check if this is the user's very first conversation
+    existing_count = db.query(Conversation).filter(
+        Conversation.user_id == user.id
+    ).count()
+    is_first_ever = existing_count == 0
+
     conv = Conversation(
         user_id       = user.id,
         language      = payload.language,
@@ -45,11 +52,16 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
     db.refresh(conv)
 
     # Generate opening greeting from the avatar
+    start_msg = f"__START__ My name is {user.name}."
+    if is_first_ever:
+        start_msg += " FIRST_TIME"
+
     greeting = chat(
-        user_name = user.name,
-        language  = payload.language,
-        gender    = payload.avatar_gender,
-        history   = [{"role": "user", "content": f"__START__ My name is {user.name}."}],
+        user_name   = user.name,
+        language    = payload.language,
+        gender      = payload.avatar_gender,
+        user_gender = payload.user_gender,
+        history     = [{"role": "user", "content": start_msg}],
     )
 
     msg = Message(conversation_id=conv.id, speaker="avatar", text=greeting)
@@ -121,10 +133,11 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
     # Get AI response
     try:
         response_text = chat(
-            user_name = user.name,
-            language  = conv.language,
-            gender    = conv.avatar_gender,
-            history   = history,
+            user_name   = user.name,
+            language    = conv.language,
+            gender      = conv.avatar_gender,
+            user_gender = getattr(user, "gender", "unknown"),
+            history     = history,
         )
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
