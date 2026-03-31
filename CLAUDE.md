@@ -22,10 +22,10 @@ Based on everything in this conversation, here is the full list of requirements 
     ---
     Language & Interface
 
-    - Interface language chooser on the welcome screen (Hebrew default, English option)
+    - Interface language chooser on the welcome screen (Hebrew default, English option), show small flag on button
     - All buttons, labels, and prompts display in the chosen language
     - Hebrew UI uses correct gendered forms based on the user's gender (e.g., לחתה → י/לחתה or ילחתה)
-    - RTL layout for Hebrew, LTR for English
+       -  RTL layout for Hebrew, LTR for English
 
     ---
     Avatar Setup
@@ -33,10 +33,10 @@ Based on everything in this conversation, here is the full list of requirements 
     - User chooses companion gender (female/male) on setup screen
     - Language of conversation chosen on setup screen (Hebrew/English)
     - Avatar has a realistic animated SVG face (not an emoji), with blinking both eyes (simultaneously), head movement, mouth animation while speaking
-    - Female avatar: long afro hair, eyelashes, softer features, light face skin, perky and lively but not too much
+    - Female avatar: long afro hair, eyelashes, softer features, light face skin, energetic and lively voice and attitude but not too much
     - Male avatar: shorter hair, stubble , light face skin , energetic
     - Hebrew avatars have semi-light skin tone; English avatars have lighter skin tone
-    - Avatar names: Sophie (English female), James (English male), רחל (Hebrew female), דוד (Hebrew male)
+    - Avatar names: Sophie (English female), James (English male), עדי (Hebrew female), רועי (Hebrew male)
 
     ---
     Voice (TTS/STT)
@@ -71,7 +71,7 @@ Based on everything in this conversation, here is the full list of requirements 
     - if mic is open and nothing recording for 15 seconds, accept input given so far
     - allow getting weather information and forecast - per desired location
     - avatar will not ask and person should not give any personal data such as identification details , financial data and so on.
-    - when asked for tv/movie/theatre/books recommendatons - avatar will ask for specific areas , anyway - they must be with their correct names (if translated) , and available in Israel
+    - when asked for tv/movie/theatre/books recommendatons - avatar will ask for specific areas , anyway - they must be with their correct names (if translated) , and available in Israel and most important - book and writer should match
 
     ---
     User Gender in Conversation
@@ -95,10 +95,13 @@ Based on everything in this conversation, here is the full list of requirements 
     - Page at /admin showing all conversations
     - Displays: user name, user gender, avatar name, language, start time, last active time, message count
     - Messages shown as chat bubbles with timestamps (text only, no voice)
+    - enable collapse and un-collapse the conversation , so only metadata is shown (only when opening a line)
     - Filter by user name (live search), language, avatar gender
+    - allow sorting by filtered fields
     - Export to CSV (UTF-8 BOM for Hebrew Excel support)
     - admin page protected by password "Gabi1234" , save password in browser
-    - converstion content should be kept in DB, and not deleted on deploying a new version	
+    - conversation content should be kept in DB, and not deleted on deploying a new version
+    - 	
 
     ---
     Deployment

@@ -41,7 +41,11 @@
     .conv-header {
       background: #eef1fb; padding: .75rem 1.2rem;
       display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; align-items: center;
+      cursor: pointer; user-select: none;
     }
+    .conv-header:hover { background: #dde4f5; }
+    .collapse-arrow { margin-left: auto; font-size: .85rem; color: #888; flex-shrink: 0; }
+    .messages.collapsed { display: none; }
     .conv-header .user-name { font-weight: 700; font-size: 1.05rem; color: #3a5fcd; }
     .conv-header .meta { font-size: .82rem; color: #666; }
     .conv-header .tag {
@@ -120,6 +124,18 @@
       <option value="male">Male</option>
     </select>
   </label>
+  <label>Sort by:
+    <select id="sortBy" onchange="render()">
+      <option value="date_desc">Date (newest)</option>
+      <option value="date_asc">Date (oldest)</option>
+      <option value="name_asc">User name A–Z</option>
+      <option value="name_desc">User name Z–A</option>
+      <option value="msgs_desc">Most messages</option>
+      <option value="msgs_asc">Fewest messages</option>
+      <option value="lang_asc">Language</option>
+      <option value="gender_asc">Avatar gender</option>
+    </select>
+  </label>
   <button id="exportBtn" onclick="exportCSV()">Export CSV</button>
 </div>
 
@@ -163,16 +179,43 @@ async function load() {
   }
 }
 
+function sortData(arr) {
+  const s = document.getElementById('sortBy').value;
+  const copy = [...arr];
+  copy.sort((a, b) => {
+    switch (s) {
+      case 'date_desc':  return b.created_at.localeCompare(a.created_at);
+      case 'date_asc':   return a.created_at.localeCompare(b.created_at);
+      case 'name_asc':   return a.user_name.localeCompare(b.user_name);
+      case 'name_desc':  return b.user_name.localeCompare(a.user_name);
+      case 'msgs_desc':  return b.message_count - a.message_count;
+      case 'msgs_asc':   return a.message_count - b.message_count;
+      case 'lang_asc':   return a.language.localeCompare(b.language);
+      case 'gender_asc': return a.avatar_gender.localeCompare(b.avatar_gender);
+      default:           return 0;
+    }
+  });
+  return copy;
+}
+
+function toggleMessages(cardId) {
+  const el = document.getElementById('msgs-' + cardId);
+  const arrow = document.getElementById('arrow-' + cardId);
+  if (!el) return;
+  const collapsed = el.classList.toggle('collapsed');
+  arrow.textContent = collapsed ? '▶ Show' : '▼ Hide';
+}
+
 function render() {
   const search = document.getElementById('searchUser').value.trim().toLowerCase();
   const lang   = document.getElementById('filterLang').value;
   const gender = document.getElementById('filterGender').value;
 
-  const filtered = allData.filter(c =>
+  const filtered = sortData(allData.filter(c =>
     (!search || c.user_name.toLowerCase().includes(search)) &&
     (!lang   || c.language === lang) &&
     (!gender || c.avatar_gender === gender)
-  );
+  ));
 
   document.getElementById('summary').textContent =
     `${filtered.length} conversation${filtered.length !== 1 ? 's' : ''} / ${allData.length} total`;
@@ -184,6 +227,7 @@ function render() {
   }
 
   list.innerHTML = filtered.map(conv => {
+    const cid       = conv.conversation_id;
     const langTag   = `<span class="tag ${conv.language}">${conv.language === 'he' ? '🇮🇱 Hebrew' : '🇬🇧 English'}</span>`;
     const genderTag = `<span class="tag">${conv.avatar_gender === 'female' ? '♀' : '♂'} ${conv.avatar_name}</span>`;
     const userGTag  = conv.user_gender !== 'unknown' ? `<span class="meta">(${conv.user_gender})</span>` : '';
@@ -207,15 +251,16 @@ function render() {
 
     return `
       <div class="conv-card">
-        <div class="conv-header">
+        <div class="conv-header" onclick="toggleMessages(${cid})">
           <span class="user-name">${escHtml(conv.user_name)}</span>
           ${userGTag}
           ${langTag} ${genderTag}
           <span class="meta">Started: ${conv.created_at}</span>
           <span class="meta">Last: ${conv.updated_at}</span>
           <span class="meta">${conv.message_count} messages</span>
+          <span class="collapse-arrow" id="arrow-${cid}">▶ Show</span>
         </div>
-        <div class="messages">${msgs}${noMsgs}</div>
+        <div class="messages collapsed" id="msgs-${cid}">${msgs}${noMsgs}</div>
       </div>`;
   }).join('');
 }
