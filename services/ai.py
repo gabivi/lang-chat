@@ -13,39 +13,52 @@ except Exception:
     _IL_TZ = timezone(timedelta(hours=2))
 
 
-# ── Israeli holidays (month, day) → (English name, Hebrew name) ───────────────
-_IL_HOLIDAYS = {
-    (9, 22): ("Rosh Hashana", "ראש השנה"),
-    (9, 23): ("Rosh Hashana", "ראש השנה"),
-    (10, 1): ("Yom Kippur", "יום כיפור"),
-    (10, 6): ("Sukkot", "סוכות"),
-    (10, 7): ("Sukkot", "סוכות"),
-    (10, 14): ("Simchat Torah", "שמחת תורה"),
-    (12, 14): ("Hanukkah", "חנוכה"),
-    (12, 15): ("Hanukkah", "חנוכה"),
-    (12, 16): ("Hanukkah", "חנוכה"),
-    (12, 17): ("Hanukkah", "חנוכה"),
-    (12, 18): ("Hanukkah", "חנוכה"),
-    (12, 19): ("Hanukkah", "חנוכה"),
-    (12, 20): ("Hanukkah", "חנוכה"),
-    (12, 21): ("Hanukkah", "חנוכה"),
-    (3, 13): ("Purim", "פורים"),
-    (3, 14): ("Shushan Purim", "שושן פורים"),
-    (4, 2): ("Pesach", "פסח"),
-    (4, 3): ("Pesach", "פסח"),
-    (4, 8): ("Pesach", "פסח"),
-    (4, 9): ("Pesach", "פסח"),
+# ── Hebrew holiday name mapping (pyluach → Hebrew) ────────────────────────────
+_HOL_HEB = {
+    "Rosh Hashana":   "ראש השנה",
+    "Yom Kippur":     "יום כיפור",
+    "Sukkos":         "סוכות",
+    "Simchas Torah":  "שמחת תורה",
+    "Chanukah":       "חנוכה",
+    "Tu B'Shvat":     'ט"ו בשבט',
+    "Purim":          "פורים",
+    "Shushan Purim":  "שושן פורים",
+    "Pesach":         "פסח",
+    "Pesach Sheni":   "פסח שני",
+    "Lag B'Omer":     'ל"ג בעומר',
+    "Shavuos":        "שבועות",
+    "Tisha B'Av":     "תשעה באב",
+    "Rosh Chodesh":   "ראש חודש",
+}
+
+# Israeli civil holidays (Gregorian month, day) → (English, Hebrew)
+_CIVIL_HOLIDAYS = {
     (4, 16): ("Yom HaShoah", "יום השואה"),
     (4, 22): ("Yom HaZikaron", "יום הזיכרון"),
     (4, 23): ("Yom HaAtzmaut", "יום העצמאות"),
-    (5, 14): ('Lag BaOmer', 'ל"ג בעומר'),
-    (5, 22): ("Shavuot", "שבועות"),
-    (5, 23): ("Shavuot", "שבועות"),
 }
 
 
+def _get_jewish_holiday(now: datetime):
+    """Return (english, hebrew) holiday name for today in Israel, or (None, None)."""
+    # Check civil Israeli holidays first
+    civil = _CIVIL_HOLIDAYS.get((now.month, now.day))
+    if civil:
+        return civil
+    # Use pyluach for dynamic Hebrew calendar holidays
+    try:
+        from pyluach import dates as hd, hebrewcal
+        today = hd.HebrewDate.today()
+        hol = hebrewcal.holiday(today, israel=True)
+        if hol:
+            return hol, _HOL_HEB.get(hol, hol)
+    except Exception:
+        pass
+    return None, None
+
+
 def _get_israel_context(language: str) -> str:
-    """Return a one-line context string about Israel's current time/day/holiday."""
+    """Return a context string about Israel's current time/day/Jewish holiday."""
     now = datetime.now(_IL_TZ)
     hour = now.hour
     weekday = now.weekday()  # 0=Mon … 4=Fri, 5=Sat, 6=Sun
@@ -63,21 +76,21 @@ def _get_israel_context(language: str) -> str:
     days_he = ["יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת", "יום ראשון"]
     is_weekend = weekday in (4, 5)  # Fri or Sat
 
-    holiday = _IL_HOLIDAYS.get((now.month, now.day))
+    hol_en, hol_he = _get_jewish_holiday(now)
 
     if language == "he":
         weekend = " (סוף שבוע)" if is_weekend else ""
-        hol = f" היום {holiday[1]}." if holiday else ""
+        hol = f" היום {hol_he}." if hol_he else ""
         return (
             f"\n\nהקשר נוכחי: עכשיו {tod_he} ב{days_he[weekday]}{weekend} בישראל.{hol} "
-            f"ברך/י את האדם בהתאם לשעה וליום."
+            f"ברך/י את האדם בהתאם לשעה, ליום ולחגים."
         )
     else:
         weekend = " (weekend in Israel)" if is_weekend else ""
-        hol = f" Today is {holiday[0]}." if holiday else ""
+        hol = f" Today is {hol_en}." if hol_en else ""
         return (
             f"\n\nCurrent context: It is {tod_en} on {days_en[weekday]}{weekend} in Israel.{hol} "
-            f"Greet and respond appropriately for this time and day."
+            f"Greet and respond appropriately for this time, day, and any Jewish/Israeli holidays."
         )
 
 load_dotenv()

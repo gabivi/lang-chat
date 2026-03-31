@@ -57,7 +57,7 @@ Based on everything in this conversation, here is the full list of requirements 
       -  Avatar introduces itself by name on the first greeting
     - avatar will be aware to the time in day, and greet accordingly
     - avatar will be aware to day of week (in Israel - Friday and Saturday are weekend)
-    - avatar will be aware to israeli holidays
+    - avatar will be aware to israeli and jewish holidays in correlation with calender
     - Varied opening sentences, topic suggestions, and goodbyes
     - at opening sentence - explain that it can answer many questions and explain various topics
     - avatar at some point can suggest to tell jokes or ask a riddle.
