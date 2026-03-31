@@ -135,6 +135,20 @@
 
     <button class="btn btn-primary btn-big" onclick="doIdentify()" data-i18n="continueBtn">Continue →</button>
     <div id="welcomeError" class="text-danger text-center mt-2" style="display:none;"></div>
+    <div class="text-center mt-3">
+      <button class="btn btn-link btn-sm text-muted" onclick="showAbout()" data-i18n="aboutBtn">ℹ️ About this app</button>
+    </div>
+  </div>
+</div>
+
+<!-- About modal -->
+<div id="aboutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;padding:1.8rem 1.6rem;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+    <h5 class="fw-bold mb-3" data-i18n="aboutTitle" style="color:var(--accent);">About Companion Chat</h5>
+    <p data-i18n="aboutText" style="font-size:1rem;line-height:1.6;"></p>
+    <div class="text-center mt-3">
+      <button class="btn btn-primary" onclick="hideAbout()" data-i18n="closeBtn">Close</button>
+    </div>
   </div>
 </div>
 
@@ -221,6 +235,10 @@ const T = {
     starting:'Starting…',
     pitchNote:'No female voice found — using pitch adjustment.',
     noVoiceWarning:'No Hebrew voice found on this device.',
+    aboutBtn:'ℹ️ About this app',
+    aboutTitle:'About Companion Chat',
+    aboutText:'Companion Chat is an AI-powered voice companion designed for elderly people who enjoy friendly conversation. Simply press the microphone and start talking — your companion will listen, respond, and suggest topics. The app is free, runs in Israel, and works in both Hebrew and English.',
+    closeBtn:'Close',
   },
   he: {
     appTitle:'שיחת חברותא', appSubtitle:'שיחה חברית, רק בשבילך',
@@ -240,6 +258,10 @@ const T = {
     starting:'מתחיל/ה…',
     pitchNote:'לא נמצא קול נשי — משתמש/ת בהתאמת גובה קול.',
     noVoiceWarning:'לא נמצא קול עברי במכשיר זה.',
+    aboutBtn:'ℹ️ אודות האפליקציה',
+    aboutTitle:'אודות שיחת חברותא',
+    aboutText:'שיחת חברותא היא מלווה שיחה קולי מבוסס בינה מלאכותית, מיועד לאנשים מבוגרים הנהנים משיחות חבריות. פשוט לחצו על המיקרופון והתחילו לדבר — המלווה יקשיב, יענה, ויציע נושאים לשיחה. האפליקציה חינמית, פועלת בישראל, ועובדת בעברית ובאנגלית.',
+    closeBtn:'סגור/י',
   }
 };
 // Resolve gendered Hebrew text: "התחל/י" → "התחל" (male) / "התחלי" (female)
@@ -274,6 +296,14 @@ function applyUI() {
     const v = (T[language]||T.en)[el.dataset.i18nPh];
     if (v) el.placeholder = genderizeHe(v);
   });
+}
+
+function showAbout() {
+  const modal = document.getElementById('aboutModal');
+  modal.style.display = 'flex';
+}
+function hideAbout() {
+  document.getElementById('aboutModal').style.display = 'none';
 }
 
 // ════════════════════════════════════════════════════

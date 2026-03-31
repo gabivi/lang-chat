@@ -8,6 +8,8 @@ Based on everything in this conversation, here is the full list of requirements 
     - Free TTS/STT via Web Speech API (no paid voice service)
     - AI conversation via Claude API (claude-sonnet-4-6)
     - Conversations saved to database
+    - about button on first screen will explain the purpose of the app 
+    - at the moment the app is running in Israel
 
     ---
     User Identification
@@ -53,6 +55,9 @@ Based on everything in this conversation, here is the full list of requirements 
 
     - 4 system prompts: English female (Sophie), English male (James), Hebrew female (לחר), Hebrew male (דוד)
       -  Avatar introduces itself by name on the first greeting
+    - avatar will be aware to the time in day, and greet accordingly
+    - avatar will be aware to day of week (in Israel - Friday and Saturday are weekend)
+    - avatar will be aware to israeli holidays
     - Varied opening sentences, topic suggestions, and goodbyes
     - at opening sentence - explain that it can answer many questions and explain various topics
     - avatar at some point can suggest to tell jokes or ask a riddle.
@@ -66,6 +71,7 @@ Based on everything in this conversation, here is the full list of requirements 
     - if mic is open and nothing recording for 15 seconds, accept input given so far
     - allow getting weather information and forecast - per desired location
     - avatar will not ask and person should not give any personal data such as identification details , financial data and so on.
+    - when asked for tv/movie/theatre/books recommendatons - avatar will ask for specific areas , anyway - they must be with their correct names (if translated) , and available in Israel
 
     ---
     User Gender in Conversation

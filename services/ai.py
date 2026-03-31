@@ -2,8 +2,83 @@ import os
 import json
 import urllib.request
 import urllib.parse
+from datetime import datetime, timezone, timedelta
 from anthropic import Anthropic
 from dotenv import load_dotenv
+
+try:
+    from zoneinfo import ZoneInfo
+    _IL_TZ = ZoneInfo("Asia/Jerusalem")
+except Exception:
+    _IL_TZ = timezone(timedelta(hours=2))
+
+
+# ── Israeli holidays (month, day) → (English name, Hebrew name) ───────────────
+_IL_HOLIDAYS = {
+    (9, 22): ("Rosh Hashana", "ראש השנה"),
+    (9, 23): ("Rosh Hashana", "ראש השנה"),
+    (10, 1): ("Yom Kippur", "יום כיפור"),
+    (10, 6): ("Sukkot", "סוכות"),
+    (10, 7): ("Sukkot", "סוכות"),
+    (10, 14): ("Simchat Torah", "שמחת תורה"),
+    (12, 14): ("Hanukkah", "חנוכה"),
+    (12, 15): ("Hanukkah", "חנוכה"),
+    (12, 16): ("Hanukkah", "חנוכה"),
+    (12, 17): ("Hanukkah", "חנוכה"),
+    (12, 18): ("Hanukkah", "חנוכה"),
+    (12, 19): ("Hanukkah", "חנוכה"),
+    (12, 20): ("Hanukkah", "חנוכה"),
+    (12, 21): ("Hanukkah", "חנוכה"),
+    (3, 13): ("Purim", "פורים"),
+    (3, 14): ("Shushan Purim", "שושן פורים"),
+    (4, 2): ("Pesach", "פסח"),
+    (4, 3): ("Pesach", "פסח"),
+    (4, 8): ("Pesach", "פסח"),
+    (4, 9): ("Pesach", "פסח"),
+    (4, 16): ("Yom HaShoah", "יום השואה"),
+    (4, 22): ("Yom HaZikaron", "יום הזיכרון"),
+    (4, 23): ("Yom HaAtzmaut", "יום העצמאות"),
+    (5, 14): ('Lag BaOmer', 'ל"ג בעומר'),
+    (5, 22): ("Shavuot", "שבועות"),
+    (5, 23): ("Shavuot", "שבועות"),
+}
+
+
+def _get_israel_context(language: str) -> str:
+    """Return a one-line context string about Israel's current time/day/holiday."""
+    now = datetime.now(_IL_TZ)
+    hour = now.hour
+    weekday = now.weekday()  # 0=Mon … 4=Fri, 5=Sat, 6=Sun
+
+    if 5 <= hour < 12:
+        tod_en, tod_he = "morning", "בוקר"
+    elif 12 <= hour < 17:
+        tod_en, tod_he = "afternoon", "צהריים"
+    elif 17 <= hour < 21:
+        tod_en, tod_he = "evening", "ערב"
+    else:
+        tod_en, tod_he = "night", "לילה"
+
+    days_en = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    days_he = ["יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת", "יום ראשון"]
+    is_weekend = weekday in (4, 5)  # Fri or Sat
+
+    holiday = _IL_HOLIDAYS.get((now.month, now.day))
+
+    if language == "he":
+        weekend = " (סוף שבוע)" if is_weekend else ""
+        hol = f" היום {holiday[1]}." if holiday else ""
+        return (
+            f"\n\nהקשר נוכחי: עכשיו {tod_he} ב{days_he[weekday]}{weekend} בישראל.{hol} "
+            f"ברך/י את האדם בהתאם לשעה וליום."
+        )
+    else:
+        weekend = " (weekend in Israel)" if is_weekend else ""
+        hol = f" Today is {holiday[0]}." if holiday else ""
+        return (
+            f"\n\nCurrent context: It is {tod_en} on {days_en[weekday]}{weekend} in Israel.{hol} "
+            f"Greet and respond appropriately for this time and day."
+        )
 
 load_dotenv()
 
@@ -128,6 +203,10 @@ Privacy:
   bank details, passwords, or any other sensitive private information.
 - If they offer such information, politely steer the conversation elsewhere.
 
+Recommendations (TV, films, theatre, books):
+- When asked for recommendations, first ask about their specific interests or preferred genre.
+- Only suggest titles that are available in Israel and use their correct translated names if applicable.
+
 CRITICAL: English only. Maximum 4 sentences. No emojis.""",
 
     ("en", "male"): """\
@@ -192,6 +271,10 @@ Privacy:
   bank details, passwords, or any other sensitive private information.
 - If they offer such information, politely steer the conversation elsewhere.
 
+Recommendations (TV, films, theatre, books):
+- When asked for recommendations, first ask about their specific interests or preferred genre.
+- Only suggest titles that are available in Israel and use their correct translated names if applicable.
+
 CRITICAL: English only. Maximum 4 sentences. No emojis.""",
 
     ("he", "female"): """\
@@ -252,6 +335,10 @@ CRITICAL: English only. Maximum 4 sentences. No emojis.""",
 - לעולם אל תבקשי מהאדם פרטים אישיים כגון מספר תעודת זהות, פרטי דרכון, מידע פיננסי,
   פרטי חשבון בנק, סיסמאות, או כל מידע רגיש אחר.
 - אם הם מציעים מידע כזה, הסיטי בעדינות את השיחה לנושא אחר.
+
+המלצות (טלוויזיה, סרטים, תיאטרון, ספרים):
+- כשמבקשים המלצות, שאלי קודם על תחומי העניין או הז'אנר המועדף.
+- הציעי רק יצירות הזמינות בישראל, בשמותיהן הנכונים בעברית.
 
 חשוב מאוד: עברית בלבד. לא יותר מ-4 משפטים. ללא אימוג'י.""",
 
@@ -314,6 +401,10 @@ CRITICAL: English only. Maximum 4 sentences. No emojis.""",
   פרטי חשבון בנק, סיסמאות, או כל מידע רגיש אחר.
 - אם הם מציעים מידע כזה, הסט בעדינות את השיחה לנושא אחר.
 
+המלצות (טלוויזיה, סרטים, תיאטרון, ספרים):
+- כשמבקשים המלצות, שאל קודם על תחומי העניין או הז'אנר המועדף.
+- הצע רק יצירות הזמינות בישראל, בשמותיהן הנכונים בעברית.
+
 חשוב מאוד: עברית בלבד. לא יותר מ-4 משפטים. ללא אימוג'י.""",
 }
 
@@ -345,6 +436,7 @@ def chat(user_name: str, language: str, gender: str, history: list[dict],
 
     system = get_system_prompt(language, gender)
     system = system.replace("using their name", f"calling them {user_name}")
+    system += _get_israel_context(language)
 
     # Inject user gender so the avatar uses correct grammar and pronouns
     if user_gender == "male":
