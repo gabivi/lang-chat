@@ -71,7 +71,9 @@ Based on everything in this conversation, here is the full list of requirements 
     - if mic is open and nothing recording for 15 seconds, accept input given so far
     - allow getting weather information and forecast - per desired location
     - avatar will not ask and person should not give any personal data such as identification details , financial data and so on.
-    - when asked for tv/movie/theatre/books recommendatons - avatar will ask for specific areas , anyway - they must be with their correct names (if translated) , and available in Israel and most important - book and writer should match
+    - when asked for tv/movie/theatre/books recommendatons - 
+	avatar will ask for specific areas , anyway - they must be with their correct names (if translated) , 
+	and available in Israel and most important - book and writer should match, on recommendations - double check the answer
 
     ---
     User Gender in Conversation

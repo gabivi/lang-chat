@@ -880,7 +880,7 @@ function startListening() {
   stopSpeaking();
   recognition = new SR();
   recognition.lang = language === 'he' ? 'he-IL' : 'en-US';
-  recognition.interimResults = true; recognition.continuous = false;
+  recognition.interimResults = true; recognition.continuous = true;
   finalTranscript = '';
 
   recognition.onstart = () => {
