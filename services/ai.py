@@ -1,8 +1,50 @@
 import os
+import json
+import urllib.request
+import urllib.parse
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# ── Weather tool ──────────────────────────────────────────────────────────────
+
+WEATHER_TOOL = {
+    "name": "get_weather",
+    "description": "Get current weather for a given location. Use this whenever the user asks about the weather.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "description": "City name or location to get weather for (e.g. 'Tel Aviv', 'London', 'New York')"
+            }
+        },
+        "required": ["location"]
+    }
+}
+
+
+def fetch_weather(location: str) -> str:
+    """Fetch weather data from wttr.in (free, no API key required)."""
+    try:
+        encoded = urllib.parse.quote(location)
+        url = f"https://wttr.in/{encoded}?format=j1"
+        req = urllib.request.Request(url, headers={"User-Agent": "companion-chat/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+        current = data["current_condition"][0]
+        temp_c = current["temp_C"]
+        feels_c = current["FeelsLikeC"]
+        desc = current["weatherDesc"][0]["value"]
+        humidity = current["humidity"]
+        return (
+            f"Weather in {location}: {desc}, {temp_c}°C "
+            f"(feels like {feels_c}°C), humidity {humidity}%."
+        )
+    except Exception as e:
+        return f"Sorry, I couldn't retrieve the weather for {location} right now."
+
 
 AVATAR_NAMES = {
     ("en", "female"): "Sophie",
@@ -297,5 +339,35 @@ def chat(user_name: str, language: str, gender: str, history: list[dict],
         max_tokens=300,
         system=system,
         messages=history,
+        tools=[WEATHER_TOOL],
     )
+
+    # Handle weather tool call if Claude requests it
+    if response.stop_reason == "tool_use":
+        tool_use_block = next(b for b in response.content if b.type == "tool_use")
+        location = tool_use_block.input.get("location", "")
+        weather_result = fetch_weather(location)
+
+        follow_up = history + [
+            {"role": "assistant", "content": response.content},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": tool_use_block.id,
+                        "content": weather_result,
+                    }
+                ],
+            },
+        ]
+        final = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=300,
+            system=system,
+            messages=follow_up,
+            tools=[WEATHER_TOOL],
+        )
+        return final.content[0].text.strip()
+
     return response.content[0].text.strip()

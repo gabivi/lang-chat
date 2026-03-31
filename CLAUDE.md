@@ -30,7 +30,7 @@ Based on everything in this conversation, here is the full list of requirements 
 
     - User chooses companion gender (female/male) on setup screen
     - Language of conversation chosen on setup screen (Hebrew/English)
-    - Avatar has a realistic animated SVG face (not an emoji), with blinking both eyes, head movement, mouth animation while speaking
+    - Avatar has a realistic animated SVG face (not an emoji), with blinking both eyes (simultaneously), head movement, mouth animation while speaking
     - Female avatar: longer hair, eyelashes, softer features, light face skin, perky and lively but not too much
     - Male avatar: shorter hair, stubble , light face skin , energetic
     - Hebrew avatars have semi-light skin tone; English avatars have lighter skin tone
@@ -63,6 +63,7 @@ Based on everything in this conversation, here is the full list of requirements 
     - No arguments, debates, politics, violence, religion disputes, or adult content — avatar politely redirects
     - Max 4 sentences per response, no emojis, simple language
     - if mic is open and nothing recording for 15 seconds, accept input given so far
+    - allow getting weather information - per desired location
 
     ---
     User Gender in Conversation
@@ -88,7 +89,8 @@ Based on everything in this conversation, here is the full list of requirements 
     - Messages shown as chat bubbles with timestamps (text only, no voice)
     - Filter by user name (live search), language, avatar gender
     - Export to CSV (UTF-8 BOM for Hebrew Excel support)
-    - admin page protected by password "Gabi1234"	
+    - admin page protected by password "Gabi1234" , save password in browser
+    - converstion content should be kept in DB, and not deleted on deploying a new version	
 
     ---
     Deployment
