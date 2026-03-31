@@ -31,7 +31,7 @@ Based on everything in this conversation, here is the full list of requirements 
     - User chooses companion gender (female/male) on setup screen
     - Language of conversation chosen on setup screen (Hebrew/English)
     - Avatar has a realistic animated SVG face (not an emoji), with blinking both eyes (simultaneously), head movement, mouth animation while speaking
-    - Female avatar: longer hair, eyelashes, softer features, light face skin, perky and lively but not too much
+    - Female avatar: long afro hair, eyelashes, softer features, light face skin, perky and lively but not too much
     - Male avatar: shorter hair, stubble , light face skin , energetic
     - Hebrew avatars have semi-light skin tone; English avatars have lighter skin tone
     - Avatar names: Sophie (English female), James (English male), רחל (Hebrew female), דוד (Hebrew male)
@@ -55,6 +55,7 @@ Based on everything in this conversation, here is the full list of requirements 
       -  Avatar introduces itself by name on the first greeting
     - Varied opening sentences, topic suggestions, and goodbyes
     - at opening sentence - explain that it can answer many questions and explain various topics
+    - avatar at some point can suggest to tell jokes or ask a riddle.
     - at first conversation for a user, after greetings, explain that this is an AI application
     - After 2–3 exchanges, avatar naturally suggests topics: family, grandchildren, childhood, holidays, music, food, etc.
     - "Skip small talk and suggest topics" button — sends CHANGE_TOPIC command
@@ -64,6 +65,7 @@ Based on everything in this conversation, here is the full list of requirements 
     - Max 4 sentences per response, no emojis, simple language
     - if mic is open and nothing recording for 15 seconds, accept input given so far
     - allow getting weather information and forecast - per desired location
+    - avatar will not ask and person should not give any personal data such as identification details , financial data and so on.
 
     ---
     User Gender in Conversation

@@ -302,15 +302,25 @@ function buildFace(gender, lang) {
   const lip = isFem ? '#c86878' : '#a85858';
   const liH = isFem ? '#e08898' : '#c07070';
 
-  // Female hair (long/bun) vs male (short)
+  // Female hair (long afro) vs male (short)
   const hairSVG = isFem ? `
-    <ellipse cx="80" cy="24" rx="24" ry="16" fill="${hr[0]}"/>
-    <ellipse cx="80" cy="22" rx="19" ry="11" fill="${hr[2]}" opacity=".5"/>
-    <path d="M20,84 Q22,40 44,26 Q62,14 80,12 Q98,14 116,26 Q138,40 140,84
-             Q122,62 96,55 Q88,52 80,52 Q72,52 64,55 Q38,62 20,84Z" fill="${hr[0]}"/>
-    <path d="M20,84 Q14,106 16,132 Q18,148 26,158 Q23,135 24,110 Q23,92 26,80Z" fill="${hr[0]}"/>
-    <path d="M140,84 Q146,106 144,132 Q142,148 134,158 Q137,135 136,110 Q137,92 134,80Z" fill="${hr[0]}"/>
-    <path d="M56,16 Q80,10 104,16 Q88,26 80,26 Q72,26 56,16Z" fill="${hr[2]}" opacity=".55"/>
+    <!-- Afro main puff -->
+    <ellipse cx="80" cy="46" rx="62" ry="56" fill="${hr[0]}"/>
+    <!-- Wide side volume -->
+    <ellipse cx="16" cy="86" rx="22" ry="34" fill="${hr[0]}"/>
+    <ellipse cx="144" cy="86" rx="22" ry="34" fill="${hr[0]}"/>
+    <!-- Curly bumps top/sides for texture -->
+    <ellipse cx="42" cy="18" rx="17" ry="15" fill="${hr[0]}"/>
+    <ellipse cx="62" cy="8"  rx="15" ry="14" fill="${hr[0]}"/>
+    <ellipse cx="80" cy="4"  rx="17" ry="15" fill="${hr[0]}"/>
+    <ellipse cx="98" cy="8"  rx="15" ry="14" fill="${hr[0]}"/>
+    <ellipse cx="118" cy="18" rx="17" ry="15" fill="${hr[0]}"/>
+    <ellipse cx="28" cy="38" rx="15" ry="14" fill="${hr[0]}"/>
+    <ellipse cx="132" cy="38" rx="15" ry="14" fill="${hr[0]}"/>
+    <!-- Volume highlights -->
+    <ellipse cx="65" cy="28" rx="20" ry="16" fill="${hr[2]}" opacity=".28"/>
+    <ellipse cx="95" cy="22" rx="16" ry="12" fill="${hr[2]}" opacity=".22"/>
+    <ellipse cx="80" cy="18" rx="24" ry="10" fill="${hr[2]}" opacity=".18"/>
   ` : `
     <path d="M20,82 Q24,42 46,26 Q64,14 80,12 Q96,14 114,26 Q136,42 140,82
              Q122,62 96,55 Q88,52 80,52 Q72,52 64,55 Q38,62 20,82Z" fill="${hr[0]}"/>
