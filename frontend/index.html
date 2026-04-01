@@ -730,8 +730,19 @@ async function startConversation() {
 const FEMALE_RE = /female|\b(samantha|karen|moira|tessa|fiona|victoria|zira|hazel|eva|susan|helena|anna|carmit|amelie|alice|kate|serena|veena|aria|jenny|clara|ava|emma|ivy|joanna|kendra|kimberly|salli|lotte|marlene|carla|bianca|celine|lea|penelope|naja|mia|astrid|haila|tamar|yonit)\b/i;
 const MALE_RE   = /\bmale\b|\b(david|alex|fred|lee|tom|jorge|luca|daniel|mark|james|aaron|arthur|rishi|oliver|guy|reed|roger|eric|brian|matthew|joey|andrew|hans|mathieu|giorgio|filiz|takumi|enrique|miguel|geraint|russel|justin|kevin|stephen|asaf)\b/i;
 
+let _voiceLoadAttempts = 0;
 function loadVoices() {
-  if (window.speechSynthesis.getVoices().length > 0) { voicesReady = true; populateVoiceDropdown(); }
+  if (window.speechSynthesis.getVoices().length > 0) {
+    voicesReady = true;
+    populateVoiceDropdown();
+  } else if (_voiceLoadAttempts < 15) {
+    _voiceLoadAttempts++;
+    setTimeout(loadVoices, 300);
+  } else {
+    // Voices never loaded — proceed without a specific voice; browser uses its default
+    voicesReady = true;
+    populateVoiceDropdown();
+  }
 }
 
 function switchToEnglish() {
@@ -821,7 +832,12 @@ function speak(text) {
   if (!text) return;
   const go = () => { if (!ttsVoice) applyVoiceSelection(); ttsQueue.push(text); if (!ttsBusy) drainTTS(); };
   if (voicesReady) go();
-  else window.speechSynthesis.onvoiceschanged = () => { voicesReady = true; populateVoiceDropdown(); go(); };
+  else {
+    // Wait for voices; fall back to default voice after 4 s if event never fires
+    const proceed = () => { if (!voicesReady) { voicesReady = true; populateVoiceDropdown(); } go(); };
+    window.speechSynthesis.onvoiceschanged = proceed;
+    setTimeout(proceed, 4000);
+  }
 }
 
 function stopSpeaking() {
@@ -863,7 +879,7 @@ setInterval(() => { if (ttsBusy && window.speechSynthesis.paused) window.speechS
 function toggleMic() { listening ? stopListening() : startListening(); }
 
 let silenceTimer = null;
-const SILENCE_TIMEOUT_MS = 15000;
+const SILENCE_TIMEOUT_MS = 10000;
 
 function resetSilenceTimer() {
   if (silenceTimer) clearTimeout(silenceTimer);
