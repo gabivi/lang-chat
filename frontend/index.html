@@ -198,7 +198,10 @@
 <!-- ══════════  SCREEN 4 — Chat  ══════════ -->
 <div id="screenChat" class="screen">
   <div class="card-main">
-    <div id="avatarWrap"></div>
+    <div style="position:relative;width:130px;margin:0 auto .7rem;">
+      <div id="avatarWrap" style="margin:0;"></div>
+      <div id="holidayBadge" style="display:none;position:absolute;bottom:2px;right:-14px;font-size:1.9rem;line-height:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35));cursor:default;"></div>
+    </div>
     <div id="avatarName">…</div>
     <div id="transcript"></div>
     <div id="micLabel" data-i18n="micLabel">Tap the microphone to speak</div>
@@ -264,6 +267,42 @@ const T = {
     closeBtn:'סגור/י',
   }
 };
+// ════════════════════════════════════════════════════
+//  Holiday badge
+// ════════════════════════════════════════════════════
+const HOLIDAY_SYMBOLS = {
+  "ראש השנה":"🍎","Rosh Hashana":"🍎",
+  "יום כיפור":"🕍","Yom Kippur":"🕍",
+  "סוכות":"🌿","Sukkos":"🌿",
+  "שמחת תורה":"📜","Simchas Torah":"📜",
+  "חנוכה":"🕎","Chanukah":"🕎",
+  'ט"ו בשבט':"🌳","Tu B'Shvat":"🌳",
+  "פורים":"🎭","Purim":"🎭",
+  "שושן פורים":"🎭","Shushan Purim":"🎭",
+  "פסח":"🍷","Pesach":"🍷",
+  "פסח שני":"🍷","Pesach Sheni":"🍷",
+  'ל"ג בעומר':"🔥","Lag B'Omer":"🔥",
+  "שבועות":"📖","Shavuos":"📖",
+  "תשעה באב":"🕯️","Tisha B'Av":"🕯️",
+  "ראש חודש":"🌙","Rosh Chodesh":"🌙",
+  "יום השואה":"🕯️","Yom HaShoah":"🕯️",
+  "יום הזיכרון":"🕯️","Yom HaZikaron":"🕯️",
+  "יום העצמאות":"🇮🇱","Yom HaAtzmaut":"🇮🇱",
+};
+
+function showHolidayBadge(holEn, holHe) {
+  const badge = document.getElementById('holidayBadge');
+  if (!badge) return;
+  const symbol = HOLIDAY_SYMBOLS[holHe] || HOLIDAY_SYMBOLS[holEn] || null;
+  if (symbol) {
+    badge.textContent = symbol;
+    badge.title = holHe || holEn || '';
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 // Resolve gendered Hebrew text: "התחל/י" → "התחל" (male) / "התחלי" (female)
 function genderizeHe(text) {
   if (language !== 'he' || userGender === 'unknown') return text;
@@ -616,7 +655,12 @@ function addBubble(speaker, text) {
   t.appendChild(d); scrollT();
 }
 function setStatus(msg) { document.getElementById('statusBar').textContent = msg; }
-function goWelcome() { document.getElementById('nameInput').value = ''; show('screenWelcome'); }
+function goWelcome() {
+  document.getElementById('nameInput').value = '';
+  const badge = document.getElementById('holidayBadge');
+  if (badge) badge.style.display = 'none';
+  show('screenWelcome');
+}
 function goSetup() {
   // Sync setup-screen buttons to current JS state before showing the screen
   document.querySelectorAll('[data-group="lang"]').forEach(b =>
@@ -691,7 +735,7 @@ async function resumeConversation(convId, avatarName, gender, lang) {
       body: JSON.stringify({text:'__RESUME__'}),
     });
     const d = await r.json();
-    if (r.ok) { addBubble('avatar', d.text); speak(d.text); }
+    if (r.ok) { showHolidayBadge(d.holiday_en, d.holiday_he); addBubble('avatar', d.text); speak(d.text); }
   } catch(e) {}
   setStatus(t('micLabel'));
 }
@@ -717,6 +761,7 @@ async function startConversation() {
     if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
     conversationId = data.conversation_id;
     document.getElementById('avatarName').textContent = data.avatar_name;
+    showHolidayBadge(data.holiday_en, data.holiday_he);
     initTTS(language, avatarGender);
     addBubble('avatar', data.greeting);
     speak(data.greeting);

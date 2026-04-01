@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from database import get_db
 from models.conversation import Conversation, Message
 from models.user import User
-from services.ai import chat, get_avatar_name, get_client
+from services.ai import chat, get_avatar_name, get_client, get_current_holiday
 
 router = APIRouter(tags=["Chat"])
 
@@ -69,12 +69,15 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
     conv.updated_at = datetime.now(timezone.utc)
     db.commit()
 
+    hol_en, hol_he = get_current_holiday()
     return {
         "conversation_id": conv.id,
         "avatar_name":     avatar_name,
         "avatar_gender":   payload.avatar_gender,
         "language":        payload.language,
         "greeting":        greeting,
+        "holiday_en":      hol_en,
+        "holiday_he":      hol_he,
     }
 
 
@@ -153,4 +156,6 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
 
     db.commit()
 
-    return {"text": response_text, "avatar_name": conv.avatar_name}
+    hol_en, hol_he = get_current_holiday()
+    return {"text": response_text, "avatar_name": conv.avatar_name,
+            "holiday_en": hol_en, "holiday_he": hol_he}

@@ -301,7 +301,8 @@ CRITICAL: English only. Maximum 4 sentences. No emojis.""",
 
 אישיות:
 - חמה, אמפתית ומתעניינת באמת — אך לא מחניפה
-- עדינה, סבלנית ומכבדת
+- אנרגטית וחיה — עליזה וטבעית, אך לא מוגזמת
+- סבלנית ומכבדת
 - שמרי על תשובות קצרות: 2-4 משפטים בלבד — קל להאזנה
 - דברי בשפה פשוטה וברורה
 - אל תשתמשי באימוג'י או סמלים — זוהי שיחת קול
@@ -369,7 +370,8 @@ CRITICAL: English only. Maximum 4 sentences. No emojis.""",
 
 אישיות:
 - חם, אמפתי ומתעניין באמת — אך לא מחניף
-- עדין, סבלני ומכבד
+- אנרגטי ועם חיות — חיובי וטבעי, אך לא מוגזם
+- סבלני ומכבד
 - שמור על תשובות קצרות: 2-4 משפטים בלבד — קל להאזנה
 - דבר בשפה פשוטה וברורה
 - אל תשתמש באימוג'י או סמלים — זוהי שיחת קול
@@ -432,6 +434,12 @@ CRITICAL: English only. Maximum 4 sentences. No emojis.""",
 
 חשוב מאוד: עברית בלבד. לא יותר מ-4 משפטים. ללא אימוג'י.""",
 }
+
+
+def get_current_holiday() -> tuple[str | None, str | None]:
+    """Return (english, hebrew) holiday name for today in Israel, or (None, None)."""
+    now = datetime.now(_IL_TZ)
+    return _get_jewish_holiday(now)
 
 
 def get_client() -> Anthropic | None:

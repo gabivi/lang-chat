@@ -37,6 +37,7 @@ Based on everything in this conversation, here is the full list of requirements 
     - Male avatar: shorter hair, stubble , light face skin , energetic
     - Hebrew avatars have semi-light skin tone; English avatars have lighter skin tone
     - Avatar names: Sophie (English female), James (English male), עדי (Hebrew female), רועי (Hebrew male)
+    - on holidays - add a little gesture next to the avatar that symbols that holiday
 
     ---
     Voice (TTS/STT)
@@ -68,12 +69,12 @@ Based on everything in this conversation, here is the full list of requirements 
     - Short conversations: avatar gives a simple honest goodbye, not a gushing one
     - No arguments, debates, politics, violence, religion disputes, or adult content — avatar politely redirects
     - Max 4 sentences per response, no emojis, simple language
-    - if mic is open and nothing recording for 15 seconds, accept input given so far
+    - if mic is open and nothing recording for 10 seconds, accept input given so far
     - allow getting weather information and forecast - per desired location
     - avatar will not ask and person should not give any personal data such as identification details , financial data and so on.
     - when asked for tv/movie/theatre/books recommendatons - 
-	avatar will ask for specific areas , anyway - they must be with their correct names (if translated) , 
-	and available in Israel and most important - book and writer should match, on recommendations - double check the answer
+	avatar will ask for specific areas , anyway - they must be with their correct titles in Hebrew or english , 
+	and available in Israel , and most important - book and writer names should match, on recommendations - double check the answer
 
     ---
     User Gender in Conversation
