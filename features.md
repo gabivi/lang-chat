@@ -37,7 +37,7 @@ Based on everything in this conversation, here is the full list of requirements 
     - Male avatar: shorter hair, stubble , light face skin , energetic
     - Hebrew avatars have semi-light skin tone; English avatars have lighter skin tone
     - Avatar names: Sophie (English female), James (English male), עדי (Hebrew female), רועי (Hebrew male)
-    - on holidays - add a little gesture next to the avatar that symbols that holiday
+    - on holidays - add a little gesture next to the avatar that symbols that holiday. note that holidays usually start the evening before.
 
     ---
     Voice (TTS/STT)
