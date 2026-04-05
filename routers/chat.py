@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Response
+from fastapi.responses import StreamingResponse
+import os
+from groq import Groq
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime, timezone
@@ -125,13 +128,26 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
         db.commit()
 
     # Build history for Claude (user/assistant alternating)
-    history = []
+    raw_history = []
     for m in conv.messages:
         role = "user" if m.speaker == "user" else "assistant"
-        history.append({"role": role, "content": m.text})
+        raw_history.append({"role": role, "content": m.text})
 
     # Add current user turn
-    history.append({"role": "user", "content": payload.text})
+    raw_history.append({"role": "user", "content": payload.text})
+
+    # Anthropic requires strictly alternating messages starting with 'user'
+    history = []
+    for msg in raw_history:
+        if not history:
+            if msg["role"] == "assistant":
+                history.append({"role": "user", "content": "שלום" if conv.language == "he" else "Hi"})
+            history.append(msg)
+        else:
+            if history[-1]["role"] == msg["role"]:
+                history[-1]["content"] += f"\n\n{msg['content']}"
+            else:
+                history.append(msg)
 
     # Get AI response
     try:
@@ -159,3 +175,57 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
     hol_en, hol_he = get_current_holiday()
     return {"text": response_text, "avatar_name": conv.avatar_name,
             "holiday_en": hol_en, "holiday_he": hol_he}
+
+
+# ── Speech-to-Text (STT) ──────────────────────────────────────────────────────
+
+@router.post("/stt")
+async def stt_endpoint(file: UploadFile = File(...)):
+    if "GROQ_API_KEY" not in os.environ:
+        raise HTTPException(
+            status_code=503,
+            detail="GROQ_API_KEY not configured for Speech-to-Text."
+        )
+
+    try:
+        client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+        
+        # Read the uploaded audio file into memory
+        audio_data = await file.read()
+        
+        # We need to send it as a tuple (filename, file_data)
+        file_tuple = (file.filename, audio_data)
+
+        # Call Groq's whisper model
+        transcription = client.audio.transcriptions.create(
+            file=file_tuple,
+            model="whisper-large-v3",
+            language="he",
+            temperature=0.0,
+            prompt="שלום",
+        )
+        return {"text": transcription.text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/tts")
+async def generate_tts(text: str, language: str = "he", gender: str = "female"):
+    import edge_tts
+    
+    voices = {
+        ("en", "female"): "en-US-JennyNeural",
+        ("en", "male"):   "en-US-GuyNeural",
+        ("he", "female"): "he-IL-HilaNeural",
+        ("he", "male"):   "he-IL-AvriNeural",
+    }
+    voice = voices.get((language, gender), "he-IL-HilaNeural")
+    
+    communicate = edge_tts.Communicate(text, voice)
+
+    async def audio_generator():
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                yield chunk["data"]
+                
+    return StreamingResponse(audio_generator(), media_type="audio/mpeg")
