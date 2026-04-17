@@ -11,6 +11,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
 class IdentifyRequest(BaseModel):
     name:   str
     gender: str = "unknown"   # "male" | "female" | "unknown"
+    language: str = "he"      # "he" | "en" | "de" | "es" | "fr"
+    level: str = "intermediate"  # "beginner" | "intermediate" | "advanced"
 
 
 @router.post("/identify")
@@ -23,13 +25,18 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.name.ilike(name)).first()
     is_new = user is None
     if is_new:
-        user = User(name=name, gender=payload.gender)
+        user = User(name=name, gender=payload.gender, language=payload.language, level=payload.level)
         db.add(user)
         db.commit()
         db.refresh(user)
-    elif payload.gender != "unknown":
-        # Update gender if it was unknown before
-        user.gender = payload.gender
+    else:
+        # Update fields if they were not set or have changed
+        if payload.gender != "unknown":
+            user.gender = payload.gender
+        if payload.language != "he":  # Only update if not default
+            user.language = payload.language
+        if payload.level != "intermediate":  # Only update if not default
+            user.level = payload.level
         db.commit()
 
     # Last 5 conversations with message count
@@ -57,6 +64,8 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
         "id":            user.id,
         "name":          user.name,
         "gender":        user.gender,
+        "language":      user.language,
+        "level":         user.level,
         "is_new":        is_new,
         "conversations": conversations,
     }

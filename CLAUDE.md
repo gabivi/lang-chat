@@ -3,10 +3,11 @@ Based on everything in this conversation, here is the full list of requirements 
     ---
     Core Concept
 
-    - Voice conversation app for elderly lonely people
+    - Voice conversation app for people willing to learn languages, and want to have a conversation in their level, which at the end of the conversation will show them their mistakes and will suggest how to correct. 
+    - supported languages are hebrew , english , german , spanish , french
     - Browser-based, single page app
     - Free TTS/STT via Web Speech API (no paid voice service)
-    - AI conversation via Claude API (claude-sonnet-4-6)
+    - AI conversation via free lenguage models in different languages
     - Conversations saved to database
     - about button on first screen will explain the purpose of the app 
     - at the moment the app is running in Israel
@@ -16,13 +17,14 @@ Based on everything in this conversation, here is the full list of requirements 
 
     - User enters their name on the welcome screen
     - User selects their own gender (female/male) — used for correct Hebrew grammar when addressing them
+    - user selects language and level
     - Returning users see their past conversations and can resume or start new
     - User name and gender persisted in DB
 
     ---
     Language & Interface
 
-    - Interface language chooser on the welcome screen (Hebrew default, English option), show small flag on button
+    - additional to conversation language, the user can choose interface language via chooser on the welcome screen (Hebrew default, other common languages option), show small flag on button
     - All buttons, labels, and prompts display in the chosen language
     - Hebrew UI uses correct gendered forms based on the user's gender (e.g., לחתה → י/לחתה or ילחתה)
        -  RTL layout for Hebrew, LTR for English
@@ -35,9 +37,9 @@ Based on everything in this conversation, here is the full list of requirements 
     - Avatar has a realistic animated SVG face (not an emoji), with blinking both eyes (simultaneously), head movement, mouth animation while speaking
     - Female avatar: long afro hair, eyelashes, softer features, light face skin, energetic and lively voice and attitude but not too much
     - Male avatar: shorter hair, stubble , light face skin , energetic
-    - Hebrew avatars have semi-light skin tone; English avatars have lighter skin tone
-    - Avatar names: Sophie (English female), James (English male), עדי (Hebrew female), רועי (Hebrew male)
-    - on holidays - add a little gesture next to the avatar that symbols that holiday
+    - Hebrew avatars have semi-light skin tone; other avatars have lighter skin tone
+    - Avatar names: based on my choice after claude will suggest names for each given language
+    - on holidays - add a little gesture next to the avatar that symbols that holiday. note that holidays usually start the evening before.
 
     ---
     Voice (TTS/STT)
@@ -54,8 +56,8 @@ Based on everything in this conversation, here is the full list of requirements 
     ---
     Conversation Behavior (AI / System Prompts)
 
-    - 4 system prompts: English female (Sophie), English male (James), Hebrew female (לחר), Hebrew male (דוד)
-      -  Avatar introduces itself by name on the first greeting
+    - system prompts: according to chosen language
+      -  Avatar introduces itself by name on the first greeting (distinguish between first conversation or a continued one)
     - avatar will be aware to the time in day, and greet accordingly
     - avatar will be aware to day of week (in Israel - Friday and Saturday are weekend)
     - avatar will be aware to israeli and jewish holidays in correlation with calender
@@ -63,7 +65,7 @@ Based on everything in this conversation, here is the full list of requirements 
     - at opening sentence - explain that it can answer many questions and explain various topics
     - avatar at some point can suggest to tell jokes or ask a riddle.
     - at first conversation for a user, after greetings, explain that this is an AI application
-    - After 2–3 exchanges, avatar naturally suggests topics: family, grandchildren, childhood, holidays, music, food, etc.
+    - After 2–3 exchanges, avatar naturally suggests topics: family, childhood, holidays, music, food, etc.
     - "Skip small talk and suggest topics" button — sends CHANGE_TOPIC command
     - Returning users get a warm welcome-back greeting referencing the previous conversation (RESUME)
     - Short conversations: avatar gives a simple honest goodbye, not a gushing one

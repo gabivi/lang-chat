@@ -9,7 +9,7 @@ class Conversation(Base):
 
     id            = Column(Integer, primary_key=True, index=True)
     user_id       = Column(Integer, ForeignKey("users.id"), nullable=False)
-    language      = Column(String, default="en")       # "en" | "he"
+    language      = Column(String, default="he")       # "he" | "en" | "de" | "es" | "fr"
     avatar_gender = Column(String, default="female")   # "female" | "male"
     avatar_name   = Column(String, nullable=False)
     title         = Column(String, default="New conversation")

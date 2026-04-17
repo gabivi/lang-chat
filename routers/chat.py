@@ -61,6 +61,7 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
         language    = payload.language,
         gender      = payload.avatar_gender,
         user_gender = payload.user_gender,
+        user_level  = user.level,
         history     = [{"role": "user", "content": start_msg}],
     )
 
@@ -140,6 +141,7 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
             language    = conv.language,
             gender      = conv.avatar_gender,
             user_gender = getattr(user, "gender", "unknown"),
+            user_level  = getattr(user, "level", "intermediate"),
             history     = history,
         )
     except RuntimeError as e:
