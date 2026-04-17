@@ -1030,6 +1030,7 @@ let ttsQueue        = [];
 let ttsBusy         = false;
 let finalTranscript = '';
 let voicesReady     = false;
+const isIOS         = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 // ════════════════════════════════════════════════════
 //  Helpers
@@ -1414,7 +1415,19 @@ function drainTTS() {
   }, 50);
 }
 
-setInterval(() => { if (ttsBusy && window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 8000);
+setInterval(() => { if (ttsBusy && window.speechSynthesis.paused) window.speechSynthesis.resume(); }, isIOS ? 2000 : 8000);
+
+// iOS blocks audio until a user gesture — unlock on first tap
+let _audioUnlocked = false;
+function _unlockAudio() {
+  if (_audioUnlocked || !window.speechSynthesis) return;
+  _audioUnlocked = true;
+  const utt = new SpeechSynthesisUtterance('');
+  window.speechSynthesis.speak(utt);
+  window.speechSynthesis.cancel();
+}
+document.addEventListener('touchstart', _unlockAudio, { once: true, passive: true });
+document.addEventListener('click',      _unlockAudio, { once: true });
 
 // ════════════════════════════════════════════════════
 //  STT
@@ -1448,7 +1461,8 @@ function startListening() {
     'fr': 'fr-FR',
   };
   recognition.lang = langMap[language] || 'en-US';
-  recognition.interimResults = true; recognition.continuous = true;
+  recognition.interimResults = !isIOS; // iOS doesn't support interimResults reliably
+  recognition.continuous = !isIOS;     // iOS Safari doesn't support continuous mode
   finalTranscript = '';
 
   recognition.onstart = () => {
@@ -1468,10 +1482,15 @@ function startListening() {
   };
   recognition.onend = () => {
     clearSilenceTimer();
+    const text = finalTranscript.trim();
+    // On iOS (non-continuous), restart if mic button still active and no text yet
+    if (isIOS && listening && !text) {
+      try { recognition.start(); return; } catch(e) {}
+    }
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micLabel').textContent = t('micLabel');
-    const text = finalTranscript.trim(); finalTranscript = '';
+    finalTranscript = '';
     if (text) sendMessage(text); else setStatus(t('noSpeech'));
   };
   recognition.onerror = () => {
