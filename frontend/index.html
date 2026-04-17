@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Companion Chat</title>
+  <title>ChitChat2Go(Beta)</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <style>
     :root { 
@@ -521,6 +521,7 @@
       <div class="choice-btn"          data-group="plang" data-value="de" onclick="pickPracticeLang(this)">🇩🇪 German</div>
       <div class="choice-btn"          data-group="plang" data-value="es" onclick="pickPracticeLang(this)">🇪🇸 Spanish</div>
       <div class="choice-btn"          data-group="plang" data-value="fr" onclick="pickPracticeLang(this)">🇫🇷 French</div>
+      <div class="choice-btn"          data-group="plang" data-value="hu" onclick="pickPracticeLang(this)">🇭🇺 Hungarian</div>
     </div>
 
     <p class="fw-semibold mb-2" data-i18n="levelLabel">What is your level?</p>
@@ -554,7 +555,26 @@
     from { opacity:0; transform:translateY(20px); }
     to { opacity:1; transform:translateY(0); }
   }
+  .review-spinner {
+    display:inline-block; width:16px; height:16px;
+    border:2px solid #ccc; border-top-color:var(--accent-dark);
+    border-radius:50%; animation:spin .8s linear infinite;
+    vertical-align:middle; margin-inline-end:6px;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
 </style>
+
+<!-- Review modal -->
+<div id="reviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(2px);">
+  <div style="background:#fff;border-radius:24px;padding:2rem 1.8rem;max-width:520px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 12px 48px rgba(91,127,166,.25);border:1px solid rgba(91,127,166,.1);animation:slideInUp .3s ease;">
+    <h5 id="reviewModalTitle" class="fw-bold mb-3" style="color:var(--accent-dark);font-size:1.4rem;"></h5>
+    <div id="reviewModalBody" style="font-size:1rem;line-height:1.7;color:#444;white-space:pre-wrap;margin-bottom:1.5rem;"></div>
+    <div class="text-center mt-3" style="display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;">
+      <button id="reviewSaveBtn" class="btn btn-outline-secondary btn-big" onclick="saveReviewFile()" style="width:auto;display:inline-block;padding:.65rem 1.5rem;"></button>
+      <button id="reviewCloseBtn" class="btn btn-primary btn-big" onclick="closeReview()" style="width:auto;display:inline-block;padding:.65rem 2rem;"></button>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════  SCREEN 2 — Resume  ══════════ -->
 <div id="screenResume" class="screen">
@@ -619,7 +639,7 @@
 // ════════════════════════════════════════════════════
 const T = {
   en: {
-    appTitle:'Companion Chat', appSubtitle:'A friendly conversation, just for you',
+    appTitle:'ChitChat2Go(Beta)', appSubtitle:'A friendly conversation, just for you',
     nameLabel:'What is your name?', namePlaceholder:'Type your name here…',
     genderLabel:'How should we address you?',
     continueBtn:'Continue →',
@@ -637,12 +657,18 @@ const T = {
     pitchNote:'No female voice found — using pitch adjustment.',
     noVoiceWarning:'No Hebrew voice found on this device.',
     aboutBtn:'ℹ️ About this app',
-    aboutTitle:'About Companion Chat',
-    aboutText:'Companion Chat is an AI-powered voice companion designed for elderly people who enjoy friendly conversation. Simply press the microphone and start talking — your companion will listen, respond, and suggest topics. The app is free, runs in Israel, and works in both Hebrew and English.',
+    aboutTitle:'About ChitChat2Go(Beta)',
+    aboutText:'ChitChat2Go(Beta) is an AI-powered voice companion designed for elderly people who enjoy friendly conversation. Simply press the microphone and start talking — your companion will listen, respond, and suggest topics. The app is free, runs in Israel, and works in both Hebrew and English.',
     closeBtn:'Close',
+    reviewTitle:'Conversation Review',
+    reviewLoading:'Analyzing your conversation…',
+    reviewNone:'Great job — no significant mistakes found!',
+    reviewClose:'Close',
+    reviewSave:'Save as file',
+    viewReviewBtn:'View Review',
   },
   he: {
-    appTitle:'שיחת חברותא', appSubtitle:'שיחה חברית, רק בשבילך',
+    appTitle:'ChitChat2Go(Beta)', appSubtitle:'שיחה חברית, רק בשבילך',
     nameLabel:'מה שמך?', namePlaceholder:'הקלד/י את שמך כאן…',
     genderLabel:'כיצד לפנות אליך?',
     continueBtn:'המשך ←',
@@ -660,9 +686,15 @@ const T = {
     pitchNote:'לא נמצא קול נשי — משתמש/ת בהתאמת גובה קול.',
     noVoiceWarning:'לא נמצא קול עברי במכשיר זה.',
     aboutBtn:'ℹ️ אודות האפליקציה',
-    aboutTitle:'אודות שיחת חברותא',
-    aboutText:'שיחת חברותא היא מלווה שיחה קולי מבוסס בינה מלאכותית, מיועד לאנשים מבוגרים הנהנים משיחות חבריות. פשוט לחצו על המיקרופון והתחילו לדבר — המלווה יקשיב, יענה, ויציע נושאים לשיחה. האפליקציה חינמית, פועלת בישראל, ועובדת בעברית ובאנגלית.',
+    aboutTitle:'אודות ChitChat2Go(Beta)',
+    aboutText:'ChitChat2Go(Beta) היא מלווה שיחה קולי מבוסס בינה מלאכותית, מיועד לאנשים מבוגרים הנהנים משיחות חבריות. פשוט לחצו על המיקרופון והתחילו לדבר — המלווה יקשיב, יענה, ויציע נושאים לשיחה. האפליקציה חינמית, פועלת בישראל, ועובדת בעברית ובאנגלית.',
     closeBtn:'סגור/י',
+    reviewTitle:'סקירת השיחה',
+    reviewLoading:'מנתח/ת את השיחה שלך…',
+    reviewNone:'כל הכבוד — לא נמצאו טעויות משמעותיות!',
+    reviewClose:'סגור/י',
+    reviewSave:'שמור/י כקובץ',
+    viewReviewBtn:'צפה/י בסיכום',
   }
 };
 // ════════════════════════════════════════════════════
@@ -703,7 +735,7 @@ function showHolidayBadge(holEn, holHe) {
 
 // Resolve gendered Hebrew text: "התחל/י" → "התחל" (male) / "התחלי" (female)
 function genderizeHe(text) {
-  if (language !== 'he' || userGender === 'unknown') return text;
+  if (uiLang !== 'he' || userGender === 'unknown') return text;
   if (userGender === 'male') {
     return text
       .replace(/זה\/זאת/g, 'זה')
@@ -719,18 +751,18 @@ function genderizeHe(text) {
     .replace(/\/([יהת])/g, '$1'); // keep suffix
 }
 
-function t(k) { return genderizeHe((T[language]||T.en)[k] || k); }
+function t(k) { return genderizeHe((T[uiLang]||T.en)[k] || k); }
 
 function applyUI() {
-  const isHe = language === 'he';
-  document.documentElement.lang = language;
+  const isHe = uiLang === 'he';
+  document.documentElement.lang = uiLang;
   document.documentElement.dir  = isHe ? 'rtl' : 'ltr';
   document.querySelectorAll('[data-i18n]').forEach(el => {
-    const v = (T[language]||T.en)[el.dataset.i18n];
+    const v = (T[uiLang]||T.en)[el.dataset.i18n];
     if (v) el.textContent = genderizeHe(v);
   });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-    const v = (T[language]||T.en)[el.dataset.i18nPh];
+    const v = (T[uiLang]||T.en)[el.dataset.i18nPh];
     if (v) el.placeholder = genderizeHe(v);
   });
 }
@@ -987,7 +1019,8 @@ let userGender      = localStorage.getItem('cc_userGender')   || 'female';
 let practiceLanguage = localStorage.getItem('cc_practiceLanguage') || 'he';
 let userLevel       = localStorage.getItem('cc_userLevel')    || 'intermediate';
 let conversationId  = null;
-let language        = localStorage.getItem('cc_language')     || 'he';
+let uiLang          = localStorage.getItem('cc_uiLang') || localStorage.getItem('cc_language') || 'he';
+let language        = localStorage.getItem('cc_language')     || 'he'; // TTS / conversation language
 let avatarGender    = localStorage.getItem('cc_avatarGender') || 'female';
 let recognition     = null;
 let ttsVoice        = null;
@@ -1008,6 +1041,7 @@ function show(id) {
 
 function savePrefs() {
   localStorage.setItem('cc_userGender',       userGender);
+  localStorage.setItem('cc_uiLang',            uiLang);
   localStorage.setItem('cc_language',         language);
   localStorage.setItem('cc_avatarGender',     avatarGender);
   localStorage.setItem('cc_practiceLanguage', practiceLanguage);
@@ -1039,11 +1073,7 @@ function pickLevel(el) {
 function pickUILang(el) {
   document.querySelectorAll('[data-group="uilang"]').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
-  language = el.dataset.value;
-  // Also sync the conversation language button on the setup screen
-  document.querySelectorAll('[data-group="lang"]').forEach(b => {
-    b.classList.toggle('selected', b.dataset.value === language);
-  });
+  uiLang = el.dataset.value;
   savePrefs();
   applyUI();
 }
@@ -1140,9 +1170,25 @@ function renderConvList(convs) {
   convs.forEach(c => {
     const d = document.createElement('div');
     d.className = 'conv-item';
-    d.innerHTML = `<div class="conv-title">${c.title}</div>
+    d.style.cssText = 'display:flex;align-items:center;gap:.6rem;';
+
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    info.style.cursor = 'pointer';
+    info.innerHTML = `<div class="conv-title">${c.title}</div>
       <div class="conv-meta">${c.avatar_name} &bull; ${c.message_count} msgs &bull; ${c.updated_at}</div>`;
-    d.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
+    info.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
+    d.appendChild(info);
+
+    if (c.review) {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-outline-secondary';
+      btn.style.cssText = 'font-size:.78rem;padding:.3rem .7rem;white-space:nowrap;flex-shrink:0;';
+      btn.textContent = t('viewReviewBtn');
+      btn.onclick = e => { e.stopPropagation(); showPastReview(c.review, c.title); };
+      d.appendChild(btn);
+    }
+
     el.appendChild(d);
   });
 }
@@ -1214,6 +1260,7 @@ const LANG_MAP = {
   'de': 'de-DE',
   'es': 'es-ES',
   'fr': 'fr-FR',
+  'hu': 'hu-HU',
 };
 
 let _voiceLoadAttempts = 0;
@@ -1242,7 +1289,7 @@ function switchToEnglish() {
 
 function populateVoiceDropdown() {
   const voices  = window.speechSynthesis.getVoices();
-  const code    = language === 'he' ? 'he' : language === 'de' ? 'de' : language === 'es' ? 'es' : language === 'fr' ? 'fr' : 'en';
+  const code    = language === 'he' ? 'he' : language === 'de' ? 'de' : language === 'es' ? 'es' : language === 'fr' ? 'fr' : language === 'hu' ? 'hu' : 'en';
   const pool    = voices.filter(v => v.lang.startsWith(code));
 
   const fallbackEl = document.getElementById('langFallback');
@@ -1281,11 +1328,21 @@ function fillSelect(pool) {
   const neutral  = pool.map((v,i)=>i).filter(i => !wantRe.test(pool[i].name) && !rejectRe.test(pool[i].name));
   const chosen   = matching.length ? rand(matching) : neutral.length ? rand(neutral) : 0;
   sel.value = chosen;
+
+  // Grey out avatar-gender buttons when no matching voice exists for that gender
+  const hasFemale = pool.some(v => FEMALE_RE.test(v.name));
+  const hasMale   = pool.some(v =>   MALE_RE.test(v.name));
+  document.querySelectorAll('[data-group="gender"]').forEach(btn => {
+    const isFem  = btn.dataset.value === 'female';
+    const hasVoice = isFem ? hasFemale : hasMale;
+    btn.style.opacity = hasVoice ? '' : '0.4';
+    btn.title = hasVoice ? '' : (uiLang === 'he' ? 'אין קול מתאים למין זה' : 'No matching voice for this gender');
+  });
 }
 
 function applyVoiceSelection() {
   const voices = window.speechSynthesis.getVoices();
-  const code   = language === 'he' ? 'he' : language === 'de' ? 'de' : language === 'es' ? 'es' : language === 'fr' ? 'fr' : 'en';
+  const code   = language === 'he' ? 'he' : language === 'de' ? 'de' : language === 'es' ? 'es' : language === 'fr' ? 'fr' : language === 'hu' ? 'hu' : 'en';
   let pool     = voices.filter(v => v.lang.startsWith(code));
   if (pool.length === 0) pool = voices.filter(v => v.lang.startsWith('en'));  // fallback
 
@@ -1301,7 +1358,7 @@ function applyVoiceSelection() {
 
 function initTTS(lang, gender) {
   language = lang; avatarGender = gender; ttsVoice = null;
-  if (voicesReady) applyVoiceSelection();
+  if (voicesReady) { populateVoiceDropdown(); applyVoiceSelection(); }
 }
 
 function stripForTTS(text) {
@@ -1445,15 +1502,90 @@ async function sendMessage(text) {
 
 async function suggestTopics() { stopSpeaking(); await sendMessage('__CHANGE_TOPIC__'); }
 
-async function endConversation() {
-  await sendMessage('__END__');
+function endConversation() {
+  stopSpeaking();
+  if (listening) stopListening();
   document.getElementById('micBtn').disabled = true;
   document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = true);
-  setTimeout(() => {
-    document.getElementById('micBtn').disabled = false;
-    document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = false);
-    goWelcome();
-  }, 6000);
+
+  const modal      = document.getElementById('reviewModal');
+  const titleEl    = document.getElementById('reviewModalTitle');
+  const bodyEl     = document.getElementById('reviewModalBody');
+  const closeBtnEl = document.getElementById('reviewCloseBtn');
+
+  const saveBtnEl   = document.getElementById('reviewSaveBtn');
+
+  titleEl.textContent    = t('reviewTitle');
+  bodyEl.innerHTML       = `<span class="review-spinner"></span> ${t('reviewLoading')}`;
+  saveBtnEl.textContent  = t('reviewSave');
+  saveBtnEl.style.display = 'none';
+  closeBtnEl.textContent = t('reviewClose');
+  closeBtnEl.disabled    = true;
+  modal.querySelector('div').style.direction = uiLang === 'he' ? 'rtl' : 'ltr';
+  modal.dataset.closeTo  = 'welcome';
+  modal.style.display    = 'flex';
+
+  const convId = conversationId;
+
+  // Send __END__ in background — no user bubble, just get avatar goodbye
+  fetch(`/conversations/${convId}/chat`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({text: '__END__'}),
+  }).then(r => r.json()).then(data => {
+    if (data.text) { addBubble('avatar', data.text); speak(data.text); }
+  }).catch(() => {});
+
+  // Fetch review in the UI language — enable buttons when ready
+  fetch(`/conversations/${convId}/review?ui_lang=${uiLang}`)
+    .then(r => r.json())
+    .then(data => {
+      bodyEl.textContent     = data.review || t('reviewNone');
+    })
+    .catch(() => {
+      bodyEl.textContent = t('reviewNone');
+    })
+    .finally(() => {
+      saveBtnEl.style.display = '';
+      closeBtnEl.disabled     = false;
+    });
+}
+
+function showPastReview(reviewText, convTitle) {
+  const modal      = document.getElementById('reviewModal');
+  const titleEl    = document.getElementById('reviewModalTitle');
+  const bodyEl     = document.getElementById('reviewModalBody');
+  const saveBtnEl  = document.getElementById('reviewSaveBtn');
+  const closeBtnEl = document.getElementById('reviewCloseBtn');
+
+  titleEl.textContent    = convTitle ? `${t('reviewTitle')} — ${convTitle}` : t('reviewTitle');
+  bodyEl.textContent     = reviewText;
+  saveBtnEl.textContent  = t('reviewSave');
+  saveBtnEl.style.display = '';
+  closeBtnEl.textContent = t('reviewClose');
+  closeBtnEl.disabled    = false;
+  modal.querySelector('div').style.direction = uiLang === 'he' ? 'rtl' : 'ltr';
+  modal.dataset.closeTo  = 'resume';
+  modal.style.display    = 'flex';
+}
+
+function saveReviewFile() {
+  const text = document.getElementById('reviewModalBody').textContent;
+  if (!text) return;
+  const date = new Date().toISOString().slice(0, 10);
+  const a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+  a.download = `review-${date}.txt`;
+  a.click();
+}
+
+function closeReview() {
+  const modal = document.getElementById('reviewModal');
+  const dest  = modal.dataset.closeTo;
+  modal.style.display = 'none';
+  document.getElementById('micBtn').disabled = false;
+  document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = false);
+  if (dest === 'resume') show('screenResume');
+  else goWelcome();
 }
 
 // ════════════════════════════════════════════════════
@@ -1461,8 +1593,9 @@ async function endConversation() {
 // ════════════════════════════════════════════════════
 // Sync all button groups to loaded/default state
 ['uilang','lang','gender','ugender'].forEach(group => {
-  const match = group === 'uilang' || group === 'lang' ? language
-              : group === 'gender'  ? avatarGender
+  const match = group === 'uilang' ? uiLang
+              : group === 'lang'   ? language
+              : group === 'gender' ? avatarGender
               : userGender;
   document.querySelectorAll(`[data-group="${group}"]`).forEach(b =>
     b.classList.toggle('selected', b.dataset.value === match));

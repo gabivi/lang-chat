@@ -49,13 +49,14 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
     )
     conversations = [
         {
-            "id":           c.id,
-            "title":        c.title,
-            "language":     c.language,
-            "avatar_name":  c.avatar_name,
+            "id":            c.id,
+            "title":         c.title,
+            "language":      c.language,
+            "avatar_name":   c.avatar_name,
             "avatar_gender": c.avatar_gender,
-            "updated_at":   c.updated_at.strftime("%Y-%m-%d %H:%M") if c.updated_at else "",
+            "updated_at":    c.updated_at.strftime("%Y-%m-%d %H:%M") if c.updated_at else "",
             "message_count": db.query(Message).filter(Message.conversation_id == c.id).count(),
+            "review":        c.review or "",
         }
         for c in convs
     ]

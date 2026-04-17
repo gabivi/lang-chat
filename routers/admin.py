@@ -53,5 +53,6 @@ def all_conversations(
             "updated_at":      conv.updated_at.strftime("%Y-%m-%d %H:%M") if conv.updated_at else "",
             "message_count":   len(messages),
             "messages":        messages,
+            "review":          conv.review or "",
         })
     return result

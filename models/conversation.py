@@ -13,6 +13,7 @@ class Conversation(Base):
     avatar_gender = Column(String, default="female")   # "female" | "male"
     avatar_name   = Column(String, nullable=False)
     title         = Column(String, default="New conversation")
+    review        = Column(Text, nullable=True)
     created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))

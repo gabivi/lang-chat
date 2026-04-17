@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from database import get_db
 from models.conversation import Conversation, Message
 from models.user import User
-from services.ai import chat, get_avatar_name, get_client, get_current_holiday
+from services.ai import chat, get_avatar_name, get_client, get_current_holiday, generate_conversation_review
 
 router = APIRouter(tags=["Chat"])
 
@@ -161,3 +161,45 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
     hol_en, hol_he = get_current_holiday()
     return {"text": response_text, "avatar_name": conv.avatar_name,
             "holiday_en": hol_en, "holiday_he": hol_he}
+
+
+# ── Get conversation review ───────────────────────────────────────────────────
+
+@router.get("/conversations/{conversation_id}/review")
+def get_conversation_review(conversation_id: int, ui_lang: str = "en", db: Session = Depends(get_db)):
+    """Generate a review of the conversation with mistakes and corrections."""
+    conv = db.get(Conversation, conversation_id)
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    user = db.get(User, conv.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Extract only user messages for review
+    messages = [
+        {"speaker": m.speaker, "text": m.text}
+        for m in conv.messages
+    ]
+
+    if not messages:
+        raise HTTPException(status_code=400, detail="No messages in conversation")
+
+    try:
+        review_text = generate_conversation_review(
+            messages=messages,
+            language=conv.language,
+            user_level=getattr(user, "level", "intermediate"),
+            ui_lang=ui_lang,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    conv.review = review_text
+    db.commit()
+
+    return {
+        "conversation_id": conv.id,
+        "review": review_text,
+        "language": conv.language,
+    }
