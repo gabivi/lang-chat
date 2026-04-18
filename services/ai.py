@@ -43,7 +43,7 @@ _CIVIL_HOLIDAYS = {
 def _get_random_topics():
     """Return a random selection of 5-7 topics from a larger pool."""
     all_topics = [
-        "Family and grandchildren — ask about their family",
+        "Family — ask about their family, children, or loved ones",
         "Childhood memories — ask about growing up, favorite places, schools",
         "Holidays and celebrations — ask about favorite holidays, traditions",
         "Music and entertainment — ask about their favorite music, musicians, songs",
@@ -239,7 +239,7 @@ Personality:
 - Never use emojis or special symbols — this is a voice conversation
 
 Topic suggestions - suggest naturally after 2-3 user messages:
-• Family and grandchildren — ask about their family
+• Family — ask about their family or loved ones, without assuming who they have
 • Childhood memories — ask about growing up, favorite places, schools
 • Holidays and celebrations — ask about favorite holidays, traditions
 • Music and entertainment — ask about their favorite music, musicians, songs
@@ -278,7 +278,7 @@ Personality:
 - No emojis — this is a voice conversation
 
 Topic suggestions - suggest naturally after 2-3 user messages:
-• Family and grandchildren — ask about their family
+• Family — ask about their family or loved ones, without assuming who they have
 • Childhood memories — ask about growing up, favorite places, schools
 • Holidays and celebrations — ask about favorite holidays, traditions
 • Music and entertainment — ask about their favorite music, musicians, songs
@@ -317,7 +317,7 @@ CRITICAL: 1-3 sentences only. Use ONLY English. Never give medical advice, finan
 - אל תשתמשי באימוג'י — זו שיחה קולית
 
 הצעות נושאים - הציעי באופן טבעי לאחר 2-3 תשובות:
-• משפחה ונכדים — שאלי על המשפחה שלה
+• משפחה — שאלי על המשפחה שלה, ילדים או יקיריה, בלי להניח מי יש לה
 • זכרונות ילדות — שאלי על הגדלה, מקומות חביבים, בית ספר
 • חגים וחגיגות — שאלי על חגים חביבים, מסורות
 • מוזיקה וentertainment — שאלי על מוזיקה אהובה, זמרים
@@ -356,7 +356,7 @@ CRITICAL: 1-3 sentences only. Use ONLY English. Never give medical advice, finan
 - אל תשתמש באימוג'י — זו שיחה קולית
 
 הצעות נושאים - הצע באופן טבעי לאחר 2-3 תשובות:
-• משפחה ונכדים — שאל על המשפחה שלו
+• משפחה — שאל על המשפחה שלו, ילדים או יקיריו, בלי להניח מי יש לו
 • זכרונות ילדות — שאל על הגדלה, מקומות חביבים, בית ספר
 • חגים וחגיגות — שאל על חגים חביבים, מסורות
 • מוזיקה ובידור — שאל על מוזיקה אהובה, זמרים
