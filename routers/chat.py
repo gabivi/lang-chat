@@ -253,7 +253,7 @@ async def stt_endpoint(file: UploadFile = File(...), language: str = "he"):
 
 
 @router.get("/tts")
-async def generate_tts(text: str, language: str = "he", gender: str = "female"):
+async def generate_tts(text: str, language: str = "he", gender: str = "female", level: str = "intermediate"):
     import edge_tts
 
     voices = {
@@ -272,7 +272,11 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female"):
     }
     voice = voices.get((language, gender), "en-US-JennyNeural")
 
-    communicate = edge_tts.Communicate(text, voice)
+    # Adjust speaking rate based on proficiency level
+    rate_map = {"beginner": "+50%", "intermediate": "+10%", "advanced": "+20%"}
+    rate = rate_map.get(level, "+10%")
+
+    communicate = edge_tts.Communicate(text, voice, rate=rate)
 
     async def audio_generator():
         async for chunk in communicate.stream():

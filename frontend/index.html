@@ -1146,7 +1146,8 @@ function goWelcome() {
   document.getElementById('nameInput').value = localStorage.getItem('cc_userName') || '';
   const badge = document.getElementById('holidayBadge');
   if (badge) badge.style.display = 'none';
-  // Sync buttons to current saved settings
+  // Clear all selections first, then sync buttons to current saved settings
+  document.querySelectorAll('[data-group="ugender"], [data-group="plang"], [data-group="level"]').forEach(b => b.classList.remove('selected'));
   document.querySelectorAll('[data-group="ugender"]').forEach(b =>
     b.classList.toggle('selected', b.dataset.value === userGender));
   document.querySelectorAll('[data-group="plang"]').forEach(b =>
@@ -1349,7 +1350,7 @@ async function drainTTS() {
   
   const text = ttsQueue.shift();
   try {
-    const queryParams = new URLSearchParams({ text, language, gender: avatarGender }).toString();
+    const queryParams = new URLSearchParams({ text, language, gender: avatarGender, level: userLevel }).toString();
     const url = `/tts?${queryParams}`;
     currentAudio = new Audio(url);
     currentAudio.onended = () => { currentAudio = null; drainTTS(); };
