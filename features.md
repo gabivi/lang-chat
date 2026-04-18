@@ -37,8 +37,8 @@ Based on everything in this conversation, here is the full list of requirements 
     - Avatar has a realistic animated SVG face (not an emoji), with blinking both eyes (simultaneously), head movement, mouth animation while speaking
     - Female avatar: long afro hair, eyelashes, softer features, light face skin, energetic and lively voice and attitude but not too much
     - Male avatar: shorter hair, stubble , light face skin , energetic
-    - Hebrew avatars have semi-light skin tone; other avatars have lighter skin tone
-    - Avatar names: based on my choice after claude will suggest names for each given language
+    - Hebrew avatars have semi-light skin tone; English avatars have lighter skin tone
+    - Avatar names: Sophie (English female), James (English male), עדי (Hebrew female), רועי (Hebrew male)
     - on holidays - add a little gesture next to the avatar that symbols that holiday. note that holidays usually start the evening before.
 
     ---

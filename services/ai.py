@@ -600,14 +600,13 @@ def chat(user_name: str, language: str, gender: str, history: list[dict],
                 ],
             },
         ]
-        final = client.messages.create(
+        response = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=300,
             system=system,
             messages=follow_up,
             tools=[WEATHER_TOOL],
         )
-        return final.content[0].text.strip()
 
     return response.content[0].text.strip()
 

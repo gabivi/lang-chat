@@ -32,3 +32,8 @@ app.mount("/static", StaticFiles(directory=FRONTEND), name="static")
 @app.get("/")
 def index():
     return FileResponse(FRONTEND / "index.html")
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    from fastapi import Response
+    return Response(status_code=204)

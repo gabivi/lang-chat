@@ -599,14 +599,7 @@
       <div class="choice-btn"          data-group="gender" data-value="male"   onclick="pick(this)" data-i18n="male">Male</div>
     </div>
 
-    <div id="langFallback">
-      <span id="langFallbackMsg"></span>
-    </div>
 
-    <select id="voiceSelect" style="display:none;">
-      <option value="">Loading voices…</option>
-    </select>
-    <div id="voiceNote" style="display:none;"></div>
 
     <button class="btn btn-primary btn-big mt-2" onclick="startConversation()" data-i18n="startBtn">Start Chatting</button>
     <button class="btn btn-outline-secondary btn-big" onclick="goWelcome()" data-i18n="backBtn">← Back</button>
@@ -1031,6 +1024,7 @@ let listening       = false;
 let ttsQueue        = [];
 let ttsBusy         = false;
 let finalTranscript = '';
+let interimTranscript = '';
 let voicesReady     = false;
 const isIOS         = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
@@ -1251,117 +1245,15 @@ async function startConversation() {
 }
 
 // ════════════════════════════════════════════════════
-//  TTS
+//  TTS (Edge-TTS API)
 // ════════════════════════════════════════════════════
-const FEMALE_RE = /female|\b(samantha|karen|moira|tessa|fiona|victoria|zira|hazel|eva|susan|helena|anna|carmit|amelie|alice|kate|serena|veena|aria|jenny|clara|ava|emma|ivy|joanna|kendra|kimberly|salli|lotte|marlene|carla|bianca|celine|lea|penelope|naja|mia|astrid|haila|tamar|yonit)\b/i;
-const MALE_RE   = /\bmale\b|\b(david|alex|fred|lee|tom|jorge|luca|daniel|mark|james|aaron|arthur|rishi|oliver|guy|reed|roger|eric|brian|matthew|joey|andrew|hans|mathieu|giorgio|filiz|takumi|enrique|miguel|geraint|russel|justin|kevin|stephen|asaf)\b/i;
-
-// Map app language codes to BCP 47 language tags
-const LANG_MAP = {
-  'he': 'he-IL',
-  'en': 'en-US',
-  'de': 'de-DE',
-  'es': 'es-ES',
-  'fr': 'fr-FR',
-  'hu': 'hu-HU',
-};
-
-let _voiceLoadAttempts = 0;
-function loadVoices() {
-  if (window.speechSynthesis.getVoices().length > 0) {
-    voicesReady = true;
-    populateVoiceDropdown();
-  } else if (_voiceLoadAttempts < 15) {
-    _voiceLoadAttempts++;
-    setTimeout(loadVoices, 300);
-  } else {
-    // Voices never loaded — proceed without a specific voice; browser uses its default
-    voicesReady = true;
-    populateVoiceDropdown();
-  }
-}
-
-function switchToEnglish() {
-  language = 'en';
-  document.querySelectorAll('[data-group="lang"]').forEach(b => {
-    b.classList.toggle('selected', b.dataset.value === 'en');
-  });
-  applyUI();
-  populateVoiceDropdown();
-}
-
-function populateVoiceDropdown() {
-  const voices  = window.speechSynthesis.getVoices();
-  const code    = language === 'he' ? 'he' : language === 'de' ? 'de' : language === 'es' ? 'es' : language === 'fr' ? 'fr' : language === 'hu' ? 'hu' : 'en';
-  const pool    = voices.filter(v => v.lang.startsWith(code));
-
-  const fallbackEl = document.getElementById('langFallback');
-  const fallbackMsg = document.getElementById('langFallbackMsg');
-
-  if (pool.length === 0 && language !== 'en') {
-    // No voices for this language — auto-switch to English avatar (face, name, and voice together)
-    switchToEnglish();   // sets language='en', re-populates dropdown with English voices
-    if (fallbackEl) {
-      fallbackMsg.textContent = t('noVoiceWarning');  // t() now uses language='en'
-      fallbackEl.style.display = 'block';
-    }
-    return;
-  }
-
-  if (fallbackEl) fallbackEl.style.display = 'none';
-  fillSelect(pool);
-}
-
-function fillSelect(pool) {
-  const sel      = document.getElementById('voiceSelect');
-  const wantRe   = avatarGender === 'female' ? FEMALE_RE : MALE_RE;
-  const rejectRe = avatarGender === 'female' ? MALE_RE   : FEMALE_RE;
-  sel.innerHTML  = '';
-
-  pool.forEach((v, i) => {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = v.name;
-    sel.appendChild(opt);
-  });
-
-  // Collect all matching-gender voices; fall back to neutral, then any
-  const rand = arr => arr[Math.floor(Math.random() * arr.length)];
-  const matching = pool.map((v,i)=>i).filter(i =>  wantRe.test(pool[i].name));
-  const neutral  = pool.map((v,i)=>i).filter(i => !wantRe.test(pool[i].name) && !rejectRe.test(pool[i].name));
-  const chosen   = matching.length ? rand(matching) : neutral.length ? rand(neutral) : 0;
-  sel.value = chosen;
-
-  // Grey out avatar-gender buttons when no matching voice exists for that gender
-  const hasFemale = pool.some(v => FEMALE_RE.test(v.name));
-  const hasMale   = pool.some(v =>   MALE_RE.test(v.name));
-  document.querySelectorAll('[data-group="gender"]').forEach(btn => {
-    const isFem  = btn.dataset.value === 'female';
-    const hasVoice = isFem ? hasFemale : hasMale;
-    btn.style.opacity = hasVoice ? '' : '0.4';
-    btn.title = hasVoice ? '' : (uiLang === 'he' ? 'אין קול מתאים למין זה' : 'No matching voice for this gender');
-  });
-}
-
-function applyVoiceSelection() {
-  const voices = window.speechSynthesis.getVoices();
-  const code   = language === 'he' ? 'he' : language === 'de' ? 'de' : language === 'es' ? 'es' : language === 'fr' ? 'fr' : language === 'hu' ? 'hu' : 'en';
-  let pool     = voices.filter(v => v.lang.startsWith(code));
-  if (pool.length === 0) pool = voices.filter(v => v.lang.startsWith('en'));  // fallback
-
-  const idx    = parseInt(document.getElementById('voiceSelect').value, 10);
-  ttsVoice     = pool[isNaN(idx) ? 0 : idx] || pool[0] || voices[0] || null;
-  if (ttsVoice) {
-    const wantRe   = avatarGender === 'female' ? FEMALE_RE : MALE_RE;
-    const rejectRe = avatarGender === 'female' ? MALE_RE   : FEMALE_RE;
-    ttsGenderMatch = wantRe.test(ttsVoice.name) || !rejectRe.test(ttsVoice.name);
-  }
-  console.log('[TTS]', ttsVoice?.name, '| genderMatch:', ttsGenderMatch);
-}
 
 function initTTS(lang, gender) {
-  language = lang; avatarGender = gender; ttsVoice = null;
-  if (voicesReady) { populateVoiceDropdown(); applyVoiceSelection(); }
+  language = lang;
+  avatarGender = gender;
+  ttsQueue = [];
+  ttsBusy = false;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
 }
 
 function stripForTTS(text) {
@@ -1372,28 +1264,28 @@ function stripForTTS(text) {
     .replace(/\s+/g, ' ').trim();
 }
 
-function speak(text) {
+let currentAudio = null;
+
+async function speak(text) {
   if (!text) return;
   text = stripForTTS(text);
   if (!text) return;
-  const go = () => { if (!ttsVoice) applyVoiceSelection(); ttsQueue.push(text); if (!ttsBusy) drainTTS(); };
-  if (voicesReady) go();
-  else {
-    // Wait for voices; fall back to default voice after 4 s if event never fires
-    const proceed = () => { if (!voicesReady) { voicesReady = true; populateVoiceDropdown(); } go(); };
-    window.speechSynthesis.onvoiceschanged = proceed;
-    setTimeout(proceed, 4000);
-  }
+  ttsQueue.push(text);
+  if (!ttsBusy) drainTTS();
 }
 
 function stopSpeaking() {
-  window.speechSynthesis.cancel();
-  ttsQueue = []; ttsBusy = false;
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  ttsQueue = []; 
+  ttsBusy = false;
   document.getElementById('stopBtn').style.display = 'none';
   setAvatarSpeaking(false);
 }
 
-function drainTTS() {
+async function drainTTS() {
   if (!ttsQueue.length) {
     ttsBusy = false;
     document.getElementById('stopBtn').style.display = 'none';
@@ -1403,94 +1295,83 @@ function drainTTS() {
   ttsBusy = true;
   document.getElementById('stopBtn').style.display = 'block';
   setAvatarSpeaking(true);
+  
   const text = ttsQueue.shift();
-  setTimeout(() => {
-    const utt = new SpeechSynthesisUtterance(text);
-    if (ttsVoice) utt.voice = ttsVoice;
-    utt.lang  = LANG_MAP[language] || 'en-US';
-    utt.rate  = 1.08;
-    utt.pitch = ttsGenderMatch
-      ? (avatarGender === 'female' ? 1.25 : 1.0)
-      : (avatarGender === 'female' ? 1.85 : 0.65);
-    utt.onend = utt.onerror = drainTTS;
-    window.speechSynthesis.speak(utt);
-  }, 50);
+  try {
+    const queryParams = new URLSearchParams({ text, language, gender: avatarGender }).toString();
+    const url = `/tts?${queryParams}`;
+    currentAudio = new Audio(url);
+    currentAudio.onended = () => { currentAudio = null; drainTTS(); };
+    currentAudio.onerror = () => { currentAudio = null; drainTTS(); };
+    currentAudio.play().catch(e => { console.error("Audio playback prevented:", e); drainTTS(); });
+  } catch (err) {
+    console.error("TTS error:", err);
+    drainTTS();
+  }
 }
 
-setInterval(() => { if (ttsBusy && window.speechSynthesis.paused) window.speechSynthesis.resume(); }, isIOS ? 2000 : 8000);
-
-// iOS blocks audio until a user gesture — unlock on first tap
-let _audioUnlocked = false;
-function _unlockAudio() {
-  if (_audioUnlocked || !window.speechSynthesis) return;
-  _audioUnlocked = true;
-  const utt = new SpeechSynthesisUtterance('');
-  window.speechSynthesis.speak(utt);
-  window.speechSynthesis.cancel();
-}
-document.addEventListener('touchstart', _unlockAudio, { once: true, passive: true });
-document.addEventListener('click',      _unlockAudio, { once: true });
-
 // ════════════════════════════════════════════════════
-//  STT  (press-and-hold to speak)
+//  STT  (press-and-hold to speak, Whisper via /stt)
 // ════════════════════════════════════════════════════
-function startListening() {
+let mediaRecorder = null;
+let audioChunks = [];
+
+async function startListening() {
   if (listening) return;
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { setStatus('Speech recognition not supported.'); return; }
   stopSpeaking();
-  recognition = new SR();
+  document.getElementById('micLabel').textContent = t('listening');
+  document.getElementById('micBtn').classList.add('listening');
+  listening = true;
 
-  const langMap = {
-    'he': 'he-IL',
-    'en': 'en-US',
-    'de': 'de-DE',
-    'es': 'es-ES',
-    'fr': 'fr-FR',
-    'hu': 'hu-HU',
-  };
-  recognition.lang = langMap[language] || 'en-US';
-  recognition.interimResults = true;
-  recognition.continuous = true;
-  finalTranscript = '';
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { autoGainControl: false, echoCancellation: false, noiseSuppression: false }
+    });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
 
-  recognition.onstart = () => {
-    listening = true;
-    document.getElementById('micBtn').classList.add('listening');
-    document.getElementById('micLabel').textContent = t('listening');
-  };
-  recognition.onresult = e => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const tx = e.results[i][0].transcript;
-      if (e.results[i].isFinal) finalTranscript += tx; else interim += tx;
-    }
-    document.getElementById('micLabel').textContent = finalTranscript + interim || t('listening');
-  };
-  recognition.onend = () => {
-    // iOS auto-stops recognition (no continuous support) — restart if button still held
-    if (listening) {
-      try { recognition.start(); return; } catch(e) {}
-    }
-    const text = finalTranscript.trim();
-    document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('micLabel').textContent = t('micLabel');
-    finalTranscript = '';
-    if (text) sendMessage(text); else setStatus(t('noSpeech'));
-  };
-  recognition.onerror = e => {
-    if (e.error === 'no-speech') return;
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      document.getElementById('micBtn').classList.remove('listening');
+      document.getElementById('micLabel').textContent = t('micLabel');
+
+      const mimeType = mediaRecorder.mimeType || 'audio/webm';
+      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+      const audioBlob = new Blob(audioChunks, { type: mimeType });
+      stream.getTracks().forEach(track => track.stop());
+
+      if (audioChunks.length === 0) { setStatus(t('noSpeech')); return; }
+
+      setStatus(t('thinking'));
+      try {
+        const formData = new FormData();
+        formData.append("file", audioBlob, `recording.${ext}`);
+        const res = await fetch('/stt', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
+        if (data.text && data.text.trim()) sendMessage(data.text);
+        else setStatus(t('noSpeech'));
+      } catch (err) {
+        setStatus(t('serverError'));
+      }
+    };
+
+    mediaRecorder.start();
+  } catch (err) {
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micLabel').textContent = t('micLabel');
-  };
-  recognition.start();
+    setStatus("Microphone permission denied.");
+  }
 }
 
 function stopListening() {
   if (!listening) return;
-  listening = false; // clear before stop so onend doesn't restart
-  if (recognition) recognition.stop();
+  listening = false;
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
 }
 
 // ════════════════════════════════════════════════════
@@ -1611,7 +1492,6 @@ function closeReview() {
 });
 
 document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key==='Enter') doIdentify(); });
-if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
 applyUI();
 </script>
 </body>
