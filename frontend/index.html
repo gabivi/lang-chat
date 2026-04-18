@@ -1022,7 +1022,7 @@ ${stubbleSVG}
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
-const APP_VERSION = '0.702';
+const APP_VERSION = '0.703';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
@@ -1163,7 +1163,7 @@ function goWelcome() {
   show('screenWelcome');
 }
 function goSetup() {
-  // Update avatar button names to match current practice language and sync gender
+  language = practiceLanguage;  // Always use welcome-screen selection, not last resumed conversation
   updateAvatarButtons();
   document.querySelectorAll('[data-group="gender"]').forEach(b =>
     b.classList.toggle('selected', b.dataset.value === avatarGender));
@@ -1615,10 +1615,12 @@ function updateChatInfoBar() {
 //  Init
 // ════════════════════════════════════════════════════
 // Sync all button groups to loaded/default state
-['uilang','lang','gender','ugender'].forEach(group => {
+['uilang','lang','gender','ugender','plang','level'].forEach(group => {
   const match = group === 'uilang' ? uiLang
               : group === 'lang'   ? language
               : group === 'gender' ? avatarGender
+              : group === 'plang'  ? practiceLanguage
+              : group === 'level'  ? userLevel
               : userGender;
   document.querySelectorAll(`[data-group="${group}"]`).forEach(b =>
     b.classList.toggle('selected', b.dataset.value === match));
