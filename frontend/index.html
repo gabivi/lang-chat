@@ -1314,6 +1314,10 @@ function stripForTTS(text) {
     .replace(/^#{1,6}\s+/gm, '')        // # headings
     .replace(/^[-*]\s+/gm, '')          // - list items
     .replace(/^\d+\.\s+/gm, '')         // 1. numbered lists
+    // Remove HTML-like tags and angle brackets
+    .replace(/<[^>]*>/g, ' ')           // remove HTML tags
+    .replace(/</g, ' less than ')       // convert remaining < to 'less than'
+    .replace(/>/g, ' greater than ')    // convert remaining > to 'greater than'
     // Remove problematic punctuation and special characters
     .replace(/[\u2014\u2013\u2026]/g, ' ') // em-dash, en-dash, ellipsis to space
     .replace(/[\u201C\u201D]/g, '"')   // smart quotes to regular quotes
@@ -1493,7 +1497,8 @@ function endConversation() {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({text: '__END__'}),
   }).then(r => r.json()).then(data => {
-    if (data.text) { addBubble('avatar', data.text); speak(data.text); }
+    // Only display the goodbye message, don't speak it - user wants immediate stop
+    if (data.text) { addBubble('avatar', data.text); }
   }).catch(() => {});
 
   _reviewAbortController = new AbortController();

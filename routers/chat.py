@@ -279,6 +279,10 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     rate = rate_map.get(level, 1.0)
 
     # Comprehensive sanitization for TTS to prevent misinterpretation
+    # Remove HTML-like tags first
+    text = re.sub(r'<[^>]*>', ' ', text)  # remove HTML/XML tags
+    text = text.replace("<", " less than ")  # remaining < chars
+    text = text.replace(">", " greater than ")  # remaining > chars
     # Remove/replace problematic characters that edge_tts might mispronounce
     text = text.replace("—", " - ")     # em-dash
     text = text.replace("–", "-")       # en-dash
@@ -293,8 +297,6 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     text = re.sub(r'[\u200b\u200c\u200d\u200e\u200f]', '', text)
     # Remove soft hyphens and other control characters
     text = re.sub(r'[\u00ad\u061b]', '', text)
-    # Remove any remaining non-ASCII symbols that aren't letters/numbers/common punctuation
-    text = re.sub(r'[^\w\s\.,!?\-\'"()—–&:;/?#@*+=~`\u0590-\u05FF\u0600-\u06FF\u0370-\u03FF]', ' ', text, flags=re.UNICODE)
     # Normalize whitespace
     text = re.sub(r'\s+', ' ', text).strip()
     
