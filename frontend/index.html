@@ -1111,7 +1111,7 @@ function addBubble(speaker, text) {
 }
 function setStatus(msg) { document.getElementById('statusBar').textContent = msg; }
 function goWelcome() {
-  document.getElementById('nameInput').value = '';
+  document.getElementById('nameInput').value = localStorage.getItem('cc_userName') || '';
   const badge = document.getElementById('holidayBadge');
   if (badge) badge.style.display = 'none';
   // Sync buttons to current saved settings
@@ -1156,6 +1156,7 @@ async function doIdentify() {
     });
     const data = await res.json();
     userId = data.id; userName = data.name;
+    localStorage.setItem('cc_userName', data.name);
     // Load saved settings from user profile
     if (data.language) practiceLanguage = data.language;
     if (data.level) userLevel = data.level;
@@ -1533,6 +1534,7 @@ function updateChatInfoBar() {
 });
 
 document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key==='Enter') doIdentify(); });
+document.getElementById('nameInput').value = localStorage.getItem('cc_userName') || '';
 applyUI();
 </script>
 </body>
