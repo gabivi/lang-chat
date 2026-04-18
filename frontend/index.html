@@ -1022,7 +1022,7 @@ ${stubbleSVG}
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
-const APP_VERSION = '0.70';
+const APP_VERSION = '0.701';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
@@ -1308,15 +1308,27 @@ function initTTS(lang, gender) {
 
 function stripForTTS(text) {
   return text
+    // Remove markdown formatting
     .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold**
     .replace(/\*(.+?)\*/g, '$1')        // *italic*
     .replace(/^#{1,6}\s+/gm, '')        // # headings
     .replace(/^[-*]\s+/gm, '')          // - list items
     .replace(/^\d+\.\s+/gm, '')         // 1. numbered lists
-    .replace(/,(?=\s+[a-zäöüàâéèêëïîôùûüç])/g, '') // comma before lowercase (natural TTS pause fix)
+    // Remove problematic punctuation and special characters
+    .replace(/[\u2014\u2013\u2026]/g, ' ') // em-dash, en-dash, ellipsis to space
+    .replace(/[\u201C\u201D]/g, '"')   // smart quotes to regular quotes
+    .replace(/[\u2018\u2019]/g, "'")   // smart apostrophes to regular apostrophes
+    .replace(/[\xAB\xBB]/g, '"')       // french quotes to regular quotes
+    .replace(/\s*[\[\(][-\w.]+[\]\)]\s*/g, ' ') // [reference] links
+    .replace(/,(?=\s+[a-zäöüàâéèêëïîôùûüç])/g, '') // comma before lowercase
+    // Remove emojis and variation selectors
     .replace(/\p{Emoji_Presentation}/gu, '')
     .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
     .replace(/\u{200D}/gu, '')
+    // Remove other control characters
+    .replace(/[\u200B\u200C\u200D\u200E\u200F]/g, '') // zero-width characters
+    .replace(/[\u00AD]/g, '') // soft hyphen
+    // Normalize whitespace
     .replace(/\s+/g, ' ').trim();
 }
 

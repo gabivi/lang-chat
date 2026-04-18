@@ -70,10 +70,26 @@ def _get_random_topics():
 
 def _sanitize_for_tts(text):
     """Sanitize text for all languages before TTS to prevent edge_tts misinterpretation."""
-    # Replace problematic characters that edge_tts might misinterpret as numbers or symbols
-    text = text.replace("—", " - ")  # em-dash to hyphen
-    text = text.replace("–", "-")    # en-dash to hyphen
-    text = text.replace("…", "...")  # ellipsis to dots
+    import re
+    
+    # Replace common problematic characters
+    text = text.replace("—", " - ")     # em-dash
+    text = text.replace("–", "-")       # en-dash
+    text = text.replace("…", "...")     # ellipsis
+    text = text.replace(""", '"')       # left smart quote
+    text = text.replace(""", '"')       # right smart quote
+    text = text.replace("'", "'")       # left smart apostrophe
+    text = text.replace("'", "'")       # right smart apostrophe
+    text = text.replace("«", '"')       # left guillemet
+    text = text.replace("»", '"')       # right guillemet
+    
+    # Remove zero-width and control characters
+    text = re.sub(r'[\u200b\u200c\u200d\u200e\u200f]', '', text)  # zero-width chars
+    text = re.sub(r'[\u00ad\u061b]', '', text)  # soft hyphen, Arabic semicolon
+    
+    # Normalize whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    
     return text
 
 

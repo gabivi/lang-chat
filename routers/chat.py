@@ -256,6 +256,7 @@ async def stt_endpoint(file: UploadFile = File(...), language: str = "he"):
 async def generate_tts(text: str, language: str = "he", gender: str = "female", level: str = "intermediate"):
     import edge_tts
     import xml.sax.saxutils
+    import re
 
     voices = {
         ("en", "female"): "en-US-JennyNeural",
@@ -277,11 +278,25 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     rate_map = {"beginner": 0.75, "intermediate": 1.0, "advanced": 1.25}
     rate = rate_map.get(level, 1.0)
 
-    # Sanitize text for all languages to prevent edge_tts misinterpretation
-    # Replace em-dashes and other problematic characters
-    text = text.replace("—", " - ")  # em-dash to hyphen
-    text = text.replace("–", "-")    # en-dash to hyphen
-    text = text.replace("…", "...")  # ellipsis to dots
+    # Comprehensive sanitization for TTS to prevent misinterpretation
+    # Remove/replace problematic characters that edge_tts might mispronounce
+    text = text.replace("—", " - ")     # em-dash
+    text = text.replace("–", "-")       # en-dash
+    text = text.replace("…", "...")     # ellipsis
+    text = text.replace("“", '"')    # left smart quote
+    text = text.replace("”", '"')    # right smart quote
+    text = text.replace("‘", "'")    # left smart apostrophe
+    text = text.replace("’", "'")    # right smart apostrophe
+    text = text.replace("«", '"')    # left guillemet
+    text = text.replace("»", '"')    # right guillemet
+    # Remove zero-width characters
+    text = re.sub(r'[\u200b\u200c\u200d\u200e\u200f]', '', text)
+    # Remove soft hyphens and other control characters
+    text = re.sub(r'[\u00ad\u061b]', '', text)
+    # Remove any remaining non-ASCII symbols that aren't letters/numbers/common punctuation
+    text = re.sub(r'[^\w\s\.,!?\-\'"()—–&:;/?#@*+=~`\u0590-\u05FF\u0600-\u06FF\u0370-\u03FF]', ' ', text, flags=re.UNICODE)
+    # Normalize whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
     
     # Escape XML and wrap in SSML prosody tag for rate control
     escaped_text = xml.sax.saxutils.escape(text)
