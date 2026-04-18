@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone, timedelta
@@ -37,6 +38,43 @@ _CIVIL_HOLIDAYS = {
     (4, 22): ("Yom HaZikaron", "יום הזיכרון"),
     (4, 23): ("Yom HaAtzmaut", "יום העצמאות"),
 }
+
+
+def _get_random_topics():
+    """Return a random selection of 5-7 topics from a larger pool."""
+    all_topics = [
+        "Family and grandchildren — ask about their family",
+        "Childhood memories — ask about growing up, favorite places, schools",
+        "Holidays and celebrations — ask about favorite holidays, traditions",
+        "Music and entertainment — ask about their favorite music, musicians, songs",
+        "Food and cooking — ask about favorite dishes, family recipes, cuisines",
+        "Hobbies and interests — ask about activities they enjoy",
+        "Travel — ask about places they've visited or want to visit",
+        "Sports and games — ask about sports they enjoy or play",
+        "Books and reading — ask about favorite authors or stories",
+        "Work and career — ask about their professional life and interests",
+        "Nature and outdoors — ask about favorite natural places",
+        "Crafts and creativity — ask about creative hobbies and projects",
+        "Local culture — ask about Israeli traditions and customs",
+        "Languages — ask about languages they speak or want to learn",
+        "Community and friends — ask about social activities and friendships",
+        "Technology — ask about how they use technology",
+        "Gardening — ask about plants and gardens",
+        "Animals and pets — ask about pets they have or love",
+        "Movies and TV — ask about favorite shows and actors",
+        "Weather and seasons — ask about their favorite times of year"
+    ]
+    # Select 5-7 random topics
+    return random.sample(all_topics, min(6, len(all_topics)))
+
+
+def _sanitize_for_tts(text):
+    """Sanitize text for all languages before TTS to prevent edge_tts misinterpretation."""
+    # Replace problematic characters that edge_tts might misinterpret as numbers or symbols
+    text = text.replace("—", " - ")  # em-dash to hyphen
+    text = text.replace("–", "-")    # en-dash to hyphen
+    text = text.replace("…", "...")  # ellipsis to dots
+    return text
 
 
 def _get_jewish_holiday(now: datetime):
@@ -508,29 +546,55 @@ def get_system_prompt(language: str, gender: str, user_level: str = "intermediat
     """Get the system prompt for the given language, gender, and user level."""
     base_prompt = SYSTEM_PROMPTS.get((language, gender), SYSTEM_PROMPTS[("en", "female")])
     
-    # Add level-specific instructions
-    level_instructions = {
-        "beginner": "Focus on basic vocabulary and simple sentence structures. Use short, simple words. Repeat key phrases. Encourage basic responses.",
-        "intermediate": "Use natural conversation with some new vocabulary. Include common idioms and expressions.",
-        "advanced": "Discuss complex topics, use sophisticated vocabulary, and include cultural references and nuanced expressions."
-    }
-    
-    level_text = level_instructions.get(user_level, level_instructions["intermediate"])
-    
+    # Level-specific instructions with more distinct characteristics
     if language == "he":
-        level_text_he = {
-            "beginner": "התמקד באוצר מילים בסיסי ומבני משפטים פשוטים. השתמש במילים קצרות ופשוטות. חזור על ביטויים מרכזיים. עודד תשובות בסיסיות.",
-            "intermediate": "השתמש בשיחה טבעית עם אוצר מילים חדש. כלול ביטויי לשון נפוצים.",
-            "advanced": "דן בנושאים מורכבים, השתמש באוצר מילים מתקדם וכלול הפניות תרבותיות וביטויים מורכבים."
+        level_instructions = {
+            "beginner": "רמה בסיסית בלבד! השתמש רק במילים פשוטות מאוד. משפטים קצרים מאוד: 5-7 מילים בלבד. חזור על מילים. שאל שאלות פשוטות (כן/לא). אל תשתמש במילים מתקדמות.",
+            "intermediate": "רמה בינונית. השתמש בעברית טבעית עם אוצר מילים מתון. כלול ביטויים נפוצים. משפטים בעלי מבנה רגיל. שאל שאלות פתוחות. השתמש בזמנים שונים.",
+            "advanced": "רמה מתקדמת! השתמש בעברית עשירה עם אוצר מילים מתקדם. כלול ביטויים דקיקים ותרבותיים. דן בנושאים מורכבים. השתמש בכל הזמנים והמבנים."
         }
-        level_text = level_text_he.get(user_level, level_text_he["intermediate"])
-        prompt = base_prompt.replace("[LEVEL_INSTRUCTIONS]", level_text)
-        # Add strict length constraint in Hebrew
-        prompt += "\n\n⚠️ CRITICAL: Respond ONLY in 1-3 sentences. Never more. Be concise."
+        level_text = level_instructions.get(user_level, level_instructions["intermediate"])
+        
+    elif language == "de":
+        level_instructions = {
+            "beginner": "NUR ANFÄNGER NIVEAU! Nutze nur sehr einfache Wörter. Kurze Sätze: nur 5-7 Wörter. Wiederhole Schlüsselwörter. Stelle einfache Ja/Nein-Fragen. Kein komplexes Vokabular. Nur Präsens.",
+            "intermediate": "Mittelstufe. Nutze natürliche Konversation mit moderatem Wortschatz. Einfache Redewendungen. Normaler Satzbau. Offene Fragen. Vergangenheit und Präsens.",
+            "advanced": "Fortgeschritten! Reicher Wortschatz. Komplexe Ausdrücke. Komplexe Themen. Alle Zeitformen. Kulturelle Hinweise. Subtile Nuancen."
+        }
+        level_text = level_instructions.get(user_level, level_instructions["intermediate"])
+        
     else:
-        prompt = base_prompt.replace("[LEVEL_INSTRUCTIONS]", level_text)
-        # Add strict length constraint in English
-        prompt += "\n\n⚠️ CRITICAL: Respond ONLY in 1-3 sentences. Never exceed this. Be extremely concise."
+        level_instructions = {
+            "beginner": "BEGINNER LEVEL ONLY! Use only very simple, common words. Keep sentences SHORT (5-7 words max). Repeat key words. Ask very simple yes/no questions. NO complex vocabulary. Use present tense only.",
+            "intermediate": "Intermediate level. Use natural conversation with moderate vocabulary. Include common expressions and idioms. Normal sentence structure. Ask open questions. Use past and present tenses naturally.",
+            "advanced": "Advanced level! Use rich vocabulary and sophisticated expressions. Discuss complex topics. Use all tenses, subjunctive, and nuanced language. Include cultural references and thoughtful observations."
+        }
+        level_text = level_instructions.get(user_level, level_instructions["intermediate"])
+    
+    # Get random topics
+    topics = _get_random_topics()
+    topics_text = "\n".join([f"• {t}" for t in topics])
+    
+    prompt = base_prompt.replace("[LEVEL_INSTRUCTIONS]", level_text)
+    
+    # Add random topics section
+    if language == "he":
+        prompt += f"\n\nנושאים מושתנים לשיחה:\n{topics_text}"
+    elif language == "de":
+        prompt += f"\n\nZufällige Themen für das Gespräch:\n{topics_text}"
+    else:
+        prompt += f"\n\nRandom topics for conversation:\n{topics_text}"
+    
+    # Add strict length constraint and sanitize
+    if language == "he":
+        prompt += "\n\n⚠️ חשוב: תשובה תמיד ב-1-3 משפטים בלבד! אי פעם יותר!"
+    elif language == "de":
+        prompt += "\n\n⚠️ KRITISCH: Antworte IMMER in nur 1-3 Sätzen! Niemals mehr!"
+    else:
+        prompt += "\n\n⚠️ CRITICAL: Respond ONLY in 1-3 sentences. Never exceed. Be concise."
+    
+    # Sanitize for all languages to prevent TTS issues
+    prompt = _sanitize_for_tts(prompt)
     
     return prompt
 
@@ -608,7 +672,10 @@ def chat(user_name: str, language: str, gender: str, history: list[dict],
             tools=[WEATHER_TOOL],
         )
 
-    return response.content[0].text.strip()
+    response_text = response.content[0].text.strip()
+    # Sanitize response text for all languages before TTS
+    response_text = _sanitize_for_tts(response_text)
+    return response_text
 
 
 def generate_conversation_review(

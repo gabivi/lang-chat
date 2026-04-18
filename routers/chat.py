@@ -277,6 +277,12 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     rate_map = {"beginner": 0.75, "intermediate": 1.0, "advanced": 1.25}
     rate = rate_map.get(level, 1.0)
 
+    # Sanitize text for all languages to prevent edge_tts misinterpretation
+    # Replace em-dashes and other problematic characters
+    text = text.replace("—", " - ")  # em-dash to hyphen
+    text = text.replace("–", "-")    # en-dash to hyphen
+    text = text.replace("…", "...")  # ellipsis to dots
+    
     # Escape XML and wrap in SSML prosody tag for rate control
     escaped_text = xml.sax.saxutils.escape(text)
     ssml_text = f'<speak><prosody rate="{rate}">{escaped_text}</prosody></speak>'
