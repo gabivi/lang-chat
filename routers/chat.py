@@ -223,12 +223,17 @@ def get_conversation_review(conversation_id: int, ui_lang: str = "en", db: Sessi
 # ── Speech-to-Text (STT) ──────────────────────────────────────────────────────
 
 @router.post("/stt")
-async def stt_endpoint(file: UploadFile = File(...)):
+async def stt_endpoint(file: UploadFile = File(...), language: str = "he"):
     if "GROQ_API_KEY" not in os.environ:
         raise HTTPException(
             status_code=503,
             detail="GROQ_API_KEY not configured for Speech-to-Text."
         )
+
+    prompts = {
+        "he": "שלום", "en": "Hello", "de": "Hallo",
+        "es": "Hola",  "fr": "Bonjour", "hu": "Szia",
+    }
 
     try:
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -237,9 +242,9 @@ async def stt_endpoint(file: UploadFile = File(...)):
         transcription = client.audio.transcriptions.create(
             file=file_tuple,
             model="whisper-large-v3",
-            language="he",
+            language=language,
             temperature=0.0,
-            prompt="שלום",
+            prompt=prompts.get(language, ""),
         )
         return {"text": transcription.text}
     except Exception as e:

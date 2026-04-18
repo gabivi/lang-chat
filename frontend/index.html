@@ -1349,7 +1349,7 @@ async function startListening() {
       try {
         const formData = new FormData();
         formData.append("file", audioBlob, `recording.${ext}`);
-        const res = await fetch('/stt', { method: 'POST', body: formData });
+        const res = await fetch(`/stt?language=${language}`, { method: 'POST', body: formData });
         const data = await res.json();
         if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
         if (data.text && data.text.trim()) sendMessage(data.text);
