@@ -286,6 +286,7 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     # Use named rate values instead of decimals to avoid number artifacts
     rate_map = {"beginner": "slow", "intermediate": "medium", "advanced": "fast"}
     rate = rate_map.get(level, "medium")
+    # Note: We're not using SSML rate control anymore as it was causing edge_tts to speak the rate value
 
     # Comprehensive sanitization for TTS to prevent misinterpretation
     # Remove HTML-like tags first
@@ -313,11 +314,8 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     # Normalize whitespace
     text = re.sub(r'\s+', ' ', text).strip()
     
-    # Escape XML and wrap in SSML prosody tag for rate control
-    escaped_text = xml.sax.saxutils.escape(text)
-    ssml_text = f'<speak><prosody rate="{rate}">{escaped_text}</prosody></speak>'
-
-    communicate = edge_tts.Communicate(ssml_text, voice)
+    # Send plain text to edge_tts without SSML (SSML may be causing the rate value to be spoken)
+    communicate = edge_tts.Communicate(text, voice)
 
     async def audio_generator():
         async for chunk in communicate.stream():
