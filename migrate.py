@@ -1,7 +1,8 @@
 """One-time migration: add gender, language, and level columns to users table if missing."""
 import sqlite3, os
 
-DB = os.getenv("DATABASE_URL", "companion.db").replace("sqlite:///", "")
+# Use persistent disk on Render (/data), fall back to local file
+DB = "/data/companion.db" if os.path.isdir("/data") else "./companion.db"
 
 conn = sqlite3.connect(DB)
 cur  = conn.cursor()

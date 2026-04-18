@@ -1,11 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs grep:*)",
-      "Bash(python -c \"import routers.admin; import routers.chat; import services.ai; print\\(''OK''\\)\")",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git rebase *)",
+      "Bash(git stash *)",
+      "Bash(mv .claude/settings.local.json /tmp/settings.local.json.bak)",
+      "Bash(mv /tmp/settings.local.json.bak .claude/settings.local.json)",
+      "Bash(git pull *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git reset *)",
+      "Bash(claude logout *)"
     ]
   }
 }
