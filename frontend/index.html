@@ -600,8 +600,8 @@
 
     <p class="fw-semibold mb-2" data-i18n="chooseCompanion">Choose companion:</p>
     <div class="choice-grid">
-      <div class="choice-btn selected" data-group="gender" data-value="female" onclick="pick(this)" data-i18n="female">Female</div>
-      <div class="choice-btn"          data-group="gender" data-value="male"   onclick="pick(this)" data-i18n="male">Male</div>
+      <div class="choice-btn selected" data-group="gender" data-value="female" onclick="pick(this)">Female</div>
+      <div class="choice-btn"          data-group="gender" data-value="male"   onclick="pick(this)">Male</div>
     </div>
 
 
@@ -1065,10 +1065,42 @@ function pickUser(el) {
   applyUI();
 }
 
+const AVATAR_NAMES_FE = {
+  he: { female:'עדי',   male:'רועי'   },
+  en: { female:'Sophie', male:'James'  },
+  de: { female:'Anna',   male:'Lukas'  },
+  es: { female:'Maria',  male:'Carlos' },
+  fr: { female:'Chloé',  male:'Antoine'},
+  hu: { female:'Zsófi',  male:'Péter'  },
+};
+
+function updateAvatarButtons() {
+  const names = AVATAR_NAMES_FE[practiceLanguage] || {};
+  const femLabel = uiLang === 'he' ? 'נקבה' : 'Female';
+  const malLabel = uiLang === 'he' ? 'זכר'  : 'Male';
+  document.querySelectorAll('[data-group="gender"]').forEach(btn => {
+    const g    = btn.dataset.value;
+    const name = names[g];
+    if (name) {
+      btn.style.display = '';
+      btn.textContent   = `${name} (${g === 'female' ? femLabel : malLabel})`;
+    } else {
+      btn.style.display = 'none';
+      if (btn.classList.contains('selected')) {
+        btn.classList.remove('selected');
+        const first = document.querySelector('[data-group="gender"]:not([style*="none"])');
+        if (first) { first.classList.add('selected'); avatarGender = first.dataset.value; }
+      }
+    }
+  });
+}
+
 function pickPracticeLang(el) {
   document.querySelectorAll('[data-group="plang"]').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   practiceLanguage = el.dataset.value;
+  language = el.dataset.value;
+  updateAvatarButtons();
   savePrefs();
 }
 
@@ -1557,6 +1589,7 @@ function updateChatInfoBar() {
 
 document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key==='Enter') doIdentify(); });
 document.getElementById('nameInput').value = localStorage.getItem('cc_userName') || '';
+updateAvatarButtons();
 applyUI();
 </script>
 </body>
