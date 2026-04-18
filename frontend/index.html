@@ -1271,6 +1271,12 @@ function initTTS(lang, gender) {
 
 function stripForTTS(text) {
   return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold**
+    .replace(/\*(.+?)\*/g, '$1')        // *italic*
+    .replace(/^#{1,6}\s+/gm, '')        // # headings
+    .replace(/^[-*]\s+/gm, '')          // - list items
+    .replace(/^\d+\.\s+/gm, '')         // 1. numbered lists
+    .replace(/,(?=\s+[a-zäöüàâéèêëïîôùûüç])/g, '') // comma before lowercase (natural TTS pause fix)
     .replace(/\p{Emoji_Presentation}/gu, '')
     .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
     .replace(/\u{200D}/gu, '')
@@ -1483,14 +1489,28 @@ function showPastReview(reviewText, convTitle) {
   modal.style.display    = 'flex';
 }
 
-function saveReviewFile() {
+async function saveReviewFile() {
   const text = document.getElementById('reviewModalBody').textContent;
   if (!text) return;
   const date = new Date().toISOString().slice(0, 10);
+  const filename = `review-${date}.txt`;
+  const blob = new Blob(['\ufeff' + text], { type: 'text/plain;charset=utf-8' });
+
+  // Use Web Share API on mobile (iOS/Android)
+  if (navigator.share && navigator.canShare) {
+    const file = new File([blob], filename, { type: 'text/plain' });
+    if (navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: filename }); return; }
+      catch(e) { if (e.name === 'AbortError') return; }
+    }
+  }
+
+  // Desktop fallback
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
-  a.download = `review-${date}.txt`;
-  a.click();
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
 function closeReview() {
