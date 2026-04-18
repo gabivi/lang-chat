@@ -297,6 +297,9 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     text = re.sub(r'[\u200b\u200c\u200d\u200e\u200f]', '', text)
     # Remove soft hyphens and other control characters
     text = re.sub(r'[\u00ad\u061b]', '', text)
+    # Remove system value patterns (rates, parameters): 0.XX, 1.XX
+    text = re.sub(r'\b(0\.\d+|1\.\d+|\d+\.\d{2})\b', ' ', text)  # floating point numbers
+    text = re.sub(r'\[\d+\]|\(\d+\)', ' ', text)  # bracketed/parenthesized numbers
     # Normalize whitespace
     text = re.sub(r'\s+', ' ', text).strip()
     

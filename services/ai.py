@@ -87,6 +87,10 @@ def _sanitize_for_tts(text):
     text = re.sub(r'[\u200b\u200c\u200d\u200e\u200f]', '', text)  # zero-width chars
     text = re.sub(r'[\u00ad\u061b]', '', text)  # soft hyphen, Arabic semicolon
     
+    # Remove system value patterns (rates, parameters): 0.XX, 1.XX
+    text = re.sub(r'\b(0\.\d+|1\.\d+|\d+\.\d{2})\b', ' ', text)  # floating point numbers
+    text = re.sub(r'\[\d+\]|\(\d+\)', ' ', text)  # bracketed/parenthesized numbers
+    
     # Normalize whitespace
     text = re.sub(r'\s+', ' ', text).strip()
     
