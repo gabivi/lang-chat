@@ -288,6 +288,10 @@
     .face-root.speaking .mouth-open   { animation:mouththing .24s ease-in-out infinite alternate; }
 
     /* ── Chat screen ── */
+    #chatInfoBar {
+      text-align:center; font-size:.8rem; color:#aaa;
+      margin-bottom:.5rem; letter-spacing:.01em;
+    }
     #avatarName {
       text-align:center;
       font-size:1.35rem;
@@ -570,6 +574,7 @@
     <h5 id="reviewModalTitle" class="fw-bold mb-3" style="color:var(--accent-dark);font-size:1.4rem;"></h5>
     <div id="reviewModalBody" style="font-size:1rem;line-height:1.7;color:#444;white-space:pre-wrap;margin-bottom:1.5rem;"></div>
     <div class="text-center mt-3" style="display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;">
+      <button id="reviewCancelBtn" class="btn btn-outline-danger btn-big" onclick="cancelReview()" style="width:auto;display:none;padding:.65rem 1.5rem;"></button>
       <button id="reviewSaveBtn" class="btn btn-outline-secondary btn-big" onclick="saveReviewFile()" style="width:auto;display:inline-block;padding:.65rem 1.5rem;"></button>
       <button id="reviewCloseBtn" class="btn btn-primary btn-big" onclick="closeReview()" style="width:auto;display:inline-block;padding:.65rem 2rem;"></button>
     </div>
@@ -609,6 +614,7 @@
 <!-- ══════════  SCREEN 4 — Chat  ══════════ -->
 <div id="screenChat" class="screen">
   <div class="card-main">
+    <div id="chatInfoBar"></div>
     <div style="position:relative;width:130px;margin:0 auto .7rem;">
       <div id="avatarWrap" style="margin:0;"></div>
       <div id="holidayBadge" style="display:none;position:absolute;bottom:2px;right:-14px;font-size:1.9rem;line-height:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35));cursor:default;"></div>
@@ -655,8 +661,11 @@ const T = {
     aboutTitle:'About ChitChat2Go(Beta)',
     aboutText:'ChitChat2Go(Beta) is an AI-powered voice companion designed for elderly people who enjoy friendly conversation. Simply press the microphone and start talking — your companion will listen, respond, and suggest topics. The app is free, runs in Israel, and works in both Hebrew and English.',
     closeBtn:'Close',
+    levelLabel:'What is your level?',
+    beginner:'🌱 Beginner', intermediate:'📖 Intermediate', advanced:'🎓 Advanced',
     reviewTitle:'Conversation Review',
     reviewLoading:'Analyzing your conversation…',
+    reviewCancel:'Cancel',
     reviewNone:'Great job — no significant mistakes found!',
     reviewClose:'Close',
     reviewSave:'Save as file',
@@ -684,8 +693,11 @@ const T = {
     aboutTitle:'אודות ChitChat2Go(Beta)',
     aboutText:'ChitChat2Go(Beta) היא מלווה שיחה קולי מבוסס בינה מלאכותית, מיועד לאנשים מבוגרים הנהנים משיחות חבריות. פשוט לחצו על המיקרופון והתחילו לדבר — המלווה יקשיב, יענה, ויציע נושאים לשיחה. האפליקציה חינמית, פועלת בישראל, ועובדת בעברית ובאנגלית.',
     closeBtn:'סגירה',
+    levelLabel:'מה רמת השפה שלך?',
+    beginner:'🌱 מתחיל/ת', intermediate:'📖 בינוני/ת', advanced:'🎓 מתקדם/ת',
     reviewTitle:'סקירת השיחה',
     reviewLoading:'מנתח/ת את השיחה שלך…',
+    reviewCancel:'ביטול',
     reviewNone:'כל הכבוד — לא נמצאו טעויות משמעותיות!',
     reviewClose:'סגירה',
     reviewSave:'שמירה כקובץ',
@@ -1192,7 +1204,7 @@ function renderConvList(convs) {
 
 async function resumeConversation(convId, avatarName, gender, lang) {
   conversationId = convId; language = lang; avatarGender = gender;
-  applyUI(); setDir(lang);
+  applyUI(); setDir(lang); updateChatInfoBar();
   document.getElementById('avatarWrap').innerHTML = buildFace(gender, lang);
   document.getElementById('avatarName').textContent = avatarName;
   document.getElementById('transcript').innerHTML = '';
@@ -1219,7 +1231,7 @@ async function resumeConversation(convId, avatarName, gender, lang) {
 //  Screen 3 → 4 — Start new conversation
 // ════════════════════════════════════════════════════
 async function startConversation() {
-  applyUI(); setDir(language);
+  applyUI(); setDir(language); updateChatInfoBar();
   document.getElementById('avatarWrap').innerHTML = buildFace(avatarGender, language);
   document.getElementById('avatarName').textContent = '…';
   document.getElementById('transcript').innerHTML = '';
@@ -1392,32 +1404,34 @@ async function sendMessage(text) {
 
 async function suggestTopics() { stopSpeaking(); await sendMessage('__CHANGE_TOPIC__'); }
 
+let _reviewAbortController = null;
+
 function endConversation() {
   stopSpeaking();
   if (listening) stopListening();
   document.getElementById('micBtn').disabled = true;
   document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = true);
 
-  const modal      = document.getElementById('reviewModal');
-  const titleEl    = document.getElementById('reviewModalTitle');
-  const bodyEl     = document.getElementById('reviewModalBody');
-  const closeBtnEl = document.getElementById('reviewCloseBtn');
+  const modal        = document.getElementById('reviewModal');
+  const titleEl      = document.getElementById('reviewModalTitle');
+  const bodyEl       = document.getElementById('reviewModalBody');
+  const closeBtnEl   = document.getElementById('reviewCloseBtn');
+  const cancelBtnEl  = document.getElementById('reviewCancelBtn');
+  const saveBtnEl    = document.getElementById('reviewSaveBtn');
 
-  const saveBtnEl   = document.getElementById('reviewSaveBtn');
-
-  titleEl.textContent    = t('reviewTitle');
-  bodyEl.innerHTML       = `<span class="review-spinner"></span> ${t('reviewLoading')}`;
-  saveBtnEl.textContent  = t('reviewSave');
-  saveBtnEl.style.display = 'none';
-  closeBtnEl.textContent = t('reviewClose');
-  closeBtnEl.disabled    = true;
+  titleEl.textContent      = t('reviewTitle');
+  bodyEl.innerHTML         = `<span class="review-spinner"></span> ${t('reviewLoading')}`;
+  saveBtnEl.style.display  = 'none';
+  closeBtnEl.textContent   = t('reviewClose');
+  closeBtnEl.disabled      = true;
+  cancelBtnEl.textContent  = t('reviewCancel');
+  cancelBtnEl.style.display = 'inline-block';
   modal.querySelector('div').style.direction = uiLang === 'he' ? 'rtl' : 'ltr';
-  modal.dataset.closeTo  = 'welcome';
-  modal.style.display    = 'flex';
+  modal.dataset.closeTo    = 'welcome';
+  modal.style.display      = 'flex';
 
   const convId = conversationId;
 
-  // Send __END__ in background — no user bubble, just get avatar goodbye
   fetch(`/conversations/${convId}/chat`, {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({text: '__END__'}),
@@ -1425,19 +1439,29 @@ function endConversation() {
     if (data.text) { addBubble('avatar', data.text); speak(data.text); }
   }).catch(() => {});
 
-  // Fetch review in the UI language — enable buttons when ready
-  fetch(`/conversations/${convId}/review?ui_lang=${uiLang}`)
+  _reviewAbortController = new AbortController();
+  fetch(`/conversations/${convId}/review?ui_lang=${uiLang}`, { signal: _reviewAbortController.signal })
     .then(r => r.json())
     .then(data => {
-      bodyEl.textContent     = data.review || t('reviewNone');
+      bodyEl.textContent = data.review || t('reviewNone');
     })
-    .catch(() => {
-      bodyEl.textContent = t('reviewNone');
+    .catch(err => {
+      if (err.name !== 'AbortError') bodyEl.textContent = t('reviewNone');
     })
     .finally(() => {
-      saveBtnEl.style.display = '';
-      closeBtnEl.disabled     = false;
+      _reviewAbortController = null;
+      cancelBtnEl.style.display = 'none';
+      saveBtnEl.style.display   = '';
+      closeBtnEl.disabled       = false;
     });
+}
+
+function cancelReview() {
+  if (_reviewAbortController) {
+    _reviewAbortController.abort();
+    _reviewAbortController = null;
+  }
+  closeReview();
 }
 
 function showPastReview(reviewText, convTitle) {
@@ -1469,6 +1493,7 @@ function saveReviewFile() {
 }
 
 function closeReview() {
+  stopSpeaking();
   const modal = document.getElementById('reviewModal');
   const dest  = modal.dataset.closeTo;
   modal.style.display = 'none';
@@ -1476,6 +1501,22 @@ function closeReview() {
   document.querySelectorAll('.action-btns .btn').forEach(b => b.disabled = false);
   if (dest === 'resume') show('screenResume');
   else goWelcome();
+}
+
+const LANG_FLAGS = { he:'🇮🇱', en:'🇬🇧', de:'🇩🇪', es:'🇪🇸', fr:'🇫🇷', hu:'🇭🇺' };
+const LANG_NAMES_UI = {
+  he:{ he:'עברית',    en:'Hebrew'    },
+  en:{ he:'אנגלית',   en:'English'   },
+  de:{ he:'גרמנית',   en:'German'    },
+  es:{ he:'ספרדית',   en:'Spanish'   },
+  fr:{ he:'צרפתית',   en:'French'    },
+  hu:{ he:'הונגרית',  en:'Hungarian' },
+};
+function updateChatInfoBar() {
+  const flag = LANG_FLAGS[language] || '';
+  const name = (LANG_NAMES_UI[language] || {})[uiLang] || language;
+  const level = t(userLevel);
+  document.getElementById('chatInfoBar').textContent = `ChitChat2Go · ${flag} ${name} · ${level}`;
 }
 
 // ════════════════════════════════════════════════════
