@@ -622,8 +622,10 @@
     </div>
     <div id="avatarName">…</div>
     <div id="transcript"></div>
-    <div id="micLabel" data-i18n="micLabel">Tap the microphone to speak</div>
-    <button id="micBtn" onclick="toggleMic()">🎤</button>
+    <div id="micLabel" data-i18n="micLabel">Hold the microphone to speak</div>
+    <button id="micBtn"
+      onmousedown="startListening()" onmouseup="stopListening()" onmouseleave="stopListening()"
+      ontouchstart="event.preventDefault();startListening()" ontouchend="stopListening()">🎤</button>
     <button id="stopBtn" onclick="stopSpeaking()">⏹ <span data-i18n="stopBtn">Stop</span></button>
     <div id="statusBar">&nbsp;</div>
     <div class="action-btns">
@@ -650,7 +652,7 @@ const T = {
     female:'Female', male:'Male',
     voiceLabel:'Speaking voice:', startBtn:'Start Chatting', backBtn:'← Back',
     switchBtn:'Switch to English avatar',
-    micLabel:'Tap the microphone to speak', listening:'Listening…', thinking:'Thinking…',
+    micLabel:'Hold the microphone to speak', listening:'Listening…', thinking:'Thinking…',
     stopBtn:'Stop', suggestBtn:'Skip small talk and suggest topics', endBtn:'End chat',
     noSpeech:'No speech detected. Try again.', serverError:'Could not connect to server.',
     starting:'Starting…',
@@ -679,7 +681,7 @@ const T = {
     female:'נקבה', male:'זכר',
     voiceLabel:'קול הדובר:', startBtn:'התחל/י לשוחח', backBtn:'חזור ←',
     switchBtn:'מעבר לאווטאר אנגלי',
-    micLabel:'לחץ/י על המיקרופון לדיבור', listening:'מקשיב/ה…', thinking:'חושב/ת…',
+    micLabel:'לחץ/י לחיצה ממושכת על המיקרופון לדיבור', listening:'מקשיב/ה…', thinking:'חושב/ת…',
     stopBtn:'עצור', suggestBtn:'דלג/י על שיחת חולין והצע/י נושאים', endBtn:'סיום שיחה',
     noSpeech:'לא זוהה דיבור. נסה/י שוב.', serverError:'לא ניתן להתחבר לשרת.',
     starting:'מתחיל/ה…',
@@ -1430,29 +1432,15 @@ document.addEventListener('touchstart', _unlockAudio, { once: true, passive: tru
 document.addEventListener('click',      _unlockAudio, { once: true });
 
 // ════════════════════════════════════════════════════
-//  STT
+//  STT  (press-and-hold to speak)
 // ════════════════════════════════════════════════════
-function toggleMic() { listening ? stopListening() : startListening(); }
-
-let silenceTimer = null;
-const SILENCE_TIMEOUT_MS = 10000;
-
-function resetSilenceTimer() {
-  if (silenceTimer) clearTimeout(silenceTimer);
-  silenceTimer = setTimeout(() => { if (listening) recognition.stop(); }, SILENCE_TIMEOUT_MS);
-}
-
-function clearSilenceTimer() {
-  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-}
-
 function startListening() {
+  if (listening) return;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { setStatus('Speech recognition not supported.'); return; }
   stopSpeaking();
   recognition = new SR();
-  
-  // Map app language codes to BCP 47 language tags for STT
+
   const langMap = {
     'he': 'he-IL',
     'en': 'en-US',
@@ -1462,15 +1450,14 @@ function startListening() {
     'hu': 'hu-HU',
   };
   recognition.lang = langMap[language] || 'en-US';
-  recognition.interimResults = !isIOS; // iOS doesn't support interimResults reliably
-  recognition.continuous = !isIOS;     // iOS Safari doesn't support continuous mode
+  recognition.interimResults = true;
+  recognition.continuous = true;
   finalTranscript = '';
 
   recognition.onstart = () => {
     listening = true;
     document.getElementById('micBtn').classList.add('listening');
     document.getElementById('micLabel').textContent = t('listening');
-    resetSilenceTimer();
   };
   recognition.onresult = e => {
     let interim = '';
@@ -1479,30 +1466,32 @@ function startListening() {
       if (e.results[i].isFinal) finalTranscript += tx; else interim += tx;
     }
     document.getElementById('micLabel').textContent = finalTranscript + interim || t('listening');
-    resetSilenceTimer();
   };
   recognition.onend = () => {
-    clearSilenceTimer();
-    const text = finalTranscript.trim();
-    // On iOS (non-continuous), restart if mic button still active and no text yet
-    if (isIOS && listening && !text) {
+    // iOS auto-stops recognition (no continuous support) — restart if button still held
+    if (listening) {
       try { recognition.start(); return; } catch(e) {}
     }
-    listening = false;
+    const text = finalTranscript.trim();
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micLabel').textContent = t('micLabel');
     finalTranscript = '';
     if (text) sendMessage(text); else setStatus(t('noSpeech'));
   };
-  recognition.onerror = () => {
-    clearSilenceTimer();
+  recognition.onerror = e => {
+    if (e.error === 'no-speech') return;
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micLabel').textContent = t('micLabel');
   };
   recognition.start();
 }
-function stopListening() { if (recognition) recognition.stop(); }
+
+function stopListening() {
+  if (!listening) return;
+  listening = false; // clear before stop so onend doesn't restart
+  if (recognition) recognition.stop();
+}
 
 // ════════════════════════════════════════════════════
 //  Send message
