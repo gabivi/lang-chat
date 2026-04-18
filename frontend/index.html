@@ -1022,7 +1022,7 @@ ${stubbleSVG}
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
-const APP_VERSION = '0.701';
+const APP_VERSION = '0.702';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
@@ -1158,6 +1158,8 @@ function goWelcome() {
   document.querySelectorAll('[data-group="level"]').forEach(b =>
     b.classList.toggle('selected', b.dataset.value === userLevel));
   document.getElementById('versionDisplay').textContent = `v${APP_VERSION}`;
+  // Update avatar buttons to match current practice language
+  updateAvatarButtons();
   show('screenWelcome');
 }
 function goSetup() {
@@ -1194,8 +1196,7 @@ async function doIdentify() {
     const data = await res.json();
     userId = data.id; userName = data.name;
     localStorage.setItem('cc_userName', data.name);
-    // Load saved settings from user profile
-    if (data.language) practiceLanguage = data.language;
+    // Load saved settings from user profile, but don't overwrite language (user selects on welcome screen)
     if (data.level) userLevel = data.level;
     if (data.gender) userGender = data.gender;
     language = practiceLanguage;  // Set conversation language to the chosen practice language
