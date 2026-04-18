@@ -678,9 +678,9 @@ const T = {
     chooseCompanion:'בחר/י מלווה:',
     female:'נקבה', male:'זכר',
     voiceLabel:'קול הדובר:', startBtn:'התחל/י לשוחח', backBtn:'חזור ←',
-    switchBtn:'עבור/י לאווטאר אנגלי',
+    switchBtn:'מעבר לאווטאר אנגלי',
     micLabel:'לחץ/י על המיקרופון לדיבור', listening:'מקשיב/ה…', thinking:'חושב/ת…',
-    stopBtn:'עצור', suggestBtn:'דלג/י על שיחת חולין והצע/י נושאים', endBtn:'סיים/י שיחה',
+    stopBtn:'עצור', suggestBtn:'דלג/י על שיחת חולין והצע/י נושאים', endBtn:'סיום שיחה',
     noSpeech:'לא זוהה דיבור. נסה/י שוב.', serverError:'לא ניתן להתחבר לשרת.',
     starting:'מתחיל/ה…',
     pitchNote:'לא נמצא קול נשי — משתמש/ת בהתאמת גובה קול.',
@@ -688,13 +688,13 @@ const T = {
     aboutBtn:'ℹ️ אודות האפליקציה',
     aboutTitle:'אודות ChitChat2Go(Beta)',
     aboutText:'ChitChat2Go(Beta) היא מלווה שיחה קולי מבוסס בינה מלאכותית, מיועד לאנשים מבוגרים הנהנים משיחות חבריות. פשוט לחצו על המיקרופון והתחילו לדבר — המלווה יקשיב, יענה, ויציע נושאים לשיחה. האפליקציה חינמית, פועלת בישראל, ועובדת בעברית ובאנגלית.',
-    closeBtn:'סגור/י',
+    closeBtn:'סגירה',
     reviewTitle:'סקירת השיחה',
     reviewLoading:'מנתח/ת את השיחה שלך…',
     reviewNone:'כל הכבוד — לא נמצאו טעויות משמעותיות!',
-    reviewClose:'סגור/י',
-    reviewSave:'שמור/י כקובץ',
-    viewReviewBtn:'צפה/י בסיכום',
+    reviewClose:'סגירה',
+    reviewSave:'שמירה כקובץ',
+    viewReviewBtn:'צפייה בסיכום',
   }
 };
 // ════════════════════════════════════════════════════
@@ -1459,6 +1459,7 @@ function startListening() {
     'de': 'de-DE',
     'es': 'es-ES',
     'fr': 'fr-FR',
+    'hu': 'hu-HU',
   };
   recognition.lang = langMap[language] || 'en-US';
   recognition.interimResults = !isIOS; // iOS doesn't support interimResults reliably
