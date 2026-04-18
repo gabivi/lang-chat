@@ -1345,8 +1345,10 @@ let currentAudio = null;
 
 async function speak(text) {
   if (!text) return;
+  const originalText = text;
   text = stripForTTS(text);
   if (!text) return;
+  console.log('[TTS Debug]', {original: originalText, sanitized: text});
   ttsQueue.push(text);
   if (!ttsBusy) drainTTS();
 }
@@ -1377,6 +1379,7 @@ async function drainTTS() {
   try {
     const queryParams = new URLSearchParams({ text, language, gender: avatarGender, level: userLevel }).toString();
     const url = `/tts?${queryParams}`;
+    console.log('[TTS Request]', {text, url});
     currentAudio = new Audio(url);
     currentAudio.onended = () => { currentAudio = null; drainTTS(); };
     currentAudio.onerror = () => { currentAudio = null; drainTTS(); };

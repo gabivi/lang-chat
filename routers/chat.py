@@ -257,6 +257,7 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     import edge_tts
     import xml.sax.saxutils
     import re
+    from urllib.parse import unquote
 
     voices = {
         ("en", "female"): "en-US-JennyNeural",
@@ -273,6 +274,13 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
         ("hu", "male"):   "hu-HU-TamasNeural",
     }
     voice = voices.get((language, gender), "en-US-JennyNeural")
+
+    # Ensure text is properly decoded from URL
+    text = unquote(text)
+    
+    # Debug: log incoming text
+    import sys
+    print(f"[TTS DEBUG] Incoming text: {repr(text)}", file=sys.stderr)
 
     # Adjust speaking rate based on proficiency level using SSML
     # Use named rate values instead of decimals to avoid number artifacts
