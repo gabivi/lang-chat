@@ -217,6 +217,7 @@ def get_conversation_review(conversation_id: int, ui_lang: str = "en", db: Sessi
         "conversation_id": conv.id,
         "review": review_text,
         "language": conv.language,
+        "created_at": conv.created_at.isoformat() if conv.created_at else None,
     }
 
 

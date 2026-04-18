@@ -1458,8 +1458,7 @@ function endConversation() {
   const cancelBtnEl  = document.getElementById('reviewCancelBtn');
   const saveBtnEl    = document.getElementById('reviewSaveBtn');
 
-  const convDate = new Date().toLocaleDateString(uiLang === 'he' ? 'he-IL' : 'en-GB');
-  titleEl.textContent      = `${t('reviewTitle')} — ${convDate}`;
+  titleEl.textContent      = `${t('reviewTitle')} — ${t('reviewLoading')}`;
   bodyEl.innerHTML         = `<span class="review-spinner"></span> ${t('reviewLoading')}`;
   saveBtnEl.style.display  = 'none';
   saveBtnEl.textContent    = t('reviewSave');
@@ -1485,6 +1484,12 @@ function endConversation() {
     .then(r => r.json())
     .then(data => {
       bodyEl.textContent = data.review || t('reviewNone');
+      if (data.created_at) {
+        const createdDate = new Date(data.created_at);
+        const dateStr = createdDate.toLocaleDateString(uiLang === 'he' ? 'he-IL' : 'en-GB');
+        const timeStr = createdDate.toLocaleTimeString(uiLang === 'he' ? 'he-IL' : 'en-GB', {hour: '2-digit', minute: '2-digit'});
+        titleEl.textContent = `${t('reviewTitle')} — ${dateStr} ${timeStr}`;
+      }
     })
     .catch(err => {
       if (err.name !== 'AbortError') bodyEl.textContent = t('reviewNone');
