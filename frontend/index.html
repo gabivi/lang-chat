@@ -1426,9 +1426,11 @@ function endConversation() {
   const cancelBtnEl  = document.getElementById('reviewCancelBtn');
   const saveBtnEl    = document.getElementById('reviewSaveBtn');
 
-  titleEl.textContent      = t('reviewTitle');
+  const convDate = new Date().toLocaleDateString(uiLang === 'he' ? 'he-IL' : 'en-GB');
+  titleEl.textContent      = `${t('reviewTitle')} — ${convDate}`;
   bodyEl.innerHTML         = `<span class="review-spinner"></span> ${t('reviewLoading')}`;
   saveBtnEl.style.display  = 'none';
+  saveBtnEl.textContent    = t('reviewSave');
   closeBtnEl.textContent   = t('reviewClose');
   closeBtnEl.disabled      = true;
   cancelBtnEl.textContent  = t('reviewCancel');
