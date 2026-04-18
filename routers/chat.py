@@ -275,8 +275,9 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     voice = voices.get((language, gender), "en-US-JennyNeural")
 
     # Adjust speaking rate based on proficiency level using SSML
-    rate_map = {"beginner": 0.75, "intermediate": 1.0, "advanced": 1.25}
-    rate = rate_map.get(level, 1.0)
+    # Use named rate values instead of decimals to avoid number artifacts
+    rate_map = {"beginner": "slow", "intermediate": "medium", "advanced": "fast"}
+    rate = rate_map.get(level, "medium")
 
     # Comprehensive sanitization for TTS to prevent misinterpretation
     # Remove HTML-like tags first
@@ -297,9 +298,10 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     text = re.sub(r'[\u200b\u200c\u200d\u200e\u200f]', '', text)
     # Remove soft hyphens and other control characters
     text = re.sub(r'[\u00ad\u061b]', '', text)
-    # Remove system value patterns (rates, parameters): 0.XX, 1.XX
-    text = re.sub(r'\b(0\.\d+|1\.\d+|\d+\.\d{2})\b', ' ', text)  # floating point numbers
-    text = re.sub(r'\[\d+\]|\(\d+\)', ' ', text)  # bracketed/parenthesized numbers
+    # Remove ANY decimal/float numbers (0.75, 1.0, 1.25, any X.Y pattern)
+    text = re.sub(r'\d+\.\d+', '', text)
+    # Remove bracketed/parenthesized numbers
+    text = re.sub(r'[\[\(]\d+[\]\)]', '', text)
     # Normalize whitespace
     text = re.sub(r'\s+', ' ', text).strip()
     

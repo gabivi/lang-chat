@@ -1327,9 +1327,9 @@ function stripForTTS(text) {
     .replace(/[\xAB\xBB]/g, '"')       // french quotes to regular quotes
     .replace(/\s*[\[\(][-\w.]+[\]\)]\s*/g, ' ') // [reference] links
     .replace(/,(?=\s+[a-zäöüàâéèêëïîôùûüç])/g, '') // comma before lowercase
-    // Remove system value patterns (rates, parameters): 0.XX, 1.XX
-    .replace(/\b(0\.\d+|1\.\d+|\d+\.\d{2})\b/g, ' ') // floating point numbers like 0.75, 1.0, 1.25
-    .replace(/\[\d+\]|\(\d+\)/g, ' ') // bracketed/parenthesized numbers
+    // Remove ALL decimal numbers (0.75, 1.0, 1.25, any X.Y numeric pattern)
+    .replace(/\d+\.\d+/g, ' ') // remove any decimal/float numbers
+    .replace(/[\[\(]\d+[\]\)]/g, ' ') // remove bracketed/parenthesized numbers
     // Remove emojis and variation selectors
     .replace(/\p{Emoji_Presentation}/gu, '')
     .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
