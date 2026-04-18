@@ -1484,6 +1484,7 @@ function endConversation() {
   fetch(`/conversations/${convId}/review?ui_lang=${uiLang}`, { signal: _reviewAbortController.signal })
     .then(r => r.json())
     .then(data => {
+      // Only display the review, don't speak it
       bodyEl.textContent = data.review || t('reviewNone');
       if (data.created_at) {
         const createdDate = new Date(data.created_at);
@@ -1504,6 +1505,7 @@ function endConversation() {
 }
 
 function cancelReview() {
+  stopSpeaking();  // Stop any audio playback when canceling
   if (_reviewAbortController) {
     _reviewAbortController.abort();
     _reviewAbortController = null;

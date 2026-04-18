@@ -255,6 +255,7 @@ async def stt_endpoint(file: UploadFile = File(...), language: str = "he"):
 @router.get("/tts")
 async def generate_tts(text: str, language: str = "he", gender: str = "female", level: str = "intermediate"):
     import edge_tts
+    import xml.sax.saxutils
 
     voices = {
         ("en", "female"): "en-US-JennyNeural",
@@ -272,11 +273,15 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     }
     voice = voices.get((language, gender), "en-US-JennyNeural")
 
-    # Adjust speaking rate based on proficiency level
-    rate_map = {"beginner": "+50%", "intermediate": "+10%", "advanced": "+20%"}
-    rate = rate_map.get(level, "+10%")
+    # Adjust speaking rate based on proficiency level using SSML
+    rate_map = {"beginner": 0.75, "intermediate": 1.0, "advanced": 1.25}
+    rate = rate_map.get(level, 1.0)
 
-    communicate = edge_tts.Communicate(text, voice, rate=rate)
+    # Escape XML and wrap in SSML prosody tag for rate control
+    escaped_text = xml.sax.saxutils.escape(text)
+    ssml_text = f'<speak><prosody rate="{rate}">{escaped_text}</prosody></speak>'
+
+    communicate = edge_tts.Communicate(ssml_text, voice)
 
     async def audio_generator():
         async for chunk in communicate.stream():
