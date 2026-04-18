@@ -255,8 +255,16 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female"):
         ("en", "male"):   "en-US-GuyNeural",
         ("he", "female"): "he-IL-HilaNeural",
         ("he", "male"):   "he-IL-AvriNeural",
+        ("de", "female"): "de-DE-KatjaNeural",
+        ("de", "male"):   "de-DE-ConradNeural",
+        ("es", "female"): "es-ES-ElviraNeural",
+        ("es", "male"):   "es-ES-AlvaroNeural",
+        ("fr", "female"): "fr-FR-DeniseNeural",
+        ("fr", "male"):   "fr-FR-HenriNeural",
+        ("hu", "female"): "hu-HU-NoemiNeural",
+        ("hu", "male"):   "hu-HU-TamasNeural",
     }
-    voice = voices.get((language, gender), "he-IL-HilaNeural")
+    voice = voices.get((language, gender), "en-US-JennyNeural")
 
     communicate = edge_tts.Communicate(text, voice)
 
