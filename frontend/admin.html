@@ -239,7 +239,8 @@ function render() {
 
   list.innerHTML = filtered.map(conv => {
     const cid       = conv.conversation_id;
-    const langTag   = `<span class="tag ${conv.language}">${conv.language === 'he' ? '🇮🇱 Hebrew' : '🇬🇧 English'}</span>`;
+    const LANG_LABELS = {he:'🇮🇱 Hebrew', en:'🇬🇧 English', de:'🇩🇪 German', es:'🇪🇸 Spanish', fr:'🇫🇷 French', hu:'🇭🇺 Hungarian'};
+    const langTag   = `<span class="tag ${conv.language}">${LANG_LABELS[conv.language] || conv.language}</span>`;
     const genderTag = `<span class="tag">${conv.avatar_gender === 'female' ? '♀' : '♂'} ${conv.avatar_name}</span>`;
     const userGTag  = conv.user_gender !== 'unknown' ? `<span class="meta">(${conv.user_gender})</span>` : '';
 

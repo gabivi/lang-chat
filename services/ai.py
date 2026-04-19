@@ -220,6 +220,21 @@ AVATAR_NAMES = {
     ("hu", "male"):   "Péter",
 }
 
+AVATAR_APPEARANCE = {
+    ("en", "female"): "Your appearance: You look like a young woman with light peach skin, a large full afro hairstyle with medium-brown hair, and blue eyes. You wear a light blue top.",
+    ("en", "male"):   "Your appearance: You look like a young man with light skin, short brown hair styled neatly, subtle light stubble, and hazel-green eyes. You wear a blue shirt.",
+    ("he", "female"): "המראה שלך: את נראית כמו אישה צעירה עם גוון עור חם, שיער אפרו שחור ומלא, ועיניים חומות. את לובשת חולצה כחולה-בהירה.",
+    ("he", "male"):   "המראה שלך: אתה נראה כמו גבר צעיר עם גוון עור חם, שיער קצר וכהה מסודר, זיפים עדינים ועיניים חומות. אתה לובש חולצה כחולה.",
+    ("de", "female"): "Dein Aussehen: Du siehst aus wie eine junge Frau mit hellem Teint, einem vollen Afro mit mittelbraunem Haar und blauen Augen. Du trägst ein hellblaues Oberteil.",
+    ("de", "male"):   "Dein Aussehen: Du siehst aus wie ein junger Mann mit hellem Teint, kurzen braunen Haaren, leichtem Stoppelbart und haselnussgrünen Augen. Du trägst ein blaues Hemd.",
+    ("es", "female"): "Tu apariencia: Pareces una mujer joven con piel clara, un gran afro de cabello castaño medio y ojos azules. Llevas una blusa azul claro.",
+    ("es", "male"):   "Tu apariencia: Pareces un hombre joven con piel clara, cabello castaño corto y ordenado, barba incipiente sutil y ojos verde-avellana. Llevas una camisa azul.",
+    ("fr", "female"): "Ton apparence : Tu ressembles à une jeune femme avec une peau claire, un grand afro aux cheveux brun moyen et des yeux bleus. Tu portes un haut bleu clair.",
+    ("fr", "male"):   "Ton apparence : Tu ressembles à un jeune homme avec une peau claire, des cheveux brun court et soignés, une légère barbe de quelques jours et des yeux noisette. Tu portes une chemise bleue.",
+    ("hu", "female"): "A megjelenésed: Fiatal nőnek nézel ki, világos bőrrel, teli afro frizurával, középbarna hajjal és kék szemekkel. Világoskék felsőt viselsz.",
+    ("hu", "male"):   "A megjelenésed: Fiatal férfinak nézel ki, világos bőrrel, rövid, rendezett barna hajjal, enyhe borostával és zöldes-mogyoróbarna szemekkel. Kék inget viselsz.",
+}
+
 SYSTEM_PROMPTS = {
     ("en", "female"): """You are Sophie, a friendly and encouraging language learning partner for elderly people who want to practice conversation.
 
@@ -566,6 +581,9 @@ def get_avatar_name(language: str, gender: str) -> str:
 def get_system_prompt(language: str, gender: str, user_level: str = "intermediate") -> str:
     """Get the system prompt for the given language, gender, and user level."""
     base_prompt = SYSTEM_PROMPTS.get((language, gender), SYSTEM_PROMPTS[("en", "female")])
+    appearance = AVATAR_APPEARANCE.get((language, gender), "")
+    if appearance:
+        base_prompt = appearance + "\n\n" + base_prompt
     
     # Level-specific instructions with more distinct characteristics
     if language == "he":

@@ -790,102 +790,91 @@ function hideAbout() {
 function buildFace(gender, lang) {
   const isFem = gender === 'female';
   const isHe  = lang === 'he';
-  const uid   = 'g' + (Date.now() % 9999);   // unique gradient IDs
+  const uid   = 'g' + (Date.now() % 9999);
 
-  // Skin palette [highlight, base, shadow, accent]
+  // Skin palette [highlight, base, shadow, accent] — Hebrew: warm olive; others: light/peach
   const sk = isHe
-    ? (isFem ? ['#f0c090','#d09068','#a86030','#b87040'] : ['#e0a870','#c07848','#904820','#a05828'])
-    : (isFem ? ['#feecd8','#f5c898','#d89060','#e0a870'] : ['#f0c898','#d8a060','#b07838','#c08848']);
+    ? (isFem ? ['#f8d4a0','#d8a060','#b07030','#c08040']
+             : ['#f0c890','#c89050','#a06828','#b07838'])
+    : (isFem ? ['#fff2e4','#fcd9b0','#dba870','#ecc080']
+             : ['#fde8c4','#f0c898','#ccaa70','#ddb880']);
 
-  // Hair palette [base, shadow, highlight]
+  // Hair palette [base, dark, highlight]
   const hr = isHe
-    ? (isFem ? ['#1a1008','#0c0806','#3a2818'] : ['#2a2018','#141008','#4a3828'])
-    : (isFem ? ['#807060','#504030','#c0a888'] : ['#9a9898','#606060','#d0ccc8']);
+    ? (isFem ? ['#100a06','#060402','#281808']
+             : ['#180e06','#080404','#301808'])
+    : (isFem ? ['#7c5c40','#4a3020','#b08860']
+             : ['#504040','#2c2020','#8c7060']);
 
-  // Iris [inner, outer, edge]
+  // Iris [light, mid, edge]
   const ir = isHe
-    ? ['#5a3018','#2a1008','#0c0806']
-    : (isFem ? ['#90b8d0','#3a7090','#0a2840'] : ['#808840','#484820','#202010']);
+    ? ['#a86828','#6a3810','#280e04']
+    : (isFem ? ['#6ab0d0','#3478a0','#0e3060']
+             : ['#7a9040','#485420','#1c2008']);
 
-  const lip = isFem ? '#c86878' : '#a85858';
-  const liH = isFem ? '#e08898' : '#c07070';
+  const lip  = isFem ? '#cc6878' : '#b06060';
+  const lipH = isFem ? '#e890a0' : '#c87878';
 
-  // Female hair (long afro) vs male (short)
+  // Female: large full afro; Male: short neat hair
   const hairSVG = isFem ? `
-    <!-- Afro main puff -->
-    <ellipse cx="80" cy="46" rx="62" ry="56" fill="${hr[0]}"/>
-    <!-- Wide side volume -->
-    <ellipse cx="16" cy="86" rx="22" ry="34" fill="${hr[0]}"/>
-    <ellipse cx="144" cy="86" rx="22" ry="34" fill="${hr[0]}"/>
-    <!-- Curly bumps top/sides for texture -->
-    <ellipse cx="42" cy="18" rx="17" ry="15" fill="${hr[0]}"/>
-    <ellipse cx="62" cy="8"  rx="15" ry="14" fill="${hr[0]}"/>
-    <ellipse cx="80" cy="4"  rx="17" ry="15" fill="${hr[0]}"/>
-    <ellipse cx="98" cy="8"  rx="15" ry="14" fill="${hr[0]}"/>
-    <ellipse cx="118" cy="18" rx="17" ry="15" fill="${hr[0]}"/>
-    <ellipse cx="28" cy="38" rx="15" ry="14" fill="${hr[0]}"/>
-    <ellipse cx="132" cy="38" rx="15" ry="14" fill="${hr[0]}"/>
-    <!-- Volume highlights -->
-    <ellipse cx="65" cy="28" rx="20" ry="16" fill="${hr[2]}" opacity=".28"/>
-    <ellipse cx="95" cy="22" rx="16" ry="12" fill="${hr[2]}" opacity=".22"/>
-    <ellipse cx="80" cy="18" rx="24" ry="10" fill="${hr[2]}" opacity=".18"/>
+    <ellipse cx="80" cy="48" rx="70" ry="66" fill="${hr[0]}"/>
+    <ellipse cx="16" cy="90" rx="26" ry="42" fill="${hr[0]}"/>
+    <ellipse cx="144" cy="90" rx="26" ry="42" fill="${hr[0]}"/>
+    <ellipse cx="48" cy="14" rx="20" ry="18" fill="${hr[0]}"/>
+    <ellipse cx="68" cy="6"  rx="18" ry="16" fill="${hr[0]}"/>
+    <ellipse cx="88" cy="4"  rx="18" ry="16" fill="${hr[0]}"/>
+    <ellipse cx="108" cy="10" rx="19" ry="17" fill="${hr[0]}"/>
+    <ellipse cx="128" cy="28" rx="18" ry="17" fill="${hr[0]}"/>
+    <ellipse cx="32" cy="28"  rx="18" ry="17" fill="${hr[0]}"/>
+    <ellipse cx="66" cy="28" rx="22" ry="18" fill="${hr[2]}" opacity=".22"/>
+    <ellipse cx="94" cy="22" rx="18" ry="14" fill="${hr[2]}" opacity=".16"/>
   ` : `
-    <path d="M20,82 Q24,42 46,26 Q64,14 80,12 Q96,14 114,26 Q136,42 140,82
-             Q122,62 96,55 Q88,52 80,52 Q72,52 64,55 Q38,62 20,82Z" fill="${hr[0]}"/>
-    <path d="M38,58 Q46,44 60,38" stroke="${sk[0]}" stroke-width="7" fill="none" stroke-linecap="round" opacity=".55"/>
-    <path d="M122,58 Q114,44 100,38" stroke="${sk[0]}" stroke-width="7" fill="none" stroke-linecap="round" opacity=".55"/>
-    <path d="M58,16 Q80,10 102,16 Q88,26 80,26 Q72,26 58,16Z" fill="${hr[2]}" opacity=".45"/>
-    <path d="M22,80 Q22,90 26,105" stroke="#c8c0b8" stroke-width="6" fill="none" opacity=".45"/>
-    <path d="M138,80 Q138,90 134,105" stroke="#c8c0b8" stroke-width="6" fill="none" opacity=".45"/>
+    <ellipse cx="80" cy="46" rx="62" ry="46" fill="${hr[0]}"/>
+    <path d="M18,86 Q22,46 50,28 Q64,18 80,16 Q96,18 110,28 Q138,46 142,86
+             Q128,64 100,56 Q90,52 80,52 Q70,52 60,56 Q32,64 18,86Z" fill="${hr[1]}"/>
+    <ellipse cx="74" cy="32" rx="26" ry="16" fill="${hr[2]}" opacity=".38"/>
+    <path d="M20,86 Q17,100 20,120" stroke="${sk[1]}" stroke-width="10" fill="none" stroke-linecap="round" opacity=".65"/>
+    <path d="M140,86 Q143,100 140,120" stroke="${sk[1]}" stroke-width="10" fill="none" stroke-linecap="round" opacity=".65"/>
   `;
 
-  // Eyebrows
   const browSVG = isFem ? `
-    <path d="M44,80 Q58,72 72,77" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-    <path d="M88,77 Q102,72 116,80" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-    <path d="M46,79 Q60,73 70,76" stroke="${hr[2]}" stroke-width="1" fill="none" opacity=".4"/>
-    <path d="M90,76 Q100,73 114,79" stroke="${hr[2]}" stroke-width="1" fill="none" opacity=".4"/>
+    <path d="M44,82 Q58,74 72,79" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <path d="M88,79 Q102,74 116,82" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
   ` : `
-    <path d="M42,80 Q58,73 74,77" stroke="${hr[1]}" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <path d="M86,77 Q102,73 118,80" stroke="${hr[1]}" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <path d="M44,78 Q60,73 72,76" stroke="${hr[2]}" stroke-width="1.2" fill="none" opacity=".4"/>
-    <path d="M88,76 Q100,73 116,78" stroke="${hr[2]}" stroke-width="1.2" fill="none" opacity=".4"/>
+    <path d="M42,82 Q58,74 74,79" stroke="${hr[1]}" stroke-width="4.2" fill="none" stroke-linecap="round"/>
+    <path d="M86,79 Q102,74 118,82" stroke="${hr[1]}" stroke-width="4.2" fill="none" stroke-linecap="round"/>
   `;
 
-  // Eyelashes (female only)
   const lashSVG = isFem ? `
-    <line x1="46" y1="91" x2="43" y2="85" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="50" y1="88" x2="48" y2="83" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="55" y1="87" x2="54" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="60" y1="87" x2="60" y2="81" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="65" y1="87" x2="66" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="70" y1="89" x2="72" y2="84" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="74" y1="91" x2="77" y2="86" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="86" y1="91" x2="83" y2="86" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="90" y1="89" x2="88" y2="84" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="95" y1="87" x2="94" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="100" y1="87" x2="100" y2="81" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="105" y1="87" x2="106" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="110" y1="88" x2="112" y2="83" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="114" y1="91" x2="117" y2="86" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="46" y1="92" x2="43" y2="86" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="52" y1="89" x2="50" y2="83" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="59" y1="88" x2="58" y2="82" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="66" y1="88" x2="66" y2="82" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="73" y1="89" x2="75" y2="83" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="87" y1="89" x2="85" y2="83" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="94" y1="88" x2="94" y2="82" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="101" y1="88" x2="102" y2="82" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="108" y1="89" x2="110" y2="83" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="114" y1="92" x2="117" y2="86" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
   ` : '';
 
-  // Stubble (male only)
   const stubbleSVG = !isFem ? `
-    <path d="M52,155 Q80,163 108,155" stroke="${sk[2]}" stroke-width="4.5" fill="none" opacity=".14" stroke-dasharray="1.5,2.2"/>
-    <path d="M60,164 Q80,170 100,164" stroke="${sk[2]}" stroke-width="3.5" fill="none" opacity=".11" stroke-dasharray="1,2"/>
+    <ellipse cx="80" cy="162" rx="30" ry="14" fill="${sk[2]}" opacity=".16" filter="url(#${uid}blur)"/>
+    <path d="M52,156 Q80,166 108,156" stroke="${sk[2]}" stroke-width="5" fill="none" opacity=".13" stroke-dasharray="1.5,2.5"/>
+    <path d="M60,165 Q80,172 100,165" stroke="${sk[2]}" stroke-width="3.5" fill="none" opacity=".10" stroke-dasharray="1,2.2"/>
   ` : '';
 
-  // Face outline (female=oval, male=squarer jaw)
   const faceD = isFem
-    ? 'M22,88 Q16,115 18,142 Q22,168 42,180 Q58,190 80,191 Q102,190 118,180 Q138,168 142,142 Q144,115 138,88'
-    : 'M20,88 Q14,118 16,146 Q18,166 36,178 Q52,188 80,190 Q108,188 124,178 Q142,166 144,146 Q146,118 140,88';
+    ? 'M22,90 Q15,118 17,146 Q20,170 42,182 Q58,192 80,193 Q102,192 118,182 Q140,170 143,146 Q145,118 138,90'
+    : 'M20,90 Q13,120 15,150 Q17,170 36,182 Q52,192 80,193 Q108,192 124,182 Q143,170 145,150 Q147,120 140,90';
+
+  const shirtColor = isFem ? '#8eb8d8' : '#5878a8';
 
   return `<svg id="avatarFace" class="face-root" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
 <defs>
-  <radialGradient id="${uid}s" cx="38%" cy="26%" r="72%" gradientUnits="objectBoundingBox">
+  <radialGradient id="${uid}s" cx="36%" cy="24%" r="74%" gradientUnits="objectBoundingBox">
     <stop offset="0%"   stop-color="${sk[0]}"/>
-    <stop offset="48%"  stop-color="${sk[1]}"/>
+    <stop offset="50%"  stop-color="${sk[1]}"/>
     <stop offset="100%" stop-color="${sk[2]}"/>
   </radialGradient>
   <radialGradient id="${uid}i" cx="30%" cy="26%" r="70%">
@@ -894,135 +883,93 @@ function buildFace(gender, lang) {
     <stop offset="100%" stop-color="${ir[2]}"/>
   </radialGradient>
   <radialGradient id="${uid}lip" cx="50%" cy="30%" r="70%">
-    <stop offset="0%"   stop-color="${liH}"/>
+    <stop offset="0%"   stop-color="${lipH}"/>
     <stop offset="100%" stop-color="${lip}"/>
   </radialGradient>
-  <filter id="${uid}blur"><feGaussianBlur stdDeviation=".55"/></filter>
+  <filter id="${uid}blur"><feGaussianBlur stdDeviation=".65"/></filter>
 </defs>
 
-<!-- Ground shadow -->
-<ellipse cx="80" cy="198" rx="46" ry="4.5" fill="rgba(0,0,0,.17)"/>
+<ellipse cx="80" cy="198" rx="48" ry="5" fill="rgba(0,0,0,.15)"/>
 
-<!-- Neck -->
-<path d="M56,170 Q58,185 68,190 Q80,195 92,190 Q102,185 104,170 Q94,178 80,179 Q66,178 56,170Z"
-      fill="url(#${uid}s)"/>
+<path d="M58,172 Q60,188 70,194 Q80,198 90,194 Q100,188 102,172 Q92,180 80,181 Q68,180 58,172Z" fill="url(#${uid}s)"/>
+<path d="M8,200 Q36,182 58,172 Q68,180 80,181 Q92,180 102,172 Q124,182 152,200Z" fill="${shirtColor}" opacity=".88"/>
 
-<!-- Shoulders -->
-<path d="M8,200 Q36,180 56,170 Q68,175 80,176 Q92,175 104,170 Q124,180 152,200Z"
-      fill="${sk[2]}" opacity=".5"/>
+${isFem ? `<ellipse cx="80" cy="168" rx="70" ry="82" fill="${hr[0]}"/>` : ''}
 
-<!-- Hair (back layer) -->
-<ellipse cx="80" cy="74" rx="64" ry="66" fill="${hr[0]}"/>
-
-<!-- Face shape -->
-<path d="${faceD} Q20,88 20,88Z" fill="url(#${uid}s)"/>
+<path d="${faceD} Q20,90 20,90Z" fill="url(#${uid}s)"/>
 
 ${hairSVG}
 
-<!-- Ears -->
-<path d="M18,106 Q10,115 10,126 Q10,137 18,143 Q22,132 22,120 Q22,108 18,106Z" fill="${sk[1]}"/>
-<path d="M18,109 Q14,116 14,125 Q14,134 18,140" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".5"/>
-<path d="M142,106 Q150,115 150,126 Q150,137 142,143 Q138,132 138,120 Q138,108 142,106Z" fill="${sk[1]}"/>
-<path d="M142,109 Q146,116 146,125 Q146,134 142,140" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".5"/>
+<path d="M17,108 Q9,118 9,129 Q9,140 17,146 Q21,135 21,122 Q21,109 17,108Z" fill="${sk[1]}"/>
+<path d="M17,111 Q13,119 13,128 Q13,137 17,143" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".42"/>
+<path d="M143,108 Q151,118 151,129 Q151,140 143,146 Q139,135 139,122 Q139,109 143,108Z" fill="${sk[1]}"/>
+<path d="M143,111 Q147,119 147,128 Q147,137 143,143" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".42"/>
 
 ${browSVG}
 
-<!-- Eye area shadows (depth) -->
-<ellipse cx="60" cy="94" rx="18" ry="12" fill="${sk[3]}" opacity=".2" filter="url(#${uid}blur)"/>
-<ellipse cx="100" cy="94" rx="18" ry="12" fill="${sk[3]}" opacity=".2" filter="url(#${uid}blur)"/>
+<ellipse cx="60" cy="96" rx="18" ry="12" fill="${sk[3]}" opacity=".16" filter="url(#${uid}blur)"/>
+<ellipse cx="100" cy="96" rx="18" ry="12" fill="${sk[3]}" opacity=".16" filter="url(#${uid}blur)"/>
 
-<!-- Sclera (eye whites) -->
-<ellipse cx="60" cy="96" rx="15" ry="10" fill="#fafaf8"/>
-<ellipse cx="100" cy="96" rx="15" ry="10" fill="#fafaf8"/>
+<ellipse cx="60" cy="97" rx="15" ry="10" fill="#fafaf8"/>
+<ellipse cx="100" cy="97" rx="15" ry="10" fill="#fafaf8"/>
 
-<!-- Eyelid crease shadow -->
-<path d="M45,90 Q60,85 75,90 Q60,96 45,90Z" fill="${sk[3]}" opacity=".28"/>
-<path d="M85,90 Q100,85 115,90 Q100,96 85,90Z" fill="${sk[3]}" opacity=".28"/>
+<path d="M45,91 Q60,86 75,91 Q60,97 45,91Z" fill="${sk[3]}" opacity=".22"/>
+<path d="M85,91 Q100,86 115,91 Q100,97 85,91Z" fill="${sk[3]}" opacity=".22"/>
 
-<!-- Iris -->
-<circle cx="60" cy="96" r="7.5" fill="url(#${uid}i)"/>
-<circle cx="100" cy="96" r="7.5" fill="url(#${uid}i)"/>
-<!-- Iris limbal ring -->
-<circle cx="60" cy="96" r="7.5" fill="none" stroke="${ir[2]}" stroke-width="1" opacity=".6"/>
-<circle cx="100" cy="96" r="7.5" fill="none" stroke="${ir[2]}" stroke-width="1" opacity=".6"/>
+<circle cx="60" cy="97" r="7.5" fill="url(#${uid}i)"/>
+<circle cx="100" cy="97" r="7.5" fill="url(#${uid}i)"/>
+<circle cx="60" cy="97" r="7.5" fill="none" stroke="${ir[2]}" stroke-width=".9" opacity=".55"/>
+<circle cx="100" cy="97" r="7.5" fill="none" stroke="${ir[2]}" stroke-width=".9" opacity=".55"/>
 
-<!-- Pupils -->
-<circle cx="60" cy="96" r="3.8" fill="#060810"/>
-<circle cx="100" cy="96" r="3.8" fill="#060810"/>
+<circle cx="60" cy="97" r="3.8" fill="#050810"/>
+<circle cx="100" cy="97" r="3.8" fill="#050810"/>
 
-<!-- Corneal highlights -->
-<ellipse cx="57" cy="93" rx="2.2" ry="1.7" fill="white"/>
-<circle  cx="63" cy="99" r=".8"  fill="white" opacity=".55"/>
-<ellipse cx="97" cy="93" rx="2.2" ry="1.7" fill="white"/>
-<circle  cx="103" cy="99" r=".8" fill="white" opacity=".55"/>
+<ellipse cx="57" cy="94" rx="2.2" ry="1.7" fill="white"/>
+<circle  cx="63" cy="100" r=".8" fill="white" opacity=".55"/>
+<ellipse cx="97" cy="94" rx="2.2" ry="1.7" fill="white"/>
+<circle  cx="103" cy="100" r=".8" fill="white" opacity=".55"/>
 
-<!-- Upper eyelid line -->
-<path d="M45,93 Q60,87 75,93" stroke="#1a1010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-<path d="M85,93 Q100,87 115,93" stroke="#1a1010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M45,94 Q60,88 75,94" stroke="${hr[1]}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M85,94 Q100,88 115,94" stroke="${hr[1]}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
 
 ${lashSVG}
 
-<!-- Lower eyelid -->
-<path d="M46,103 Q60,108 74,103" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".5"/>
-<path d="M86,103 Q100,108 114,103" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".5"/>
+<path d="M46,104 Q60,110 74,104" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".4"/>
+<path d="M86,104 Q100,110 114,104" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".4"/>
 
-<!-- Blink eyelids -->
-<ellipse class="eyelid"   cx="60"  cy="93" rx="15" ry="11" fill="${sk[1]}"/>
-<ellipse class="eyelid r" cx="100" cy="93" rx="15" ry="11" fill="${sk[1]}"/>
+<ellipse class="eyelid"   cx="60"  cy="94" rx="15" ry="11" fill="${sk[1]}"/>
+<ellipse class="eyelid r" cx="100" cy="94" rx="15" ry="11" fill="${sk[1]}"/>
 
-<!-- NOSE -->
-<path d="M80,108 Q76,122 76,128 Q80,133 84,128 Q84,122 80,108Z" fill="${sk[2]}" opacity=".3"/>
-<ellipse cx="73" cy="128" rx="7"   ry="4.5" fill="${sk[2]}" opacity=".22"/>
-<ellipse cx="87" cy="128" rx="7"   ry="4.5" fill="${sk[2]}" opacity=".22"/>
-<path d="M68,127 Q76,132 80,130 Q84,132 92,127" stroke="${sk[2]}" stroke-width="1.6" fill="none" opacity=".48"/>
-<!-- Nose bridge highlight -->
-<path d="M80,108 Q82,115 81,122" stroke="white" stroke-width="1.2" fill="none" opacity=".18"/>
+<path d="M80,110 Q76,123 77,130 Q80,135 83,130 Q84,123 80,110Z" fill="${sk[2]}" opacity=".26"/>
+<ellipse cx="74" cy="130" rx="6.5" ry="4.2" fill="${sk[2]}" opacity=".18"/>
+<ellipse cx="86" cy="130" rx="6.5" ry="4.2" fill="${sk[2]}" opacity=".18"/>
+<path d="M68,129 Q77,134 80,131 Q83,134 92,129" stroke="${sk[2]}" stroke-width="1.5" fill="none" opacity=".42"/>
 
-<!-- MOUTH -->
+<ellipse cx="32" cy="120" rx="18" ry="12" fill="#ff8878" opacity="${isFem ? '.09' : '.05'}" filter="url(#${uid}blur)"/>
+<ellipse cx="128" cy="120" rx="18" ry="12" fill="#ff8878" opacity="${isFem ? '.09' : '.05'}" filter="url(#${uid}blur)"/>
+
 <g class="mouth-closed">
-  <path d="M56,147 Q67,139 80,140 Q93,139 104,147 Q93,152 80,153 Q67,152 56,147Z"
-        fill="url(#${uid}lip)"/>
-  <path d="M64,141 Q75,136 80,140 Q85,136 96,141"
-        stroke="${liH}" stroke-width=".9" fill="none" opacity=".5"/>
-  <path d="M56,147 Q80,144 104,147 Q80,144 56,147"
-        fill="none" stroke="#803848" stroke-width=".8"/>
-  <path d="M56,147 Q67,158 80,160 Q93,158 104,147 Q93,152 80,153 Q67,152 56,147Z"
-        fill="${lip}" opacity=".9"/>
-  <path d="M66,155 Q80,159 94,155" stroke="white" stroke-width="1.5" fill="none" opacity=".18"/>
+  <path d="M57,148 Q67,140 80,141 Q93,140 103,148 Q93,153 80,154 Q67,153 57,148Z" fill="url(#${uid}lip)"/>
+  <path d="M65,142 Q75,137 80,141 Q85,137 95,142" stroke="${lipH}" stroke-width=".8" fill="none" opacity=".45"/>
+  <path d="M57,148 Q80,145 103,148" fill="none" stroke="#803040" stroke-width=".8"/>
+  <path d="M57,148 Q67,159 80,161 Q93,159 103,148 Q93,153 80,154 Q67,153 57,148Z" fill="${lip}" opacity=".88"/>
+  <path d="M66,157 Q80,161 94,157" stroke="white" stroke-width="1.3" fill="none" opacity=".14"/>
 </g>
 <g class="mouth-open" style="transform-box:fill-box;transform-origin:50% 0%">
-  <path d="M58,145 Q68,138 80,139 Q92,138 102,145" stroke="#803040" stroke-width="1.1" fill="none"/>
-  <path d="M58,145 Q66,162 80,164 Q94,162 102,145 Q92,150 80,150 Q68,150 58,145Z" fill="#68101e"/>
-  <path d="M62,145 Q80,142 98,145 Q80,149 62,145Z" fill="#f0eeec"/>
-  <ellipse cx="80" cy="159" rx="11" ry="5" fill="#c04050" opacity=".85"/>
+  <path d="M59,146 Q68,139 80,140 Q92,139 101,146" stroke="#803040" stroke-width="1.1" fill="none"/>
+  <path d="M59,146 Q67,163 80,165 Q93,163 101,146 Q92,151 80,151 Q68,151 59,146Z" fill="#68101e"/>
+  <path d="M63,146 Q80,143 97,146 Q80,150 63,146Z" fill="#f0eeec"/>
+  <ellipse cx="80" cy="160" rx="11" ry="5" fill="#c04050" opacity=".82"/>
 </g>
 
 ${stubbleSVG}
-
-<!-- Cheek blush -->
-<ellipse cx="33" cy="120" rx="17" ry="11" fill="#ff8070" opacity="${isFem ? '.11' : '.07'}"
-         filter="url(#${uid}blur)"/>
-<ellipse cx="127" cy="120" rx="17" ry="11" fill="#ff8070" opacity="${isFem ? '.11' : '.07'}"
-         filter="url(#${uid}blur)"/>
-
-<!-- Nasolabial folds (age character) -->
-<path d="M38,114 Q36,126 40,138" stroke="${sk[2]}" stroke-width="1.3" fill="none" opacity=".26"/>
-<path d="M122,114 Q124,126 120,138" stroke="${sk[2]}" stroke-width="1.3" fill="none" opacity=".26"/>
-
-<!-- Under-eye lines -->
-<path d="M45,105 Q60,111 75,105" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".2"/>
-<path d="M85,105 Q100,111 115,105" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".2"/>
-
-<!-- Forehead lines -->
-<path d="M46,62 Q80,56 114,62" stroke="${sk[2]}" stroke-width=".9" fill="none" opacity=".18"/>
-<path d="M52,54 Q80,48 108,54" stroke="${sk[2]}" stroke-width=".7" fill="none" opacity=".14"/>
 </svg>`;
 }
 
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
-const APP_VERSION = '0.703';
+const APP_VERSION = '0.704';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
