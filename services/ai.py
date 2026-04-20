@@ -62,7 +62,8 @@ def _get_random_topics():
         "Gardening — ask about plants and gardens",
         "Animals and pets — ask about pets they have or love",
         "Movies and TV — ask about favorite shows and actors",
-        "Weather and seasons — ask about their favorite times of year"
+        "Weather and seasons — ask about their favorite times of year",
+        "Story or situation — tell a short story or describe an interesting situation and discuss it together",
     ]
     # Select 5-7 random topics
     return random.sample(all_topics, min(6, len(all_topics)))
@@ -588,25 +589,25 @@ def get_system_prompt(language: str, gender: str, user_level: str = "intermediat
     # Level-specific instructions with more distinct characteristics
     if language == "he":
         level_instructions = {
-            "beginner": "רמה בסיסית בלבד! השתמש רק במילים פשוטות מאוד. משפטים קצרים מאוד: 5-7 מילים בלבד. חזור על מילים. שאל שאלות פשוטות (כן/לא). אל תשתמש במילים מתקדמות.",
-            "intermediate": "רמה בינונית. השתמש בעברית טבעית עם אוצר מילים מתון. כלול ביטויים נפוצים. משפטים בעלי מבנה רגיל. שאל שאלות פתוחות. השתמש בזמנים שונים.",
-            "advanced": "רמה מתקדמת! השתמש בעברית עשירה עם אוצר מילים מתקדם. כלול ביטויים דקיקים ותרבותיים. דן בנושאים מורכבים. השתמש בכל הזמנים והמבנים."
+            "beginner": "רמה בסיסית בלבד! השתמש רק במילים פשוטות מאוד. משפטים: 5-7 מילים בלבד. לאחר הפתיחה, ספר/י סיפור קצר או מצב יומיומי (עד 5 משפטים, מילים פשוטות), ואז שאל/י שאלות כן/לא על הסיפור. אל תבקש/י מהמשתמש לדבר במשפטים ארוכים. חזור על מילים מפתח. זמן הווה בלבד.",
+            "intermediate": "רמה בינונית. השתמש בעברית טבעית עם אוצר מילים מתון. כלול ביטויים נפוצים. משפטים בעלי מבנה רגיל. שאל שאלות פתוחות. השתמש בזמנים שונים. הצע גם לספר סיפור קצר או לתאר מצב מעניין ולדון בו יחד.",
+            "advanced": "רמה מתקדמת! השתמש בעברית עשירה עם אוצר מילים מתקדם. כלול ביטויים דקיקים ותרבותיים. דן בנושאים מורכבים. השתמש בכל הזמנים והמבנים. הצע גם לספר סיפור או להציג תרחיש ולחקור אותו לעומק יחד."
         }
         level_text = level_instructions.get(user_level, level_instructions["intermediate"])
         
     elif language == "de":
         level_instructions = {
-            "beginner": "NUR ANFÄNGER NIVEAU! Nutze nur sehr einfache Wörter. Kurze Sätze: nur 5-7 Wörter. Wiederhole Schlüsselwörter. Stelle einfache Ja/Nein-Fragen. Kein komplexes Vokabular. Nur Präsens.",
-            "intermediate": "Mittelstufe. Nutze natürliche Konversation mit moderatem Wortschatz. Einfache Redewendungen. Normaler Satzbau. Offene Fragen. Vergangenheit und Präsens.",
-            "advanced": "Fortgeschritten! Reicher Wortschatz. Komplexe Ausdrücke. Komplexe Themen. Alle Zeitformen. Kulturelle Hinweise. Subtile Nuancen."
+            "beginner": "NUR ANFÄNGER NIVEAU! Nur sehr einfache Wörter. Sätze: max 5-7 Wörter. Nach der Einführung eine kurze einfache Geschichte oder Situation erzählen (max 5 Sätze), dann einfache Ja/Nein-Fragen stellen. Nutzer NICHT zu langen Sätzen auffordern. Schlüsselwörter wiederholen. Nur Präsens.",
+            "intermediate": "Mittelstufe. Natürliche Konversation mit moderatem Wortschatz. Einfache Redewendungen. Normaler Satzbau. Offene Fragen. Vergangenheit und Präsens. Auch anbieten, eine kurze Geschichte zu erzählen oder eine interessante Situation zu beschreiben und gemeinsam zu besprechen.",
+            "advanced": "Fortgeschritten! Reicher Wortschatz. Komplexe Ausdrücke. Alle Zeitformen. Kulturelle Hinweise. Auch anbieten, eine Geschichte zu erzählen oder ein Szenario vorzustellen und gemeinsam zu vertiefen."
         }
         level_text = level_instructions.get(user_level, level_instructions["intermediate"])
         
     else:
         level_instructions = {
-            "beginner": "BEGINNER LEVEL ONLY! Use only very simple, common words. Keep sentences SHORT (5-7 words max). Repeat key words. Ask very simple yes/no questions. NO complex vocabulary. Use present tense only.",
-            "intermediate": "Intermediate level. Use natural conversation with moderate vocabulary. Include common expressions and idioms. Normal sentence structure. Ask open questions. Use past and present tenses naturally.",
-            "advanced": "Advanced level! Use rich vocabulary and sophisticated expressions. Discuss complex topics. Use all tenses, subjunctive, and nuanced language. Include cultural references and thoughtful observations."
+            "beginner": "BEGINNER LEVEL ONLY! Use only very simple, common words. Sentences max 5-7 words. After introduction, tell a short simple story or situation (max 5 sentences, very simple words), then ask yes/no questions about it. Do NOT ask the user to produce long sentences. Repeat key words. Present tense only.",
+            "intermediate": "Intermediate level. Use natural conversation with moderate vocabulary. Include common expressions and idioms. Normal sentence structure. Ask open questions. Use past and present tenses naturally. Also offer to tell a short story or describe an interesting situation and discuss it together.",
+            "advanced": "Advanced level! Use rich vocabulary and sophisticated expressions. Discuss complex topics. Use all tenses, subjunctive, and nuanced language. Include cultural references and thoughtful observations. Also offer to tell a story or present a scenario and explore it in depth together."
         }
         level_text = level_instructions.get(user_level, level_instructions["intermediate"])
     
@@ -619,11 +620,14 @@ def get_system_prompt(language: str, gender: str, user_level: str = "intermediat
     # Add random topics section
     if language == "he":
         prompt += f"\n\nנושאים מושתנים לשיחה:\n{topics_text}"
+        prompt += "\n\nב-__START__: לפני הצעת הנושאים, ציין/י שאתה/את יכול/ה גם לספר בדיחות ולשאול חידות."
     elif language == "de":
         prompt += f"\n\nZufällige Themen für das Gespräch:\n{topics_text}"
+        prompt += "\n\nBei __START__: Vor den Themenvorschlägen erwähnen, dass du auch Witze erzählen und Rätsel stellen kannst."
     else:
         prompt += f"\n\nRandom topics for conversation:\n{topics_text}"
-    
+        prompt += "\n\nOn __START__: before suggesting topics, mention that you can also tell jokes and ask riddles."
+
     # Add strict length constraint and sanitize
     if language == "he":
         prompt += "\n\n⚠️ חשוב: תשובה תמיד ב-1-3 משפטים בלבד! אי פעם יותר!"

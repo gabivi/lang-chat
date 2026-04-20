@@ -6,6 +6,7 @@ from datetime import timezone, timedelta
 from database import get_db
 from models.conversation import Conversation, Message
 from models.user import User
+from models.feedback import Feedback
 
 try:
     from zoneinfo import ZoneInfo
@@ -68,3 +69,22 @@ def all_conversations(
             "review":          conv.review or "",
         })
     return result
+
+
+@router.get("/feedback")
+def all_feedback(
+    db: Session = Depends(get_db),
+    x_admin_password: str = Header(default=None),
+):
+    if x_admin_password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    entries = db.query(Feedback).order_by(Feedback.created_at.desc()).all()
+    return [
+        {
+            "id":         fb.id,
+            "user_name":  fb.user_name or "—",
+            "text":       fb.text,
+            "created_at": _il(fb.created_at).strftime("%Y-%m-%d %H:%M") if fb.created_at else "",
+        }
+        for fb in entries
+    ]

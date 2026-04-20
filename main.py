@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 from database import Base, engine
 import models  # noqa: F401 — registers all ORM models
-from routers import users, chat, admin
+from routers import users, chat, admin, feedback
 from sqlalchemy import text
 
 Base.metadata.create_all(bind=engine)
@@ -24,6 +24,7 @@ app = FastAPI(title="Companion Chat")
 app.include_router(users.router)
 app.include_router(chat.router)
 app.include_router(admin.router)
+app.include_router(feedback.router)
 
 FRONTEND = Path(__file__).parent / "frontend"
 app.mount("/static", StaticFiles(directory=FRONTEND), name="static")

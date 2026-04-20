@@ -537,10 +537,16 @@
 
     <button class="btn btn-primary btn-big" onclick="doIdentify()" data-i18n="continueBtn">Continue →</button>
     <div id="welcomeError" class="text-danger text-center mt-2" style="display:none;"></div>
-    <div class="text-center mt-3">
+    <div class="text-center mt-3" style="display:flex;justify-content:center;gap:1.2rem;flex-wrap:wrap;">
       <button class="btn btn-link btn-sm text-muted" onclick="showAbout()" data-i18n="aboutBtn">ℹ️ About this app</button>
-      <div class="text-muted" style="font-size:0.8rem;margin-top:1rem;opacity:0.7;" id="versionDisplay"></div>
+      <button class="btn btn-link btn-sm text-muted" onclick="toggleFeedback()">💬 <span data-i18n="feedbackBtn">Feedback</span></button>
     </div>
+    <div id="feedbackBox" style="display:none;margin-top:.8rem;">
+      <textarea id="feedbackText" rows="2" class="form-control mb-2" style="font-size:.9rem;resize:none;" data-i18n-ph="feedbackPlaceholder" placeholder="Share your thoughts…"></textarea>
+      <button class="btn btn-sm btn-primary" onclick="submitFeedback()" data-i18n="feedbackSend">Send</button>
+      <span id="feedbackMsg" style="font-size:.85rem;margin-inline-start:.6rem;color:green;"></span>
+    </div>
+    <div class="text-muted" style="font-size:0.8rem;margin-top:.8rem;opacity:0.7;text-align:center;" id="versionDisplay"></div>
   </div>
 </div>
 
@@ -671,7 +677,7 @@ const T = {
     noVoiceWarning:'No Hebrew voice found on this device.',
     aboutBtn:'ℹ️ About this app',
     aboutTitle:'About ChitChat2Go(Beta)',
-    aboutText:'ChitChat2Go(Beta) is an AI-powered voice companion designed for elderly people who enjoy friendly conversation. Simply press the microphone and start talking — your companion will listen, respond, and suggest topics. The app is free, runs in Israel, and works in both Hebrew and English.',
+    aboutText:'ChitChat2Go(Beta) is an AI-powered voice companion for anyone who enjoys friendly conversation and language practice. Press the microphone and start talking — your companion listens, responds, suggests topics, tells jokes, and asks riddles. The app is free (for now), runs in Israel, and supports Hebrew, English, and more languages. Created by Gabi V.',
     closeBtn:'Close',
     levelLabel:'What is your level?',
     beginner:'🌱 Beginner', intermediate:'📖 Intermediate', advanced:'🎓 Advanced',
@@ -683,6 +689,8 @@ const T = {
     reviewClose:'Close',
     reviewSave:'Save as file',
     viewReviewBtn:'View Review',
+    feedbackBtn:'Feedback', feedbackPlaceholder:'Share your thoughts…',
+    feedbackSend:'Send', feedbackSent:'Thank you!',
   },
   he: {
     appTitle:'ChitChat2Go(Beta)', appSubtitle:'שיחה חברית, רק בשבילך',
@@ -704,7 +712,7 @@ const T = {
     noVoiceWarning:'לא נמצא קול עברי במכשיר זה.',
     aboutBtn:'ℹ️ אודות האפליקציה',
     aboutTitle:'אודות ChitChat2Go(Beta)',
-    aboutText:'ChitChat2Go(Beta) היא מלווה שיחה קולי מבוסס בינה מלאכותית, מיועד לאנשים מבוגרים הנהנים משיחות חבריות. פשוט לחצו על המיקרופון והתחילו לדבר — המלווה יקשיב, יענה, ויציע נושאים לשיחה. האפליקציה חינמית, פועלת בישראל, ועובדת בעברית ובאנגלית.',
+    aboutText:'ChitChat2Go(Beta) היא מלווה שיחה קולי מבוסס בינה מלאכותית, לכל מי שנהנה משיחה חברית ותרגול שפה. לחצו על המיקרופון והתחילו לדבר — המלווה מקשיב, עונה, מציע נושאים, מספר בדיחות ושואל חידות. האפליקציה חינמית (לעת עתה), פועלת בישראל, ותומכת בעברית, אנגלית ושפות נוספות. נוצר על ידי גבי ו.',
     closeBtn:'סגירה',
     levelLabel:'מה רמת השפה שלך?',
     beginner:'🌱 מתחיל/ת', intermediate:'📖 בינוני/ת', advanced:'🎓 מתקדם/ת',
@@ -716,6 +724,8 @@ const T = {
     reviewClose:'סגירה',
     reviewSave:'שמירה כקובץ',
     viewReviewBtn:'צפייה בסיכום',
+    feedbackBtn:'משוב', feedbackPlaceholder:'שתף/י את דעתך…',
+    feedbackSend:'שלח/י', feedbackSent:'תודה!',
   }
 };
 // ════════════════════════════════════════════════════
@@ -795,6 +805,28 @@ function showAbout() {
 }
 function hideAbout() {
   document.getElementById('aboutModal').style.display = 'none';
+}
+function toggleFeedback() {
+  const box = document.getElementById('feedbackBox');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  if (box.style.display === 'block') document.getElementById('feedbackText').focus();
+}
+async function submitFeedback() {
+  const text = document.getElementById('feedbackText').value.trim();
+  const msgEl = document.getElementById('feedbackMsg');
+  if (!text) return;
+  try {
+    await fetch('/feedback', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: userId || null, user_name: userName || null, text}),
+    });
+    msgEl.textContent = t('feedbackSent');
+    document.getElementById('feedbackText').value = '';
+    setTimeout(() => {
+      document.getElementById('feedbackBox').style.display = 'none';
+      msgEl.textContent = '';
+    }, 2000);
+  } catch(e) { msgEl.textContent = t('serverError'); }
 }
 
 // ════════════════════════════════════════════════════
@@ -982,7 +1014,7 @@ ${stubbleSVG}
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
-const APP_VERSION = '0.704';
+const APP_VERSION = '0.705';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
@@ -1573,7 +1605,7 @@ function updateChatInfoBar() {
   const flag = LANG_FLAGS[language] || '';
   const name = (LANG_NAMES_UI[language] || {})[uiLang] || language;
   const level = t(userLevel);
-  document.getElementById('chatInfoBar').textContent = `ChitChat2Go · ${flag} ${name} · ${level}`;
+  document.getElementById('chatInfoBar').textContent = `ChitChat2Go · ${flag} ${name} · ${level} · v${APP_VERSION}`;
 }
 
 // ════════════════════════════════════════════════════

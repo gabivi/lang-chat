@@ -76,6 +76,16 @@
       line-height: 1.6; white-space: pre-wrap; color: #444;
     }
     .review-section strong { display:block; margin-bottom:.4rem; color:#b8860b; font-size:.82rem; text-transform:uppercase; letter-spacing:.05em; }
+    #feedbackSection { max-width: 960px; margin: 0 auto 2rem; padding: 0 2rem; }
+    #feedbackSection h2 { font-size:1rem; font-weight:700; color:#3a5fcd; margin-bottom:.7rem; }
+    .fb-card {
+      background:#fff; border-radius:10px; box-shadow:0 1px 5px rgba(0,0,0,.08);
+      padding:.65rem 1rem; margin-bottom:.5rem;
+      display:flex; gap:1rem; align-items:flex-start;
+    }
+    .fb-user  { font-weight:600; color:#3a5fcd; font-size:.88rem; white-space:nowrap; min-width:90px; }
+    .fb-text  { flex:1; font-size:.92rem; color:#333; line-height:1.45; word-break:break-word; }
+    .fb-ts    { font-size:.75rem; color:#aaa; white-space:nowrap; }
     </style>
   <style>
     #loginOverlay {
@@ -150,6 +160,11 @@
   <button id="exportBtn" onclick="exportCSV()">Export CSV</button>
 </div>
 
+<div id="feedbackSection" style="display:none;">
+  <h2>💬 User Feedback</h2>
+  <div id="feedbackList"></div>
+</div>
+
 <main>
   <div id="loading">Loading conversations…</div>
   <div id="errorMsg" style="display:none;"></div>
@@ -169,25 +184,42 @@ function login() {
 
 async function load() {
   try {
-    const r = await fetch('/admin/conversations', {
-      headers: { 'X-Admin-Password': adminPassword }
-    });
-    if (r.status === 401) {
+    const headers = { 'X-Admin-Password': adminPassword };
+    const [convR, fbR] = await Promise.all([
+      fetch('/admin/conversations', { headers }),
+      fetch('/admin/feedback',      { headers }),
+    ]);
+    if (convR.status === 401) {
       document.getElementById('loginErr').textContent = 'Incorrect password.';
       adminPassword = '';
       return;
     }
-    if (!r.ok) throw new Error(r.statusText);
-    allData = await r.json();
+    if (!convR.ok) throw new Error(convR.statusText);
+    allData = await convR.json();
+    const fbData = fbR.ok ? await fbR.json() : [];
     document.getElementById('loginOverlay').style.display = 'none';
     document.getElementById('loading').style.display = 'none';
     render();
+    renderFeedback(fbData);
   } catch(e) {
     document.getElementById('loading').style.display = 'none';
     const el = document.getElementById('errorMsg');
-    el.textContent = 'Failed to load conversations: ' + e.message;
+    el.textContent = 'Failed to load: ' + e.message;
     el.style.display = 'block';
   }
+}
+
+function renderFeedback(items) {
+  const section = document.getElementById('feedbackSection');
+  const list    = document.getElementById('feedbackList');
+  if (!items || items.length === 0) return;
+  section.style.display = 'block';
+  list.innerHTML = items.map(fb => `
+    <div class="fb-card">
+      <span class="fb-user">${escHtml(fb.user_name)}</span>
+      <span class="fb-text">${escHtml(fb.text)}</span>
+      <span class="fb-ts">${fb.created_at}</span>
+    </div>`).join('');
 }
 
 function sortData(arr) {
