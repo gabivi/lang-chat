@@ -680,6 +680,62 @@ def chat(user_name: str, language: str, gender: str, history: list[dict],
                 f"Always use she/her and address her accordingly."
             )
 
+    # Special easter-egg: user named "sipur" / "סיפור" gets a SpongeBob story offer
+    if user_name.strip().lower() in ("sipur", "סיפור"):
+        if language == "he":
+            system += (
+                "\n\n🎭 הוראה מיוחדת: המשתמש הזה אוהב סיפורים. "
+                "בפתיחה, לאחר ברכה קצרה, שאל אותו/ה אם הוא/היא רוצה לשמוע סיפור מיוחד. "
+                "אם הוא/היא יסכים/תסכים (תגובה חיובית כלשהי), ספר את הסיפור הבא — אך פרוס אותו על מספר תגובות, "
+                "2-3 משפטים בכל פעם, וחכה לאישור להמשיך:\n"
+                "הסיפור: בוב ספוג (SpongeBob) מוזמן לאירוע מיוחד בתחתית הביקיני. "
+                "גיבורי על רבים — ספיידרמן, איש הברזל, וונדר וומן ואחרים — מגיעים לביקור. "
+                "הם מחליטים לשחק משחקים יחד: מרוץ, חידות, קפיצה לרחוק ועוד. "
+                "בוב ספוג מפסיד בכל משחק ומשחק ומתעצב מאוד — פניו נופלות והוא מתחיל לבכות בועות. "
+                "הגיבורים רואים שהוא עצוב ומתייעצים ביניהם בלחש. "
+                "הם מחליטים שבמשחק הבא — 'מי יכין את הבורגר הכי טוב' — "
+                "כולם מכינים בורגרים גרועים בכוונה. "
+                "כמובן, בוב ספוג מכין קראב בורגר מושלם וזוכה בניצחון גדול. "
+                "פניו מאירות, הוא קופץ מאושר ומכריז: 'אני המנצח!' "
+                "הגיבורים מחאו כפיים ואמרו: 'ידענו שאתה הכי טוב בדבר אחד לפחות!' "
+                "בוב ספוג הלך הביתה מאושר מאי פעם."
+            )
+        else:
+            system += (
+                "\n\n🎭 Special instruction: This user loves stories. "
+                "After a short greeting, ask if they'd like to hear a special story. "
+                "If they agree (any positive response), tell the following story — spread it over several responses, "
+                "2-3 sentences at a time, waiting for them to ask for more:\n"
+                "The story: SpongeBob (בוב ספוג) is invited to a special event at Bikini Bottom. "
+                "Many superheroes — Spider-Man, Iron Man, Wonder Woman and others — arrive for a visit. "
+                "They decide to play games together: racing, riddles, long jump and more. "
+                "SpongeBob loses every single game and gets very sad — his face falls and he starts crying bubbles. "
+                "The heroes notice he is sad and huddle together, whispering. "
+                "They decide that in the next game — 'who can make the best burger' — "
+                "everyone deliberately makes terrible burgers. "
+                "Of course, SpongeBob makes a perfect Krabby Patty and wins by a landslide. "
+                "His face lights up, he jumps for joy and shouts: 'I'm the winner!' "
+                "The heroes cheer and say: 'We knew you were the best at something!' "
+                "SpongeBob goes home happier than ever."
+            )
+
+    # Cross-script name hint: if name script doesn't match the conversation language,
+    # ask the avatar to write the name phonetically in the correct script.
+    import re as _re
+    _has_latin  = bool(_re.search(r'[a-zA-Z]', user_name))
+    _has_hebrew = bool(_re.search(r'[\u05d0-\u05ea]', user_name))
+    if language == "he" and _has_latin and not _has_hebrew:
+        system += (
+            f"\n\nשים לב: שם המשתמש '{user_name}' כתוב באותיות לטיניות. "
+            f"כשאתה מזכיר את שמו/ה, כתוב אותו פונטית בעברית (לדוגמה: John → ג'ון)."
+        )
+    elif language != "he" and _has_hebrew and not _has_latin:
+        system += (
+            f"\n\nNote: The user's name '{user_name}' is written in Hebrew script. "
+            f"When addressing them by name, write it phonetically in Latin letters "
+            f"(e.g. יוסי → Yossi, רחל → Rachel)."
+        )
+
     response = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=300,

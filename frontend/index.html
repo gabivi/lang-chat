@@ -691,6 +691,7 @@ const T = {
     viewReviewBtn:'View Review',
     feedbackBtn:'Feedback', feedbackPlaceholder:'Share your thoughts…',
     feedbackSend:'Send', feedbackSent:'Thank you!',
+    nameRequired:'Please enter your name.',
   },
   he: {
     appTitle:'ChitChat2Go(Beta)', appSubtitle:'שיחה חברית, רק בשבילך',
@@ -726,6 +727,7 @@ const T = {
     viewReviewBtn:'צפייה בסיכום',
     feedbackBtn:'משוב', feedbackPlaceholder:'שתף/י את דעתך…',
     feedbackSend:'שלח/י', feedbackSent:'תודה!',
+    nameRequired:'אנא הכנס/י את שמך.',
   }
 };
 // ════════════════════════════════════════════════════
@@ -1175,7 +1177,7 @@ async function doIdentify() {
   const name  = document.getElementById('nameInput').value.trim();
   const errEl = document.getElementById('welcomeError');
   errEl.style.display = 'none';
-  if (!name) { errEl.textContent = t('nameLabel'); errEl.style.display = 'block'; return; }
+  if (!name) { errEl.textContent = t('nameRequired'); errEl.style.display = 'block'; document.getElementById('nameInput').focus(); return; }
   try {
     const res  = await fetch('/users/identify', {
       method:'POST', headers:{'Content-Type':'application/json'},

@@ -173,7 +173,7 @@
 
 <script>
 let allData = [];
-let adminPassword = '';
+let adminPassword = sessionStorage.getItem('adminPw') || '';
 
 function login() {
   const pw = document.getElementById('pwInput').value;
@@ -192,11 +192,13 @@ async function load() {
     if (convR.status === 401) {
       document.getElementById('loginErr').textContent = 'Incorrect password.';
       adminPassword = '';
+      sessionStorage.removeItem('adminPw');
       return;
     }
     if (!convR.ok) throw new Error(convR.statusText);
     allData = await convR.json();
     const fbData = fbR.ok ? await fbR.json() : [];
+    sessionStorage.setItem('adminPw', adminPassword);
     document.getElementById('loginOverlay').style.display = 'none';
     document.getElementById('loading').style.display = 'none';
     render();
@@ -340,8 +342,13 @@ function exportCSV() {
   a.click();
 }
 
-// Auto-focus password field on load
-window.onload = () => document.getElementById('pwInput').focus();
+window.onload = () => {
+  if (adminPassword) {
+    load();
+  } else {
+    document.getElementById('pwInput').focus();
+  }
+};
 </script>
 </body>
 </html>
