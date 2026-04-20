@@ -328,11 +328,10 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     # Ensure text is properly decoded from URL
     text = unquote(text)
 
-    # Arabic TTS requires Arabic script — if we got Hebrew transliteration (no Arabic chars),
-    # return empty audio gracefully instead of sending unreadable text to the Arabic voice.
+    # Arabic TTS: if text has no Arabic characters (e.g. Hebrew transliteration fallback),
+    # switch to the Hebrew voice so the user hears audio matching what they see on screen.
     if language == "ar" and not re.search(r'[\u0600-\u06FF]', text):
-        from fastapi import Response as _R
-        return _R(content=b"", media_type="audio/mpeg")
+        voice = "he-IL-HilaNeural" if gender == "female" else "he-IL-AvriNeural"
     
     # Debug: log incoming text
     import sys
