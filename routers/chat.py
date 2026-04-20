@@ -19,6 +19,17 @@ from services.ai import chat, get_avatar_name, get_client, get_current_holiday, 
 router = APIRouter(tags=["Chat"])
 
 
+def _split_arabic(text: str) -> tuple[str, str | None]:
+    """Split Arabic response into (display_hebrew, tts_arabic) parts.
+    AI outputs: 'Hebrew transliteration ||| Arabic script'
+    Returns the display text and optional Arabic-script TTS text.
+    """
+    if "|||" in text:
+        parts = text.split("|||", 1)
+        return parts[0].strip(), parts[1].strip()
+    return text, None
+
+
 # ── Create conversation ───────────────────────────────────────────────────────
 
 class NewConversationRequest(BaseModel):
@@ -74,21 +85,25 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
         history     = [{"role": "user", "content": start_msg}],
     )
 
-    msg = Message(conversation_id=conv.id, speaker="avatar", text=greeting)
+    greeting_display, greeting_tts = _split_arabic(greeting)
+    msg = Message(conversation_id=conv.id, speaker="avatar", text=greeting_display)
     db.add(msg)
     conv.updated_at = datetime.now(timezone.utc)
     db.commit()
 
     hol_en, hol_he = get_current_holiday()
-    return {
+    result = {
         "conversation_id": conv.id,
         "avatar_name":     avatar_name,
         "avatar_gender":   payload.avatar_gender,
         "language":        payload.language,
-        "greeting":        greeting,
+        "greeting":        greeting_display,
         "holiday_en":      hol_en,
         "holiday_he":      hol_he,
     }
+    if greeting_tts:
+        result["tts_text"] = greeting_tts
+    return result
 
 
 # ── Load conversation history ─────────────────────────────────────────────────
@@ -169,8 +184,11 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    # Save avatar response
-    db.add(Message(conversation_id=conv.id, speaker="avatar", text=response_text))
+    # Parse Arabic dual-format response (display ||| tts)
+    display_text, tts_arabic = _split_arabic(response_text)
+
+    # Save only the display text (Hebrew transliteration) to DB
+    db.add(Message(conversation_id=conv.id, speaker="avatar", text=display_text))
     conv.updated_at = datetime.now(timezone.utc)
 
     # Update title after first real user message
@@ -181,8 +199,11 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
     db.commit()
 
     hol_en, hol_he = get_current_holiday()
-    return {"text": response_text, "avatar_name": conv.avatar_name,
-            "holiday_en": hol_en, "holiday_he": hol_he}
+    result = {"text": display_text, "avatar_name": conv.avatar_name,
+              "holiday_en": hol_en, "holiday_he": hol_he}
+    if tts_arabic:
+        result["tts_text"] = tts_arabic
+    return result
 
 
 # ── Get conversation review ───────────────────────────────────────────────────
@@ -278,8 +299,8 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
         ("fr", "male"):   "fr-FR-HenriNeural",
         ("hu", "female"): "hu-HU-NoemiNeural",
         ("hu", "male"):   "hu-HU-TamasNeural",
-        ("ar", "female"): "he-IL-HilaNeural",
-        ("ar", "male"):   "he-IL-AvriNeural",
+        ("ar", "female"): "ar-JO-SanaNeural",
+        ("ar", "male"):   "ar-JO-TaimNeural",
     }
     voice = voices.get((language, gender), "en-US-JennyNeural")
 

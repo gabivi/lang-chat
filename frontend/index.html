@@ -1070,6 +1070,7 @@ const AVATAR_NAMES_FE = {
   es: { female:'Maria',  male:'Carlos' },
   fr: { female:'Chloé',  male:'Antoine'},
   hu: { female:'Zsófi',  male:'Péter'  },
+  ar: { female:'לַיְלַא', male:'סַאמִי' },
 };
 
 function updateAvatarButtons() {
@@ -1286,7 +1287,7 @@ async function startConversation() {
     showHolidayBadge(data.holiday_en, data.holiday_he);
     initTTS(language, avatarGender);
     addBubble('avatar', data.greeting);
-    speak(data.greeting);
+    speak(data.tts_text || data.greeting);
     setStatus(t('micLabel'));
   } catch(e) { setStatus(t('serverError')); }
 }
@@ -1461,7 +1462,7 @@ async function sendMessage(text) {
     });
     const data = await res.json();
     if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
-    addBubble('avatar', data.text); speak(data.text); setStatus(t('micLabel'));
+    addBubble('avatar', data.text); speak(data.tts_text || data.text); setStatus(t('micLabel'));
   } catch(e) { setStatus(t('serverError')); }
 }
 
