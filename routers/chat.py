@@ -278,6 +278,8 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
         ("fr", "male"):   "fr-FR-HenriNeural",
         ("hu", "female"): "hu-HU-NoemiNeural",
         ("hu", "male"):   "hu-HU-TamasNeural",
+        ("ar", "female"): "he-IL-HilaNeural",
+        ("ar", "male"):   "he-IL-AvriNeural",
     }
     voice = voices.get((language, gender), "en-US-JennyNeural")
 
