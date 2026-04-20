@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Response
 from fastapi.responses import StreamingResponse
 import os
+import re as _re_top
 from groq import Groq
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -19,15 +20,35 @@ from services.ai import chat, get_avatar_name, get_client, get_current_holiday, 
 router = APIRouter(tags=["Chat"])
 
 
+_AR = _re_top.compile(r'[\u0600-\u06FF]')   # Arabic Unicode block
+
+
 def _split_arabic(text: str) -> tuple[str, str | None]:
-    """Split Arabic response into (display_hebrew, tts_arabic) parts.
-    AI outputs: 'Hebrew transliteration ||| Arabic script'
-    Returns the display text and optional Arabic-script TTS text.
+    """Split Arabic dual-format response into (display_hebrew, tts_arabic).
+
+    AI is instructed to output: 'Hebrew transliteration ||| Arabic script'
+    but order may be reversed or separator may be missing — handle all cases.
+    Always strips Arabic chars from the display part so users see only
+    Hebrew-letter transliteration.
     """
     if "|||" in text:
-        parts = text.split("|||", 1)
-        return parts[0].strip(), parts[1].strip()
-    return text, None
+        part_a, part_b = (p.strip() for p in text.split("|||", 1))
+        a_arabic = bool(_AR.search(part_a))
+        b_arabic = bool(_AR.search(part_b))
+
+        if a_arabic and not b_arabic:
+            # Reversed — swap so part_a is the Hebrew side
+            part_a, part_b = part_b, part_a
+
+        # Strip any stray Arabic chars from the display side
+        display = _AR.sub('', part_a).strip()
+        tts = part_b if _AR.search(part_b) else None
+        return display or _AR.sub('', part_b).strip(), tts
+
+    # No separator — strip Arabic chars for display; use full text for TTS if it contains Arabic
+    display = _AR.sub('', text).strip()
+    tts = text if _AR.search(text) else None
+    return display or text, tts
 
 
 # ── Create conversation ───────────────────────────────────────────────────────
