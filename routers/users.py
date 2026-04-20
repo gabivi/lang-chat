@@ -1,9 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from datetime import timezone, timedelta
 from database import get_db
 from models.user import User
 from models.conversation import Conversation, Message
+
+try:
+    from zoneinfo import ZoneInfo
+    _IL_TZ = ZoneInfo("Asia/Jerusalem")
+except Exception:
+    _IL_TZ = timezone(timedelta(hours=3))
+
+def _il(dt):
+    if dt is None: return None
+    if dt.tzinfo is None: dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(_IL_TZ)
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -54,7 +66,7 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
             "language":      c.language,
             "avatar_name":   c.avatar_name,
             "avatar_gender": c.avatar_gender,
-            "updated_at":    c.updated_at.strftime("%Y-%m-%d %H:%M") if c.updated_at else "",
+            "updated_at":    _il(c.updated_at).strftime("%Y-%m-%d %H:%M") if c.updated_at else "",
             "message_count": db.query(Message).filter(Message.conversation_id == c.id).count(),
             "review":        c.review or "",
         }

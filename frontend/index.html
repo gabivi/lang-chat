@@ -498,9 +498,9 @@
 <div id="screenWelcome" class="screen active">
   <div class="card-main">
     <div style="text-align:center;margin-bottom:.6rem;">
-      <div class="choice-grid" style="max-width:200px;margin:0 auto;">
-        <div class="choice-btn" data-group="uilang" data-value="en" onclick="pickUILang(this)">🇬🇧 English</div>
-        <div class="choice-btn selected" data-group="uilang" data-value="he" onclick="pickUILang(this)">🇮🇱 עברית</div>
+      <div class="lang-toggle" style="margin:0 auto .2rem;">
+        <button class="lang-side" data-group="uilang" data-value="he" onclick="pickUILang(this)">🇮🇱 ע</button>
+        <button class="lang-side" data-group="uilang" data-value="en" onclick="pickUILang(this)">🇬🇧 E</button>
       </div>
     </div>
 
@@ -567,6 +567,17 @@
     vertical-align:middle; margin-inline-end:6px;
   }
   @keyframes spin { to { transform:rotate(360deg); } }
+  .lang-toggle {
+    display:inline-flex; background:#ddd8f0; border-radius:22px; padding:3px; gap:0;
+  }
+  .lang-side {
+    border:none; background:transparent; padding:5px 13px; border-radius:19px;
+    cursor:pointer; font-size:.95rem; transition:background .2s, box-shadow .2s;
+    color:#666; font-weight:500; line-height:1.3;
+  }
+  .lang-side.selected {
+    background:white; color:#333; box-shadow:0 1px 4px rgba(0,0,0,.18);
+  }
 </style>
 
 <!-- Review modal -->
@@ -666,6 +677,7 @@ const T = {
     beginner:'🌱 Beginner', intermediate:'📖 Intermediate', advanced:'🎓 Advanced',
     reviewTitle:'Conversation Review',
     reviewLoading:'Analyzing your conversation…',
+    reviewWait:'This takes a few seconds — please wait.',
     reviewCancel:'Cancel',
     reviewNone:'Great job — no significant mistakes found!',
     reviewClose:'Close',
@@ -698,6 +710,7 @@ const T = {
     beginner:'🌱 מתחיל/ת', intermediate:'📖 בינוני/ת', advanced:'🎓 מתקדם/ת',
     reviewTitle:'סקירת השיחה',
     reviewLoading:'מנתח/ת את השיחה שלך…',
+    reviewWait:'זה לוקח כמה שניות — אנא המתן/י.',
     reviewCancel:'ביטול',
     reviewNone:'כל הכבוד — לא נמצאו טעויות משמעותיות!',
     reviewClose:'סגירה',
@@ -1435,13 +1448,18 @@ function endConversation() {
   const saveBtnEl    = document.getElementById('reviewSaveBtn');
 
   titleEl.textContent      = `${t('reviewTitle')} — ${t('reviewLoading')}`;
-  bodyEl.innerHTML         = `<span class="review-spinner"></span> ${t('reviewLoading')}`;
-  saveBtnEl.style.display  = 'none';
-  saveBtnEl.textContent    = t('reviewSave');
-  closeBtnEl.textContent   = t('reviewClose');
-  closeBtnEl.disabled      = true;
-  cancelBtnEl.textContent  = t('reviewCancel');
-  cancelBtnEl.style.display = 'inline-block';
+  bodyEl.innerHTML         = `<div style="text-align:center;padding:.8rem 0">
+    <span class="review-spinner"></span>
+    <div style="margin-top:.7rem;font-size:1.05rem;color:#555">${t('reviewLoading')}</div>
+    <div style="margin-top:.4rem;font-size:.9rem;color:#999">${t('reviewWait')}</div>
+  </div>`;
+  saveBtnEl.style.display   = 'none';
+  saveBtnEl.textContent     = t('reviewSave');
+  closeBtnEl.textContent    = t('reviewClose');
+  closeBtnEl.disabled       = true;
+  cancelBtnEl.textContent   = t('reviewCancel');
+  cancelBtnEl.style.display = 'none';
+  setTimeout(() => { if (_reviewAbortController) cancelBtnEl.style.display = 'inline-block'; }, 8000);
   modal.querySelector('div').style.direction = uiLang === 'he' ? 'rtl' : 'ltr';
   modal.dataset.closeTo    = 'welcome';
   modal.style.display      = 'flex';

@@ -4,7 +4,13 @@ import os
 from groq import Groq
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+
+try:
+    from zoneinfo import ZoneInfo as _ZI
+    _IL_TZ = _ZI("Asia/Jerusalem")
+except Exception:
+    _IL_TZ = timezone(timedelta(hours=3))
 from database import get_db
 from models.conversation import Conversation, Message
 from models.user import User
@@ -35,7 +41,7 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
         )
 
     avatar_name = get_avatar_name(payload.language, payload.avatar_gender)
-    title_date  = datetime.now(timezone.utc).strftime("%d/%m/%Y")
+    title_date  = datetime.now(_IL_TZ).strftime("%d/%m/%Y")
 
     # Check if this is the user's very first conversation
     existing_count = db.query(Conversation).filter(
