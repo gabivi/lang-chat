@@ -76,6 +76,17 @@
       line-height: 1.6; white-space: pre-wrap; color: #444;
     }
     .review-section strong { display:block; margin-bottom:.4rem; color:#b8860b; font-size:.82rem; text-transform:uppercase; letter-spacing:.05em; }
+    #pagination {
+      display:flex; align-items:center; justify-content:center;
+      gap:.8rem; margin:1.2rem 0 2rem; font-size:.9rem;
+    }
+    #pagination button {
+      padding:.35rem .9rem; border:1px solid #ccd; border-radius:8px;
+      background:#fff; cursor:pointer; font-size:.88rem;
+    }
+    #pagination button:disabled { opacity:.4; cursor:default; }
+    #pagination button:not(:disabled):hover { background:#eef1fb; }
+    #pageInfo { color:#555; font-weight:600; }
     #feedbackSection { max-width: 960px; margin: 0 auto 2rem; padding: 0 2rem; }
     #feedbackSection h2 { font-size:1rem; font-weight:700; color:#3a5fcd; margin-bottom:.7rem; }
     .fb-card {
@@ -121,6 +132,7 @@
 </div>
 
 <header>
+  <img src="/static/logo-sketch-C1.jpg" alt="logo" style="width:44px;height:44px;object-fit:cover;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3);flex-shrink:0;"/>
   <h1>ChitChat2Go(Beta) — All Conversations</h1>
   <span id="summary"></span>
 </header>
@@ -170,11 +182,35 @@
   <div id="loading">Loading conversations…</div>
   <div id="errorMsg" style="display:none;"></div>
   <div id="convList"></div>
+  <div id="pagination" style="display:none;">
+    <button id="prevBtn" onclick="changePage(-1)">← Prev</button>
+    <span id="pageInfo"></span>
+    <button id="nextBtn" onclick="changePage(1)">Next →</button>
+  </div>
 </main>
 
 <script>
 let allData = [];
+let filteredData = [];
+let currentPage = 1;
+const PAGE_SIZE = 30;
 let adminPassword = sessionStorage.getItem('adminPw') || '';
+
+function fmtDate(s) {
+  if (!s) return '';
+  const [date, time] = s.split(' ');
+  const [y, m, d] = date.split('-');
+  return `${d}-${m}-${y}${time ? ' ' + time : ''}`;
+}
+
+function convLength(created, updated) {
+  if (!created || !updated) return '';
+  const parse = s => { const [date, time] = s.split(' '); return new Date(`${date}T${time||'00:00'}:00`); };
+  const diff = Math.round((parse(updated) - parse(created)) / 60000);
+  if (diff < 1) return '<1m';
+  if (diff < 60) return diff + 'm';
+  return Math.floor(diff/60) + 'h ' + (diff%60) + 'm';
+}
 
 function login() {
   const pw = document.getElementById('pwInput').value;
@@ -257,32 +293,55 @@ function render() {
   const lang   = document.getElementById('filterLang').value;
   const gender = document.getElementById('filterGender').value;
 
-  const filtered = sortData(allData.filter(c =>
+  filteredData = sortData(allData.filter(c =>
     (!search || c.user_name.toLowerCase().includes(search)) &&
     (!lang   || c.language === lang) &&
     (!gender || c.avatar_gender === gender)
   ));
+  currentPage = 1;
+  renderPage();
+}
+
+function changePage(dir) {
+  const pages = Math.ceil(filteredData.length / PAGE_SIZE);
+  currentPage = Math.max(1, Math.min(pages, currentPage + dir));
+  renderPage();
+}
+
+function renderPage() {
+  const total  = filteredData.length;
+  const pages  = Math.ceil(total / PAGE_SIZE) || 1;
+  const start  = (currentPage - 1) * PAGE_SIZE;
+  const pageData = filteredData.slice(start, start + PAGE_SIZE);
 
   document.getElementById('summary').textContent =
-    `${filtered.length} conversation${filtered.length !== 1 ? 's' : ''} / ${allData.length} total`;
+    `${total} conversation${total !== 1 ? 's' : ''} / ${allData.length} total`;
+
+  const pag = document.getElementById('pagination');
+  pag.style.display = pages > 1 ? 'flex' : 'none';
+  document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${pages}`;
+  document.getElementById('prevBtn').disabled = currentPage <= 1;
+  document.getElementById('nextBtn').disabled = currentPage >= pages;
 
   const list = document.getElementById('convList');
-  if (filtered.length === 0) {
+  if (total === 0) {
     list.innerHTML = '<div class="empty">No conversations match the filter.</div>';
     return;
   }
 
-  list.innerHTML = filtered.map(conv => {
+  const LANG_LABELS = {he:'🇮🇱 Hebrew', en:'🇬🇧 English', de:'🇩🇪 German', es:'🇪🇸 Spanish', fr:'🇫🇷 French', hu:'🇭🇺 Hungarian', ar:'🗣️ Arabic'};
+
+  list.innerHTML = pageData.map(conv => {
     const cid       = conv.conversation_id;
-    const LANG_LABELS = {he:'🇮🇱 Hebrew', en:'🇬🇧 English', de:'🇩🇪 German', es:'🇪🇸 Spanish', fr:'🇫🇷 French', hu:'🇭🇺 Hungarian', ar:'🗣️ Arabic'};
     const langTag   = `<span class="tag ${conv.language}">${LANG_LABELS[conv.language] || conv.language}</span>`;
     const genderTag = `<span class="tag">${conv.avatar_gender === 'female' ? '♀' : '♂'} ${conv.avatar_name}</span>`;
     const userGTag  = conv.user_gender !== 'unknown' ? `<span class="meta">(${conv.user_gender})</span>` : '';
+    const length    = convLength(conv.created_at, conv.updated_at);
 
     const msgs = conv.messages.map(m => {
       const isUser = m.speaker === 'user';
       const name   = isUser ? conv.user_name : conv.avatar_name;
-      const ts     = m.timestamp ? m.timestamp.slice(0, 16).replace('T', ' ') : '';
+      const ts     = m.timestamp ? fmtDate(m.timestamp.slice(0,16).replace('T',' ')) : '';
       return `
         <div class="msg ${m.speaker}">
           <div>
@@ -293,12 +352,9 @@ function render() {
         </div>`;
     }).join('');
 
-    const noMsgs = conv.message_count === 0
-      ? '<div class="empty">No messages.</div>' : '';
-
+    const noMsgs   = conv.message_count === 0 ? '<div class="empty">No messages.</div>' : '';
     const reviewHtml = conv.review
-      ? `<div class="review-section"><strong>Conversation Review</strong>${escHtml(conv.review)}</div>`
-      : '';
+      ? `<div class="review-section"><strong>Conversation Review</strong>${escHtml(conv.review)}</div>` : '';
 
     return `
       <div class="conv-card">
@@ -306,9 +362,10 @@ function render() {
           <span class="user-name">${escHtml(conv.user_name)}</span>
           ${userGTag}
           ${langTag} ${genderTag}
-          <span class="meta">Started: ${conv.created_at}</span>
-          <span class="meta">Last: ${conv.updated_at}</span>
+          <span class="meta">📅 ${fmtDate(conv.created_at)}</span>
+          <span class="meta">🕓 ${fmtDate(conv.updated_at)}</span>
           <span class="meta">${conv.message_count} msg${conv.message_count !== 1 ? 's' : ''}</span>
+          ${length ? `<span class="meta">⏱ ${length}</span>` : ''}
           ${conv.review ? '<span class="tag" style="background:#f5c51822;color:#b8860b;">✓ Review</span>' : ''}
           <span class="collapse-arrow" id="arrow-${cid}">▶ Show</span>
         </div>
