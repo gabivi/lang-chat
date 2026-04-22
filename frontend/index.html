@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ChitChat2Go(Beta)</title>
+  <link rel="icon" type="image/jpeg" href="/static/logo-sketch-C1.jpg"/>
+  <link rel="apple-touch-icon" href="/static/logo-sketch-C1.jpg"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <style>
     :root { 
@@ -565,7 +567,8 @@
 
 <!-- ══════════  SCREEN 1 — Welcome  ══════════ -->
 <div id="screenWelcome" class="screen active">
-  <div class="card-main">
+  <div class="card-main" style="position:relative;">
+    <img src="/static/logo-sketch-C1.jpg" alt="ChitChat2Go" style="position:absolute;top:10px;left:10px;width:50px;height:50px;object-fit:cover;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.15);"/>
     <div style="text-align:center;margin-bottom:.6rem;">
       <div class="lang-toggle" style="margin:0 auto .2rem;">
         <button class="lang-side" data-group="uilang" data-value="he" onclick="pickUILang(this)">🇮🇱 ע</button>
