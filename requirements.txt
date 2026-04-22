@@ -9,3 +9,4 @@ pyluach>=1.4.0
 python-multipart>=0.0.18
 groq>=0.13.0
 edge-tts>=7.0.0
+apscheduler>=3.10.4
