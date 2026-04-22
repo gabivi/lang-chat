@@ -20,6 +20,12 @@ from services.ai import chat, get_avatar_name, get_client, get_current_holiday, 
 router = APIRouter(tags=["Chat"])
 
 
+@router.get("/holiday")
+def current_holiday():
+    en, he = get_current_holiday()
+    return {"holiday_en": en or "", "holiday_he": he or ""}
+
+
 _AR     = _re_top.compile(r'[\u0600-\u06FF]')          # Arabic Unicode block
 _AR_TAG = _re_top.compile(r'<ar>([\s\S]*?)</ar>', _re_top.IGNORECASE)  # TTS tag
 

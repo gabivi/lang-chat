@@ -568,7 +568,10 @@
 <!-- ══════════  SCREEN 1 — Welcome  ══════════ -->
 <div id="screenWelcome" class="screen active">
   <div class="card-main" style="position:relative;">
-    <img src="/static/logo-sketch-C1.jpg" alt="ChitChat2Go" style="position:absolute;top:10px;left:10px;width:50px;height:50px;object-fit:cover;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.15);"/>
+    <div style="position:absolute;top:10px;left:10px;width:50px;height:50px;">
+      <img src="/static/logo-sketch-C1.jpg" alt="ChitChat2Go" style="width:50px;height:50px;object-fit:cover;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.15);display:block;"/>
+      <span id="logoBadge" style="display:none;position:absolute;bottom:-5px;right:-8px;font-size:1.3rem;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35));cursor:default;"></span>
+    </div>
     <div style="text-align:center;margin-bottom:.6rem;">
       <div class="lang-toggle" style="margin:0 auto .2rem;">
         <button class="lang-side" data-group="uilang" data-value="he" onclick="pickUILang(this)">🇮🇱 ע</button>
@@ -852,6 +855,23 @@ function showHolidayBadge(holEn, holHe) {
   } else {
     badge.style.display = 'none';
   }
+}
+
+async function loadHolidayBadge() {
+  try {
+    const r = await fetch('/holiday');
+    const d = await r.json();
+    const symbol = HOLIDAY_SYMBOLS[d.holiday_he] || HOLIDAY_SYMBOLS[d.holiday_en] || '';
+    const badge = document.getElementById('logoBadge');
+    if (!badge) return;
+    if (symbol) {
+      badge.textContent = symbol;
+      badge.title = d.holiday_he || d.holiday_en || '';
+      badge.style.display = 'inline';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(e) {}
 }
 
 // Resolve gendered Hebrew text: "התחל/י" → "התחל" (male) / "התחלי" (female)
@@ -1276,6 +1296,7 @@ function goWelcome() {
   // Update avatar buttons to match current practice language
   updateAvatarButtons();
   show('screenWelcome');
+  loadHolidayBadge();
 }
 function goSetup() {
   language = practiceLanguage;  // Always use welcome-screen selection, not last resumed conversation
@@ -1865,6 +1886,7 @@ document.getElementById('nameInput').addEventListener('keydown', e => { if (e.ke
 document.getElementById('nameInput').value = localStorage.getItem('cc_userName') || '';
 updateAvatarButtons();
 applyUI();
+loadHolidayBadge();
 </script>
 </body>
 </html>
