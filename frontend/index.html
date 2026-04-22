@@ -156,15 +156,13 @@
       flex-shrink:0;
       background:none;
       border:none;
-      color:#bbb;
-      font-size:1rem;
+      color:#ccc;
+      font-size:.95rem;
       cursor:pointer;
-      padding:.2rem .4rem;
+      padding:.2rem .5rem;
       border-radius:6px;
-      opacity:0;
-      transition:opacity .15s, color .15s;
+      transition:color .15s;
     }
-    .conv-item:hover .conv-hide-btn { opacity:1; }
     .conv-hide-btn:hover { color:#e05a5a; }
     .conv-item.hidden-conv { opacity:.45; }
     .conv-item.hidden-conv .conv-title { text-decoration:line-through; }
@@ -1138,6 +1136,7 @@ let userGender      = localStorage.getItem('cc_userGender')   || 'female';
 let practiceLanguage = localStorage.getItem('cc_practiceLanguage') || 'he';
 let userLevel       = localStorage.getItem('cc_userLevel')    || 'intermediate';
 let conversationId  = null;
+let conversationActive = false;
 let uiLang          = localStorage.getItem('cc_uiLang') || localStorage.getItem('cc_language') || 'he';
 let language        = localStorage.getItem('cc_language')     || 'he'; // TTS / conversation language
 let avatarGender    = localStorage.getItem('cc_avatarGender') || 'female';
@@ -1417,6 +1416,7 @@ async function resumeConversation(convId, avatarName, gender, lang) {
     d.messages.forEach(m => addBubble(m.speaker === 'user' ? 'user' : 'avatar', m.text));
   } catch(e) {}
   initTTS(lang, gender);
+  conversationActive = true;
   show('screenChat');
   setStatus(t('starting'));
   try {
@@ -1438,6 +1438,7 @@ async function startConversation() {
   document.getElementById('avatarWrap').innerHTML = buildFace(avatarGender, language);
   document.getElementById('avatarName').textContent = '…';
   document.getElementById('transcript').innerHTML = '';
+  conversationActive = true;
   show('screenChat'); setStatus(t('starting'));
   try {
     const res  = await fetch('/conversations', {
@@ -1689,7 +1690,9 @@ async function sendMessage(text) {
     });
     const data = await res.json();
     if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
-    addBubble('avatar', data.text); speak(data.tts_text || data.text); setStatus(t('micLabel'));
+    addBubble('avatar', data.text);
+    if (conversationActive) speak(data.tts_text || data.text);
+    setStatus(t('micLabel'));
   } catch(e) { setStatus(t('serverError')); }
 }
 
@@ -1698,6 +1701,7 @@ async function suggestTopics() { stopSpeaking(); await sendMessage('__CHANGE_TOP
 let _reviewAbortController = null;
 
 function endConversation() {
+  conversationActive = false;
   stopSpeaking();
   if (listening) stopListening();
   document.getElementById('micBtn').disabled = true;
