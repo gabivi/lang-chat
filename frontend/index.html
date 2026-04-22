@@ -152,6 +152,31 @@
     }
     .conv-title { font-weight:700; font-size:.95rem; color:#1a2a40; }
     .conv-meta  { font-size:.8rem; color:#999; margin-top:.3rem; }
+    .conv-hide-btn {
+      flex-shrink:0;
+      background:none;
+      border:none;
+      color:#bbb;
+      font-size:1rem;
+      cursor:pointer;
+      padding:.2rem .4rem;
+      border-radius:6px;
+      opacity:0;
+      transition:opacity .15s, color .15s;
+    }
+    .conv-item:hover .conv-hide-btn { opacity:1; }
+    .conv-hide-btn:hover { color:#e05a5a; }
+    .conv-item.hidden-conv { opacity:.45; }
+    .conv-item.hidden-conv .conv-title { text-decoration:line-through; }
+    #convHiddenToggle {
+      display:none;
+      text-align:center;
+      margin-bottom:.5rem;
+      font-size:.82rem;
+      color:var(--accent);
+      cursor:pointer;
+      text-decoration:underline;
+    }
 
     .choice-grid {
       display:grid;
@@ -379,6 +404,52 @@
       min-height:1.5em;
       font-weight:500;
     }
+    #micModeToggle {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:.45rem;
+      margin:.3rem auto .2rem;
+      font-size:.78rem;
+      color:#999;
+      font-weight:500;
+      user-select:none;
+    }
+    #micModeToggle span {
+      transition:color .2s;
+    }
+    #micModeToggle span.active {
+      color:var(--accent-dark);
+      font-weight:700;
+    }
+    .mic-toggle-switch {
+      position:relative;
+      display:inline-block;
+      width:36px;
+      height:20px;
+    }
+    .mic-toggle-switch input { opacity:0; width:0; height:0; }
+    .mic-toggle-slider {
+      position:absolute;
+      inset:0;
+      background:#ccc;
+      border-radius:20px;
+      cursor:pointer;
+      transition:background .2s;
+    }
+    .mic-toggle-slider:before {
+      content:'';
+      position:absolute;
+      width:14px;
+      height:14px;
+      left:3px;
+      top:3px;
+      background:#fff;
+      border-radius:50%;
+      transition:transform .2s;
+    }
+    .mic-toggle-switch input:checked + .mic-toggle-slider { background:var(--accent); }
+    .mic-toggle-switch input:checked + .mic-toggle-slider:before { transform:translateX(16px); }
     #statusBar {
       text-align:center;
       font-size:.9rem;
@@ -605,6 +676,7 @@
   <div class="card-main">
     <div class="app-title"><span data-i18n="welcomeBack">Welcome back</span>, <span id="resumeName"></span>!</div>
     <p class="text-center text-muted mb-3" data-i18n="resumePrompt">Would you like to continue a previous conversation?</p>
+    <div id="convHiddenToggle"></div>
     <div id="convList" class="mb-3"></div>
     <hr/>
     <button class="btn btn-primary btn-big"         onclick="goSetup()"   data-i18n="newConvBtn">+ Start a new conversation</button>
@@ -641,9 +713,15 @@
     <div id="avatarName">…</div>
     <div id="transcript"></div>
     <div id="micLabel" data-i18n="micLabel">Hold the microphone to speak</div>
-    <button id="micBtn"
-      onmousedown="startListening()" onmouseup="stopListening()" onmouseleave="stopListening()"
-      ontouchstart="event.preventDefault();startListening()" ontouchend="stopListening()">🎤</button>
+    <button id="micBtn">🎤</button>
+    <div id="micModeToggle">
+      <span id="micModeHoldLabel"></span>
+      <label class="mic-toggle-switch" title="">
+        <input type="checkbox" id="micModeCheck" onchange="setMicMode(this.checked?'auto':'hold')">
+        <span class="mic-toggle-slider"></span>
+      </label>
+      <span id="micModeAutoLabel"></span>
+    </div>
     <button id="stopBtn" onclick="stopSpeaking()">⏹ <span data-i18n="stopBtn">Stop</span></button>
     <div id="statusBar">&nbsp;</div>
     <div class="action-btns">
@@ -670,7 +748,9 @@ const T = {
     female:'Female', male:'Male',
     voiceLabel:'Speaking voice:', startBtn:'Start Chatting', backBtn:'← Back',
     switchBtn:'Switch to English avatar',
-    micLabel:'Hold the microphone to speak', listening:'Listening…', thinking:'Thinking…',
+    micLabel:'Hold the microphone to speak', micLabelAuto:'Click mic to speak',
+    micModeHold:'Hold', micModeAuto:'Auto',
+    listening:'Listening…', listeningAuto:'Listening… (release when done)', thinking:'Thinking…',
     stopBtn:'Stop', suggestBtn:'Skip small talk and suggest topics', endBtn:'End chat',
     noSpeech:'No speech detected. Try again.', serverError:'Could not connect to server.',
     starting:'Starting…',
@@ -693,6 +773,8 @@ const T = {
     feedbackBtn:'Feedback', feedbackPlaceholder:'Share your thoughts…',
     feedbackSend:'Send', feedbackSent:'Thank you!',
     nameRequired:'Please enter your name.',
+    hideConv:'Hide', restoreConv:'Restore',
+    showHiddenLink:'Show hidden', hideHiddenLink:'Hide hidden',
   },
   he: {
     appTitle:'ChitChat2Go(Beta)', appSubtitle:'שיחה חברית, רק בשבילך',
@@ -706,7 +788,9 @@ const T = {
     female:'נקבה', male:'זכר',
     voiceLabel:'קול הדובר:', startBtn:'התחל/י לשוחח', backBtn:'חזור ←',
     switchBtn:'מעבר לאווטאר אנגלי',
-    micLabel:'לחץ/י לחיצה ממושכת על המיקרופון לדיבור', listening:'מקשיב/ה…', thinking:'חושב/ת…',
+    micLabel:'לחץ/י לחיצה ממושכת על המיקרופון לדיבור', micLabelAuto:'לחץ/י על המיקרופון לדיבור',
+    micModeHold:'לחיצה', micModeAuto:'אוטו',
+    listening:'מקשיב/ה…', listeningAuto:'מקשיב/ה… (עוצר אוטומטית)', thinking:'חושב/ת…',
     stopBtn:'עצור', suggestBtn:'דלג/י על שיחת חולין והצע/י נושאים', endBtn:'סיום שיחה',
     noSpeech:'לא זוהה דיבור. נסה/י שוב.', serverError:'לא ניתן להתחבר לשרת.',
     starting:'מתחיל/ה…',
@@ -729,6 +813,8 @@ const T = {
     feedbackBtn:'משוב', feedbackPlaceholder:'שתף/י את דעתך…',
     feedbackSend:'שלח/י', feedbackSent:'תודה!',
     nameRequired:'אנא הכנס/י את שמך.',
+    hideConv:'הסתר', restoreConv:'שחזר',
+    showHiddenLink:'הצג מוסתרים', hideHiddenLink:'הסתר מוסתרים',
   }
 };
 // ════════════════════════════════════════════════════
@@ -800,6 +886,34 @@ function applyUI() {
     if (v) el.placeholder = genderizeHe(v);
   });
   document.getElementById('versionDisplay').textContent = `v${APP_VERSION}`;
+  setMicMode(micMode);
+}
+
+function setMicMode(mode) {
+  micMode = mode;
+  localStorage.setItem('cc_micMode', mode);
+  const check = document.getElementById('micModeCheck');
+  if (check) check.checked = (mode === 'auto');
+  const holdLbl = document.getElementById('micModeHoldLabel');
+  const autoLbl = document.getElementById('micModeAutoLabel');
+  if (holdLbl) { holdLbl.textContent = t('micModeHold'); holdLbl.classList.toggle('active', mode === 'hold'); }
+  if (autoLbl) { autoLbl.textContent = t('micModeAuto'); autoLbl.classList.toggle('active', mode === 'auto'); }
+  const btn = document.getElementById('micBtn');
+  if (!btn) return;
+  btn.onmousedown = null; btn.onmouseup = null; btn.onmouseleave = null;
+  btn.ontouchstart = null; btn.ontouchend = null; btn.onclick = null;
+  if (mode === 'hold') {
+    btn.onmousedown  = () => startListening();
+    btn.onmouseup    = () => stopListening();
+    btn.onmouseleave = () => stopListening();
+    btn.ontouchstart = (e) => { e.preventDefault(); startListening(); };
+    btn.ontouchend   = () => stopListening();
+  } else {
+    btn.onclick    = () => { if (listening) stopListening(); else startListening(); };
+    btn.ontouchend = (e) => { e.preventDefault(); if (listening) stopListening(); else startListening(); };
+  }
+  const lbl = document.getElementById('micLabel');
+  if (lbl && !listening) lbl.textContent = mode === 'auto' ? t('micLabelAuto') : t('micLabel');
 }
 
 function showAbout() {
@@ -1017,7 +1131,7 @@ ${stubbleSVG}
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
-const APP_VERSION = '0.707';
+const APP_VERSION = '0.71';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
@@ -1031,6 +1145,9 @@ let recognition     = null;
 let ttsVoice        = null;
 let ttsGenderMatch  = true;
 let listening       = false;
+let micMode         = localStorage.getItem('cc_micMode') || 'hold';
+let silenceTimer    = null;
+let audioCtx        = null;
 let ttsQueue        = [];
 let ttsBusy         = false;
 let finalTranscript = '';
@@ -1209,12 +1326,50 @@ async function doIdentify() {
 // ════════════════════════════════════════════════════
 //  Screen 2 — Resume
 // ════════════════════════════════════════════════════
+let _cachedConvs     = [];
+let _showHiddenConvs = false;
+
+function getHiddenConvs() {
+  try { return new Set(JSON.parse(localStorage.getItem('cc_hiddenConvs') || '[]')); }
+  catch(e) { return new Set(); }
+}
+function _saveHiddenConvs(set) {
+  localStorage.setItem('cc_hiddenConvs', JSON.stringify([...set]));
+}
+function hideConv(id) {
+  const s = getHiddenConvs(); s.add(id); _saveHiddenConvs(s);
+}
+function unhideConv(id) {
+  const s = getHiddenConvs(); s.delete(id); _saveHiddenConvs(s);
+}
+
+function toggleShowHidden() {
+  _showHiddenConvs = !_showHiddenConvs;
+  renderConvList(_cachedConvs);
+}
+
 function renderConvList(convs) {
-  const el = document.getElementById('convList');
-  el.innerHTML = '';
+  _cachedConvs = convs;
+  const hidden  = getHiddenConvs();
+  const el      = document.getElementById('convList');
+  const toggle  = document.getElementById('convHiddenToggle');
+  el.innerHTML  = '';
+
+  const hiddenCount = convs.filter(c => hidden.has(c.id)).length;
+  if (toggle) {
+    toggle.style.display = hiddenCount > 0 ? 'block' : 'none';
+    toggle.textContent   = _showHiddenConvs
+      ? t('hideHiddenLink')
+      : `${t('showHiddenLink')} (${hiddenCount})`;
+    toggle.onclick = toggleShowHidden;
+  }
+
   convs.forEach(c => {
+    const isHidden = hidden.has(c.id);
+    if (isHidden && !_showHiddenConvs) return;
+
     const d = document.createElement('div');
-    d.className = 'conv-item';
+    d.className = isHidden ? 'conv-item hidden-conv' : 'conv-item';
     d.style.cssText = 'display:flex;align-items:center;gap:.6rem;';
 
     const info = document.createElement('div');
@@ -1222,10 +1377,10 @@ function renderConvList(convs) {
     info.style.cursor = 'pointer';
     info.innerHTML = `<div class="conv-title">${c.title}</div>
       <div class="conv-meta">${c.avatar_name} &bull; ${c.message_count} msgs &bull; ${c.updated_at}</div>`;
-    info.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
+    if (!isHidden) info.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
     d.appendChild(info);
 
-    if (c.review) {
+    if (c.review && !isHidden) {
       const btn = document.createElement('button');
       btn.className = 'btn btn-outline-secondary';
       btn.style.cssText = 'font-size:.78rem;padding:.3rem .7rem;white-space:nowrap;flex-shrink:0;';
@@ -1233,6 +1388,18 @@ function renderConvList(convs) {
       btn.onclick = e => { e.stopPropagation(); showPastReview(c.review, c.title); };
       d.appendChild(btn);
     }
+
+    const actionBtn = document.createElement('button');
+    actionBtn.className = 'conv-hide-btn';
+    actionBtn.title = isHidden ? t('restoreConv') : t('hideConv');
+    actionBtn.textContent = isHidden ? '↩' : '✕';
+    actionBtn.onclick = e => {
+      e.stopPropagation();
+      if (isHidden) unhideConv(c.id); else hideConv(c.id);
+      if (!isHidden) _showHiddenConvs = false; // collapse hidden section after hiding
+      renderConvList(_cachedConvs);
+    };
+    d.appendChild(actionBtn);
 
     el.appendChild(d);
   });
@@ -1387,15 +1554,19 @@ async function drainTTS() {
 }
 
 // ════════════════════════════════════════════════════
-//  STT  (press-and-hold to speak, Whisper via /stt)
+//  STT  (hold-to-talk or single-click auto-stop mode)
 // ════════════════════════════════════════════════════
 let mediaRecorder = null;
 let audioChunks = [];
 
+const SILENCE_THRESHOLD = 8;   // RMS below this = silence
+const SILENCE_DURATION  = 1500; // ms of continuous silence before auto-stop
+const MAX_RECORD_MS     = 30000; // safety cap
+
 async function startListening() {
   if (listening) return;
   stopSpeaking();
-  document.getElementById('micLabel').textContent = t('listening');
+  document.getElementById('micLabel').textContent = micMode === 'auto' ? t('listeningAuto') : t('listening');
   document.getElementById('micBtn').classList.add('listening');
   listening = true;
 
@@ -1411,8 +1582,9 @@ async function startListening() {
     };
 
     mediaRecorder.onstop = async () => {
+      _cleanupSilenceDetection();
       document.getElementById('micBtn').classList.remove('listening');
-      document.getElementById('micLabel').textContent = t('micLabel');
+      document.getElementById('micLabel').textContent = micMode === 'auto' ? t('micLabelAuto') : t('micLabel');
 
       const mimeType = mediaRecorder.mimeType || 'audio/webm';
       const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
@@ -1436,17 +1608,72 @@ async function startListening() {
     };
 
     mediaRecorder.start();
+
+    if (micMode === 'auto') {
+      _startSilenceDetection(stream);
+    }
   } catch (err) {
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('micLabel').textContent = t('micLabel');
+    document.getElementById('micLabel').textContent = micMode === 'auto' ? t('micLabelAuto') : t('micLabel');
     setStatus("Microphone permission denied.");
   }
+}
+
+function _startSilenceDetection(stream) {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.resume();
+    const source   = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+    // Route through a muted gain node to destination so the browser processes audio
+    const mute = audioCtx.createGain();
+    mute.gain.value = 0;
+    source.connect(mute);
+    mute.connect(audioCtx.destination);
+
+    const buf       = new Uint8Array(analyser.fftSize);
+    const startedAt = Date.now();
+    const GRACE_MS  = 2000; // don't auto-stop in first 2s
+    let silenceStart = null;
+    const maxTimer  = setTimeout(() => stopListening(), MAX_RECORD_MS);
+
+    silenceTimer = setInterval(() => {
+      if (!listening) { clearInterval(silenceTimer); clearTimeout(maxTimer); return; }
+      analyser.getByteTimeDomainData(buf);
+      let sum = 0;
+      for (let i = 0; i < buf.length; i++) sum += Math.abs(buf[i] - 128);
+      const rms = sum / buf.length;
+
+      if (Date.now() - startedAt < GRACE_MS) return; // within grace period
+
+      if (rms >= SILENCE_THRESHOLD) {
+        silenceStart = null; // speech — reset silence timer
+      } else {
+        if (!silenceStart) silenceStart = Date.now();
+        else if (Date.now() - silenceStart >= SILENCE_DURATION) {
+          clearInterval(silenceTimer);
+          clearTimeout(maxTimer);
+          stopListening();
+        }
+      }
+    }, 50);
+  } catch (e) {
+    // Web Audio API unavailable — user can click again to stop
+  }
+}
+
+function _cleanupSilenceDetection() {
+  if (silenceTimer) { clearInterval(silenceTimer); silenceTimer = null; }
+  if (audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
 }
 
 function stopListening() {
   if (!listening) return;
   listening = false;
+  _cleanupSilenceDetection();
   if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
 }
 
