@@ -97,13 +97,53 @@ def _sanitize_for_tts(text):
     return text
 
 
+def _israeli_civil_holiday(greg_today) -> tuple[str, str] | None:
+    """Return (en, he) for Israeli civil holidays using correct Hebrew calendar shifting."""
+    from pyluach import dates as hd
+    from datetime import timedelta
+
+    h = hd.HebrewDate.from_pydate(greg_today)
+    year = h.year
+
+    # Yom HaShoah: 27 Nisan — if Friday→Thursday, if Sunday→Monday
+    d27 = hd.HebrewDate(year, 1, 27).to_pydate()
+    dow = d27.weekday()  # 0=Mon … 4=Fri, 5=Sat, 6=Sun
+    if dow == 4:    d27 = d27 - timedelta(1)   # Fri → Thu
+    elif dow == 6:  d27 = d27 + timedelta(1)   # Sun → Mon
+    if greg_today == d27:
+        return "Yom Hashoah", "יום השואה"
+
+    # Yom HaAtzmaut: 5 Iyar — if Fri→Thu (4 Iyar), if Sat→Thu (3 Iyar)
+    d_atz = hd.HebrewDate(year, 2, 5).to_pydate()
+    dow = d_atz.weekday()
+    if dow == 4:    d_atz = d_atz - timedelta(1)   # Fri → Thu
+    elif dow == 5:  d_atz = d_atz - timedelta(2)   # Sat → Thu
+    d_zik = d_atz - timedelta(1)   # Yom HaZikaron always 1 day before
+
+    if greg_today == d_atz:
+        return "Yom Haatzmaut", "יום העצמאות"
+    if greg_today == d_zik:
+        return "Yom Hazikaron", "יום הזיכרון"
+
+    # Yom Yerushalayim: 28 Iyar (no shifting)
+    if greg_today == hd.HebrewDate(year, 2, 28).to_pydate():
+        return "Yom Yerushalayim", "יום ירושלים"
+
+    return None
+
+
 def _get_jewish_holiday(now: datetime):
     """Return (english, hebrew) holiday name for today in Israel, or (None, None)."""
-    # Use pyluach for all holidays — it handles yearly Hebrew calendar shifts
+    greg_today = now.date()
     try:
+        # Check Israeli civil holidays first (pyluach doesn't cover them)
+        civil = _israeli_civil_holiday(greg_today)
+        if civil:
+            return civil
+
+        # Standard Jewish holidays via pyluach
         from pyluach import dates as hd, hebrewcal
-        today = hd.HebrewDate.today()
-        hol = hebrewcal.holiday(today, israel=True)
+        hol = hebrewcal.holiday(hd.HebrewDate.from_pydate(greg_today), israel=True)
         if hol:
             return hol, _HOL_HEB.get(hol, hol)
     except Exception:
