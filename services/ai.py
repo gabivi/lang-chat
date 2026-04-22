@@ -16,27 +16,25 @@ except Exception:
 
 # ── Hebrew holiday name mapping (pyluach → Hebrew) ────────────────────────────
 _HOL_HEB = {
-    "Rosh Hashana":   "ראש השנה",
-    "Yom Kippur":     "יום כיפור",
-    "Sukkos":         "סוכות",
-    "Simchas Torah":  "שמחת תורה",
-    "Chanukah":       "חנוכה",
-    "Tu B'Shvat":     'ט"ו בשבט',
-    "Purim":          "פורים",
-    "Shushan Purim":  "שושן פורים",
-    "Pesach":         "פסח",
-    "Pesach Sheni":   "פסח שני",
-    "Lag B'Omer":     'ל"ג בעומר',
-    "Shavuos":        "שבועות",
-    "Tisha B'Av":     "תשעה באב",
-    "Rosh Chodesh":   "ראש חודש",
-}
-
-# Israeli civil holidays (Gregorian month, day) → (English, Hebrew)
-_CIVIL_HOLIDAYS = {
-    (4, 16): ("Yom HaShoah", "יום השואה"),
-    (4, 22): ("Yom HaZikaron", "יום הזיכרון"),
-    (4, 23): ("Yom HaAtzmaut", "יום העצמאות"),
+    "Rosh Hashana":      "ראש השנה",
+    "Yom Kippur":        "יום כיפור",
+    "Sukkos":            "סוכות",
+    "Simchas Torah":     "שמחת תורה",
+    "Chanukah":          "חנוכה",
+    "Tu B'Shvat":        'ט"ו בשבט',
+    "Purim":             "פורים",
+    "Shushan Purim":     "שושן פורים",
+    "Pesach":            "פסח",
+    "Pesach Sheni":      "פסח שני",
+    "Lag B'Omer":        'ל"ג בעומר',
+    "Shavuos":           "שבועות",
+    "Tisha B'Av":        "תשעה באב",
+    "Rosh Chodesh":      "ראש חודש",
+    # Israeli national holidays — pyluach handles yearly date shifts
+    "Yom Hashoah":       "יום השואה",
+    "Yom Hazikaron":     "יום הזיכרון",
+    "Yom Haatzmaut":     "יום העצמאות",
+    "Yom Yerushalayim":  "יום ירושלים",
 }
 
 
@@ -101,11 +99,7 @@ def _sanitize_for_tts(text):
 
 def _get_jewish_holiday(now: datetime):
     """Return (english, hebrew) holiday name for today in Israel, or (None, None)."""
-    # Check civil Israeli holidays first
-    civil = _CIVIL_HOLIDAYS.get((now.month, now.day))
-    if civil:
-        return civil
-    # Use pyluach for dynamic Hebrew calendar holidays
+    # Use pyluach for all holidays — it handles yearly Hebrew calendar shifts
     try:
         from pyluach import dates as hd, hebrewcal
         today = hd.HebrewDate.today()
