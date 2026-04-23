@@ -1459,6 +1459,7 @@ async function resumeConversation(convId, avatarName, gender, lang) {
 //  Screen 3 → 4 — Start new conversation
 // ════════════════════════════════════════════════════
 async function startConversation() {
+  _unlockAudio();
   applyUI(); setDir(language); updateChatInfoBar();
   document.getElementById('avatarWrap').innerHTML = buildFace(avatarGender, language);
   document.getElementById('avatarName').textContent = '…';
@@ -1494,7 +1495,7 @@ function initTTS(lang, gender) {
   avatarGender = gender;
   ttsQueue = [];
   ttsBusy = false;
-  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (currentAudio) { try { currentAudio.stop ? currentAudio.stop() : currentAudio.pause(); } catch(e) {} currentAudio = null; }
 }
 
 function stripForTTS(text) {
@@ -1532,6 +1533,25 @@ function stripForTTS(text) {
 
 let currentAudio = null;
 
+// Shared AudioContext unlocked on first user gesture — required for iOS/Android
+let _ttsAudioCtx = null;
+function _getTTSCtx() {
+  if (!_ttsAudioCtx) {
+    _ttsAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return _ttsAudioCtx;
+}
+function _unlockAudio() {
+  const ctx = _getTTSCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  // Play a 1-frame silent buffer to fully unblock iOS autoplay policy
+  const buf = ctx.createBuffer(1, 1, 22050);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
+}
+
 async function speak(text) {
   if (!text) return;
   const originalText = text;
@@ -1544,10 +1564,10 @@ async function speak(text) {
 
 function stopSpeaking() {
   if (currentAudio) {
-    currentAudio.pause();
+    try { currentAudio.stop ? currentAudio.stop() : currentAudio.pause(); } catch(e) {}
     currentAudio = null;
   }
-  ttsQueue = []; 
+  ttsQueue = [];
   ttsBusy = false;
   document.getElementById('stopBtn').style.display = 'none';
   setAvatarSpeaking(false);
@@ -1566,15 +1586,22 @@ async function drainTTS() {
   
   const text = ttsQueue.shift();
   try {
-    const queryParams = new URLSearchParams({ text, language, gender: avatarGender, level: userLevel }).toString();
-    const url = `/tts?${queryParams}`;
-    console.log('[TTS Request]', {text, url});
-    currentAudio = new Audio(url);
-    currentAudio.onended = () => { currentAudio = null; drainTTS(); };
-    currentAudio.onerror = () => { currentAudio = null; drainTTS(); };
-    currentAudio.play().catch(e => { console.error("Audio playback prevented:", e); drainTTS(); });
+    const queryParams = new URLSearchParams({ text, language, gender: avatarGender, level: userLevel });
+    const resp = await fetch(`/tts?${queryParams}`);
+    if (!resp.ok) { drainTTS(); return; }
+    const arrayBuf = await resp.arrayBuffer();
+    const ctx = _getTTSCtx();
+    if (ctx.state === 'suspended') await ctx.resume();
+    const audioBuf = await ctx.decodeAudioData(arrayBuf);
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuf;
+    source.connect(ctx.destination);
+    source.onended = () => { currentAudio = null; drainTTS(); };
+    source.start(0);
+    currentAudio = source;
   } catch (err) {
     console.error("TTS error:", err);
+    currentAudio = null;
     drainTTS();
   }
 }
@@ -1591,6 +1618,7 @@ const MAX_RECORD_MS     = 30000; // safety cap
 
 async function startListening() {
   if (listening) return;
+  _unlockAudio();
   stopSpeaking();
   document.getElementById('micLabel').textContent = micMode === 'auto' ? t('listeningAuto') : t('listening');
   document.getElementById('micBtn').classList.add('listening');
