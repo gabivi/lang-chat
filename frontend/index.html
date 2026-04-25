@@ -1583,9 +1583,7 @@ async function drainTTS() {
     return;
   }
   ttsBusy = true;
-  document.getElementById('stopBtn').style.display = 'block';
-  setAvatarSpeaking(true);
-  
+
   const text = ttsQueue.shift();
   try {
     const queryParams = new URLSearchParams({ text, language, gender: avatarGender, level: userLevel });
@@ -1600,6 +1598,9 @@ async function drainTTS() {
     player.src = blobUrl;
     try {
       await player.play();
+      // Audio is now audible — show speaking state only at this point
+      document.getElementById('stopBtn').style.display = 'block';
+      setAvatarSpeaking(true);
       currentAudio = player;
     } catch(e) {
       console.error('TTS play error:', e);
