@@ -726,6 +726,7 @@
       </label>
       <span id="micModeAutoLabel"></span>
     </div>
+    <div id="micModeDesc" style="font-size:0.72rem;color:#888;text-align:center;margin-top:2px;padding:0 8px;"></div>
     <button id="stopBtn" onclick="stopSpeaking()">⏹ <span data-i18n="stopBtn">Stop</span></button>
     <div id="statusBar">&nbsp;</div>
     <div class="action-btns">
@@ -754,6 +755,8 @@ const T = {
     switchBtn:'Switch to English avatar',
     micLabel:'Hold the microphone to speak', micLabelAuto:'Click mic to speak',
     micModeHold:'Hold', micModeAuto:'Auto',
+    micModeHoldDesc:'Press & hold the mic button while speaking — release to send',
+    micModeAutoDesc:'Tap the mic once — it stops automatically when you go silent',
     listening:'Listening…', listeningAuto:'Listening… (release when done)', thinking:'Thinking…',
     stopBtn:'Stop', suggestBtn:'Skip small talk and suggest topics', endBtn:'End chat',
     noSpeech:'No speech detected. Try again.', serverError:'Could not connect to server.',
@@ -794,6 +797,8 @@ const T = {
     switchBtn:'מעבר לאווטאר אנגלי',
     micLabel:'לחץ/י לחיצה ממושכת על המיקרופון לדיבור', micLabelAuto:'לחץ/י על המיקרופון לדיבור',
     micModeHold:'לחיצה', micModeAuto:'אוטו',
+    micModeHoldDesc:'לחץ/י ממושכות בזמן הדיבור — שחרר/י לשליחה',
+    micModeAutoDesc:'לחץ/י פעם אחת — עוצר אוטומטית כשנשתקת',
     listening:'מקשיב/ה…', listeningAuto:'מקשיב/ה… (עוצר אוטומטית)', thinking:'חושב/ת…',
     stopBtn:'עצור', suggestBtn:'דלג/י על שיחת חולין והצע/י נושאים', endBtn:'סיום שיחה',
     noSpeech:'לא זוהה דיבור. נסה/י שוב.', serverError:'לא ניתן להתחבר לשרת.',
@@ -920,6 +925,8 @@ function setMicMode(mode) {
   const autoLbl = document.getElementById('micModeAutoLabel');
   if (holdLbl) { holdLbl.textContent = t('micModeHold'); holdLbl.classList.toggle('active', mode === 'hold'); }
   if (autoLbl) { autoLbl.textContent = t('micModeAuto'); autoLbl.classList.toggle('active', mode === 'auto'); }
+  const descEl = document.getElementById('micModeDesc');
+  if (descEl) descEl.textContent = mode === 'hold' ? t('micModeHoldDesc') : t('micModeAutoDesc');
   const btn = document.getElementById('micBtn');
   if (!btn) return;
   btn.onmousedown = null; btn.onmouseup = null; btn.onmouseleave = null;
@@ -1153,7 +1160,7 @@ ${stubbleSVG}
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
-const APP_VERSION = '0.71';
+const APP_VERSION = '0.71.2';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
@@ -1495,7 +1502,7 @@ function initTTS(lang, gender) {
   avatarGender = gender;
   ttsQueue = [];
   ttsBusy = false;
-  if (currentAudio) { try { currentAudio.stop ? currentAudio.stop() : currentAudio.pause(); } catch(e) {} currentAudio = null; }
+  if (currentAudio) { try { currentAudio.pause(); } catch(e) {} currentAudio = null; }
 }
 
 function stripForTTS(text) {
@@ -1532,24 +1539,21 @@ function stripForTTS(text) {
 }
 
 let currentAudio = null;
+let _currentBlobUrl = null;
 
-// Shared AudioContext unlocked on first user gesture — required for iOS/Android
-let _ttsAudioCtx = null;
-function _getTTSCtx() {
-  if (!_ttsAudioCtx) {
-    _ttsAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  return _ttsAudioCtx;
+// Single persistent audio element, pre-activated on first user gesture.
+// Reusing one element (instead of new Audio() each time) lets iOS/Android
+// play audio after async STT+AI round-trips without hitting autoplay blocks.
+let _ttsPlayer = null;
+function _getOrCreateTTSPlayer() {
+  if (!_ttsPlayer) { _ttsPlayer = new Audio(); _ttsPlayer.preload = 'none'; }
+  return _ttsPlayer;
 }
 function _unlockAudio() {
-  const ctx = _getTTSCtx();
-  if (ctx.state === 'suspended') ctx.resume();
-  // Play a 1-frame silent buffer to fully unblock iOS autoplay policy
-  const buf = ctx.createBuffer(1, 1, 22050);
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  src.connect(ctx.destination);
-  src.start(0);
+  // Silent 1-sample WAV played during user gesture to activate the element
+  const p = _getOrCreateTTSPlayer();
+  p.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+  p.play().then(() => p.pause()).catch(() => {});
 }
 
 async function speak(text) {
@@ -1563,10 +1567,8 @@ async function speak(text) {
 }
 
 function stopSpeaking() {
-  if (currentAudio) {
-    try { currentAudio.stop ? currentAudio.stop() : currentAudio.pause(); } catch(e) {}
-    currentAudio = null;
-  }
+  if (currentAudio) { try { currentAudio.pause(); } catch(e) {} currentAudio = null; }
+  if (_currentBlobUrl) { URL.revokeObjectURL(_currentBlobUrl); _currentBlobUrl = null; }
   ttsQueue = [];
   ttsBusy = false;
   document.getElementById('stopBtn').style.display = 'none';
@@ -1589,16 +1591,20 @@ async function drainTTS() {
     const queryParams = new URLSearchParams({ text, language, gender: avatarGender, level: userLevel });
     const resp = await fetch(`/tts?${queryParams}`);
     if (!resp.ok) { drainTTS(); return; }
-    const arrayBuf = await resp.arrayBuffer();
-    const ctx = _getTTSCtx();
-    if (ctx.state === 'suspended') await ctx.resume();
-    const audioBuf = await ctx.decodeAudioData(arrayBuf);
-    const source = ctx.createBufferSource();
-    source.buffer = audioBuf;
-    source.connect(ctx.destination);
-    source.onended = () => { currentAudio = null; drainTTS(); };
-    source.start(0);
-    currentAudio = source;
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    _currentBlobUrl = blobUrl;
+    const player = _getOrCreateTTSPlayer();
+    player.onended = () => { URL.revokeObjectURL(blobUrl); _currentBlobUrl = null; currentAudio = null; drainTTS(); };
+    player.onerror = () => { URL.revokeObjectURL(blobUrl); _currentBlobUrl = null; currentAudio = null; drainTTS(); };
+    player.src = blobUrl;
+    try {
+      await player.play();
+      currentAudio = player;
+    } catch(e) {
+      console.error('TTS play error:', e);
+      URL.revokeObjectURL(blobUrl); _currentBlobUrl = null; currentAudio = null; drainTTS();
+    }
   } catch (err) {
     console.error("TTS error:", err);
     currentAudio = null;
