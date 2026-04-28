@@ -1539,21 +1539,22 @@ function stripForTTS(text) {
 }
 
 let currentAudio = null;
-let _currentBlobUrl = null;
 
 // Single persistent audio element, pre-activated on first user gesture.
 // Reusing one element (instead of new Audio() each time) lets iOS/Android
 // play audio after async STT+AI round-trips without hitting autoplay blocks.
+// Using direct streaming URL (not blob) so audio starts immediately.
 let _ttsPlayer = null;
 function _getOrCreateTTSPlayer() {
   if (!_ttsPlayer) { _ttsPlayer = new Audio(); _ttsPlayer.preload = 'none'; }
   return _ttsPlayer;
 }
 function _unlockAudio() {
-  // Silent 1-sample WAV played during user gesture to activate the element
+  // Play a 0-sample silent WAV during user gesture — activates the element
+  // without pausing (pause() after play() can leave iOS in a bad state).
   const p = _getOrCreateTTSPlayer();
   p.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
-  p.play().then(() => p.pause()).catch(() => {});
+  p.play().catch(() => {});
 }
 
 async function speak(text) {
@@ -1568,7 +1569,6 @@ async function speak(text) {
 
 function stopSpeaking() {
   if (currentAudio) { try { currentAudio.pause(); } catch(e) {} currentAudio = null; }
-  if (_currentBlobUrl) { URL.revokeObjectURL(_currentBlobUrl); _currentBlobUrl = null; }
   ttsQueue = [];
   ttsBusy = false;
   document.getElementById('stopBtn').style.display = 'none';
@@ -1587,24 +1587,19 @@ async function drainTTS() {
   const text = ttsQueue.shift();
   try {
     const queryParams = new URLSearchParams({ text, language, gender: avatarGender, level: userLevel });
-    const resp = await fetch(`/tts?${queryParams}`);
-    if (!resp.ok) { drainTTS(); return; }
-    const blob = await resp.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    _currentBlobUrl = blobUrl;
     const player = _getOrCreateTTSPlayer();
-    player.onended = () => { URL.revokeObjectURL(blobUrl); _currentBlobUrl = null; currentAudio = null; drainTTS(); };
-    player.onerror = () => { URL.revokeObjectURL(blobUrl); _currentBlobUrl = null; currentAudio = null; drainTTS(); };
-    player.src = blobUrl;
+    player.onended = () => { currentAudio = null; drainTTS(); };
+    player.onerror = () => { currentAudio = null; drainTTS(); };
+    player.src = `/tts?${queryParams}`;
     try {
       await player.play();
-      // Audio is now audible — show speaking state only at this point
+      // Audio is streaming and audible — show speaking state now
       document.getElementById('stopBtn').style.display = 'block';
       setAvatarSpeaking(true);
       currentAudio = player;
     } catch(e) {
       console.error('TTS play error:', e);
-      URL.revokeObjectURL(blobUrl); _currentBlobUrl = null; currentAudio = null; drainTTS();
+      currentAudio = null; drainTTS();
     }
   } catch (err) {
     console.error("TTS error:", err);
@@ -1633,7 +1628,7 @@ async function startListening() {
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { autoGainControl: false, echoCancellation: false, noiseSuppression: false }
+      audio: { autoGainControl: true, echoCancellation: true, noiseSuppression: true }
     });
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];

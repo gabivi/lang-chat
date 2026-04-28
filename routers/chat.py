@@ -288,8 +288,13 @@ async def stt_endpoint(file: UploadFile = File(...), language: str = "he"):
         )
 
     prompts = {
-        "he": "שלום", "en": "Hello", "de": "Hallo",
-        "es": "Hola",  "fr": "Bonjour", "hu": "Szia",
+        "he": "שלום, מה שלומך? כן, לא, תודה, בסדר, אני, אתה, את, הוא, היא, יופי, מעניין, נכון",
+        "en": "Hello, how are you? Yes, no, thank you, okay, I, you, he, she, great, interesting, right",
+        "de": "Hallo, wie geht es dir? Ja, nein, danke, okay, ich, du, er, sie, gut, interessant",
+        "es": "Hola, ¿cómo estás? Sí, no, gracias, bien, yo, tú, él, ella, genial, interesante",
+        "fr": "Bonjour, comment ça va? Oui, non, merci, bien, je, tu, il, elle, super, intéressant",
+        "hu": "Szia, hogy vagy? Igen, nem, köszönöm, rendben, én, te, ő, jó, érdekes",
+        "ar": "أهلاً، كيف حالك؟ نعم، لا، شكراً، بخير، أنا، أنت، هو، هي، رائع، ممتاز",
     }
 
     try:
