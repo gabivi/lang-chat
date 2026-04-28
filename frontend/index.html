@@ -1615,8 +1615,9 @@ let mediaRecorder = null;
 let audioChunks = [];
 
 const SILENCE_THRESHOLD = 8;   // RMS below this = silence
-const SILENCE_DURATION  = 1500; // ms of continuous silence before auto-stop
+const SILENCE_DURATION  = 2000; // ms of continuous silence before auto-stop
 const MAX_RECORD_MS     = 30000; // safety cap
+const MIN_AUDIO_BYTES   = 2000; // blobs smaller than this are noise/silence
 
 async function startListening() {
   if (listening) return;
@@ -1630,7 +1631,12 @@ async function startListening() {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { autoGainControl: true, echoCancellation: true, noiseSuppression: true }
     });
-    mediaRecorder = new MediaRecorder(stream);
+
+    // Pick best MIME type explicitly — opus in webm is Whisper's preferred format
+    const preferredMimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+    const selectedMime   = preferredMimes.find(m => MediaRecorder.isTypeSupported(m)) || '';
+    mediaRecorder  = selectedMime ? new MediaRecorder(stream, { mimeType: selectedMime })
+                                  : new MediaRecorder(stream);
     audioChunks = [];
 
     mediaRecorder.ondataavailable = e => {
@@ -1642,18 +1648,22 @@ async function startListening() {
       document.getElementById('micBtn').classList.remove('listening');
       document.getElementById('micLabel').textContent = micMode === 'auto' ? t('micLabelAuto') : t('micLabel');
 
-      const mimeType = mediaRecorder.mimeType || 'audio/webm';
-      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
-      const audioBlob = new Blob(audioChunks, { type: mimeType });
       stream.getTracks().forEach(track => track.stop());
 
-      if (audioChunks.length === 0) { setStatus(t('noSpeech')); return; }
+      const totalBytes = audioChunks.reduce((s, c) => s + c.size, 0);
+      if (audioChunks.length === 0 || totalBytes < MIN_AUDIO_BYTES) {
+        setStatus(t('noSpeech')); return;
+      }
+
+      const mimeType  = mediaRecorder.mimeType || 'audio/webm';
+      const ext       = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+      const audioBlob = new Blob(audioChunks, { type: mimeType });
 
       setStatus(t('thinking'));
       try {
         const formData = new FormData();
         formData.append("file", audioBlob, `recording.${ext}`);
-        const res = await fetch(`/stt?language=${language}`, { method: 'POST', body: formData });
+        const res  = await fetch(`/stt?language=${language}`, { method: 'POST', body: formData });
         const data = await res.json();
         if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
         if (data.text && data.text.trim()) sendMessage(data.text);
@@ -1663,7 +1673,10 @@ async function startListening() {
       }
     };
 
-    mediaRecorder.start();
+    // timeslice=100ms: flushes audio chunks every 100ms so the final
+    // ondataavailable fires reliably on mobile (without timeslice, some
+    // browsers drop the last seconds of audio on stop).
+    mediaRecorder.start(100);
 
     if (micMode === 'auto') {
       _startSilenceDetection(stream);
