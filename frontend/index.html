@@ -1365,35 +1365,20 @@ async function doIdentify() {
           : `${totalMins} min`;
         statsText.textContent = `${totalConvs} 💬 · ${timeStr} 🎙️`;
         statsBar.style.display = 'block';
-        // Determine achievement level (convs threshold OR mins threshold)
-        const LEVELS = [
-          { convs: 600, mins: 520, type: 'medal', count: 5 },
-          { convs: 500, mins: 460, type: 'medal', count: 4 },
-          { convs: 400, mins: 400, type: 'medal', count: 3 },
-          { convs: 300, mins: 360, type: 'medal', count: 2 },
-          { convs: 250, mins: 300, type: 'medal', count: 1 },
-          { convs: 100, mins: 240, type: 'star',  count: 5 },
-          { convs:  50, mins: 180, type: 'star',  count: 4 },
-          { convs:  30, mins: 120, type: 'star',  count: 3 },
-          { convs:  10, mins:  60, type: 'star',  count: 2 },
-          { convs:   5, mins:  30, type: 'star',  count: 1 },
-        ];
-        const level = LEVELS.find(l => totalConvs >= l.convs || totalMins >= l.mins);
-        if (level && achievementRow) {
+        // Star count (0-5) and medal count (0-5) are independent
+        const STAR_L  = [{convs:100,mins:240,n:5},{convs:50,mins:180,n:4},{convs:30,mins:120,n:3},{convs:10,mins:60,n:2},{convs:5,mins:30,n:1}];
+        const MEDAL_L = [{convs:600,mins:520,n:5},{convs:500,mins:460,n:4},{convs:400,mins:400,n:3},{convs:300,mins:360,n:2},{convs:250,mins:300,n:1}];
+        const stars  = (STAR_L.find(l  => totalConvs >= l.convs || totalMins >= l.mins) || {n:0}).n;
+        const medals = (MEDAL_L.find(l => totalConvs >= l.convs || totalMins >= l.mins) || {n:0}).n;
+        if (achievementRow) {
           achievementRow.style.fontFamily = "'Segoe UI Symbol','Apple Symbols','DejaVu Sans',Arial,sans-serif";
-          if (level.type === 'star') {
-            let html = '';
-            for (let i = 0; i < 5; i++) {
-              const filled = i < level.count;
-              // ︎ forces text (glyph) rendering instead of emoji on Android
-              html += `<span style="color:${filled ? '#FFD700' : '#ccc'};font-variant-emoji:text;">${filled ? '★' : '☆'}&#xFE0E;</span>`;
-            }
-            achievementRow.innerHTML = html;
-          } else {
-            const gold  = '🏅'.repeat(level.count);
-            const empty = '🔘'.repeat(5 - level.count);
-            achievementRow.innerHTML = gold + empty;
+          achievementRow.style.lineHeight = '1.6';
+          let sRow = '', mRow = '';
+          for (let i = 0; i < 5; i++) {
+            sRow += `<span style="color:${i<stars?'#FFD700':'#ccc'};font-variant-emoji:text;">${i<stars?'★':'☆'}&#xFE0E;</span>`;
+            mRow += i < medals ? '🏅' : '<span style="filter:grayscale(1);opacity:0.25;">🏅</span>';
           }
+          achievementRow.innerHTML = `<div>${sRow}</div><div>${mRow}</div>`;
           achievementRow.style.display = 'block';
         }
       }
