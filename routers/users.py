@@ -65,7 +65,7 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
         if c.updated_at and c.created_at
     ))
 
-    # Last 5 for the resume list
+    # Last 20 for the resume list (frontend shows 5 at a time with "show more")
     conversations = [
         {
             "id":            c.id,
@@ -77,7 +77,7 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
             "message_count": db.query(Message).filter(Message.conversation_id == c.id).count(),
             "review":        c.review or "",
         }
-        for c in all_convs[:5]
+        for c in all_convs[:20]
     ]
 
     return {

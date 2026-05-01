@@ -1412,8 +1412,12 @@ function toggleShowHidden() {
   renderConvList(_cachedConvs);
 }
 
-function renderConvList(convs) {
+const CONV_PAGE = 5;
+let _convVisible = CONV_PAGE;
+
+function renderConvList(convs, resetPage) {
   _cachedConvs = convs;
+  if (resetPage) _convVisible = CONV_PAGE;
   const hidden  = getHiddenConvs();
   const el      = document.getElementById('convList');
   const toggle  = document.getElementById('convHiddenToggle');
@@ -1428,9 +1432,12 @@ function renderConvList(convs) {
     toggle.onclick = toggleShowHidden;
   }
 
+  let shown = 0;
   convs.forEach(c => {
     const isHidden = hidden.has(c.id);
     if (isHidden && !_showHiddenConvs) return;
+    if (!isHidden && shown >= _convVisible) return;
+    if (!isHidden) shown++;
 
     const d = document.createElement('div');
     d.className = isHidden ? 'conv-item hidden-conv' : 'conv-item';
@@ -1460,13 +1467,25 @@ function renderConvList(convs) {
     actionBtn.onclick = e => {
       e.stopPropagation();
       if (isHidden) unhideConv(c.id); else hideConv(c.id);
-      if (!isHidden) _showHiddenConvs = false; // collapse hidden section after hiding
+      if (!isHidden) _showHiddenConvs = false;
       renderConvList(_cachedConvs);
     };
     d.appendChild(actionBtn);
 
     el.appendChild(d);
   });
+
+  // "Show more" button if there are more visible convs to show
+  const visibleTotal = convs.filter(c => !hidden.has(c.id)).length;
+  if (visibleTotal > _convVisible) {
+    const more = document.createElement('button');
+    more.className = 'btn btn-link btn-sm';
+    more.style.cssText = 'width:100%;margin-top:.3rem;color:#888;font-size:.85rem;';
+    const remaining = visibleTotal - _convVisible;
+    more.textContent = `▼ ${t('showMore') || 'Show more'} (${remaining})`;
+    more.onclick = () => { _convVisible += CONV_PAGE; renderConvList(_cachedConvs); };
+    el.appendChild(more);
+  }
 }
 
 async function resumeConversation(convId, avatarName, gender, lang) {
