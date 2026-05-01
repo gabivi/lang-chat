@@ -104,6 +104,16 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
     start_msg = f"__START__ My name is {user.name}."
     if is_first_ever:
         start_msg += " FIRST_TIME"
+    else:
+        prior_convs = db.query(Conversation).filter(
+            Conversation.user_id == user.id,
+            Conversation.id != conv.id,
+        ).all()
+        total_mins = int(sum(
+            min(60, max(0, (c.updated_at - c.created_at).total_seconds() / 60))
+            for c in prior_convs if c.updated_at and c.created_at
+        ))
+        start_msg += f" RETURNING({existing_count} conversations, {total_mins} min)"
 
     greeting = chat(
         user_name   = user.name,

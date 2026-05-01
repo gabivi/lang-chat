@@ -51,14 +51,21 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
             user.level = payload.level
         db.commit()
 
-    # Last 5 conversations with message count
-    convs = (
+    # All conversations for aggregate stats
+    all_convs = (
         db.query(Conversation)
         .filter(Conversation.user_id == user.id)
         .order_by(Conversation.updated_at.desc())
-        .limit(5)
         .all()
     )
+    total_conversations = len(all_convs)
+    total_minutes = int(sum(
+        min(60, max(0, (c.updated_at - c.created_at).total_seconds() / 60))
+        for c in all_convs
+        if c.updated_at and c.created_at
+    ))
+
+    # Last 5 for the resume list
     conversations = [
         {
             "id":            c.id,
@@ -70,15 +77,17 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
             "message_count": db.query(Message).filter(Message.conversation_id == c.id).count(),
             "review":        c.review or "",
         }
-        for c in convs
+        for c in all_convs[:5]
     ]
 
     return {
-        "id":            user.id,
-        "name":          user.name,
-        "gender":        user.gender,
-        "language":      user.language,
-        "level":         user.level,
-        "is_new":        is_new,
-        "conversations": conversations,
+        "id":                 user.id,
+        "name":               user.name,
+        "gender":             user.gender,
+        "language":           user.language,
+        "level":              user.level,
+        "is_new":             is_new,
+        "conversations":      conversations,
+        "total_conversations": total_conversations,
+        "total_minutes":      total_minutes,
     }

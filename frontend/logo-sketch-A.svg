@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 100" width="340" height="100" style="background:#f4f7fb;border-radius:16px">
+  <!-- Background pill -->
+  <rect x="4" y="4" width="332" height="92" rx="16" fill="#eef2f9" stroke="#c5d3e8" stroke-width="1.5"/>
+
+  <!-- LEFT: Human face silhouette -->
+  <!-- Head -->
+  <circle cx="72" cy="36" r="18" fill="#5b7fa6"/>
+  <!-- Shoulders/body arc -->
+  <path d="M40 95 Q72 68 104 95" fill="#5b7fa6"/>
+
+  <!-- CENTER: Microphone -->
+  <!-- Mic capsule -->
+  <rect x="155" y="18" width="30" height="44" rx="15" fill="#1a2a40"/>
+  <!-- Mic stand arc -->
+  <path d="M155 52 Q155 74 170 74 Q185 74 185 52" fill="none" stroke="#1a2a40" stroke-width="4" stroke-linecap="round"/>
+  <!-- Mic base -->
+  <line x1="170" y1="74" x2="170" y2="84" stroke="#1a2a40" stroke-width="4" stroke-linecap="round"/>
+  <line x1="158" y1="84" x2="182" y2="84" stroke="#1a2a40" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- RIGHT: AI Bot face -->
+  <!-- Head/body rounded square -->
+  <rect x="236" y="16" width="64" height="60" rx="14" fill="#5b7fa6"/>
+  <!-- Antenna -->
+  <line x1="268" y1="16" x2="268" y2="6" stroke="#5b7fa6" stroke-width="3"/>
+  <circle cx="268" cy="4" r="4" fill="#e05a5a"/>
+  <!-- Eyes -->
+  <circle cx="252" cy="38" r="7" fill="#eef2f9"/>
+  <circle cx="284" cy="38" r="7" fill="#eef2f9"/>
+  <circle cx="252" cy="38" r="3.5" fill="#1a2a40"/>
+  <circle cx="284" cy="38" r="3.5" fill="#1a2a40"/>
+  <!-- Mouth grid -->
+  <rect x="248" y="56" width="40" height="12" rx="4" fill="#eef2f9" opacity=".85"/>
+  <line x1="261" y1="56" x2="261" y2="68" stroke="#5b7fa6" stroke-width="1.5"/>
+  <line x1="274" y1="56" x2="274" y2="68" stroke="#5b7fa6" stroke-width="1.5"/>
+
+  <!-- Labels -->
+  <text x="72" y="96" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#8899aa">Human</text>
+  <text x="170" y="96" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#8899aa">Mic</text>
+  <text x="268" y="96" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#8899aa">AI</text>
+</svg>

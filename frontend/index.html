@@ -679,6 +679,10 @@
 <div id="screenResume" class="screen">
   <div class="card-main">
     <div class="app-title"><span data-i18n="welcomeBack">Welcome back</span>, <span id="resumeName"></span>!</div>
+    <div id="userStatsBar" style="display:none;text-align:center;margin:-.2rem 0 .6rem;">
+      <span id="userStatsText" style="font-size:.82rem;color:#777;"></span>
+      <div id="userAchievementRow" style="display:none;font-size:1.4rem;letter-spacing:4px;line-height:1.5;"></div>
+    </div>
     <p class="text-center text-muted mb-3" data-i18n="resumePrompt">Would you like to continue a previous conversation?</p>
     <div id="convHiddenToggle"></div>
     <div id="convList" class="mb-3"></div>
@@ -1160,7 +1164,7 @@ ${stubbleSVG}
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
-const APP_VERSION = '0.71.3';
+const APP_VERSION = '0.71.4';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
@@ -1349,6 +1353,46 @@ async function doIdentify() {
     if (!data.is_new && data.conversations.length > 0) {
       document.getElementById('resumeName').textContent = data.name;
       renderConvList(data.conversations);
+      // Stats bar
+      const totalConvs = data.total_conversations || 0;
+      const totalMins  = data.total_minutes || 0;
+      const statsBar        = document.getElementById('userStatsBar');
+      const statsText       = document.getElementById('userStatsText');
+      const achievementRow  = document.getElementById('userAchievementRow');
+      if (statsBar && totalConvs > 0) {
+        const timeStr = totalMins >= 60
+          ? `${Math.floor(totalMins/60)}h ${totalMins % 60}m`
+          : `${totalMins} min`;
+        statsText.textContent = `${totalConvs} 💬 · ${timeStr} 🎙️`;
+        statsBar.style.display = 'block';
+        // Determine achievement level (convs threshold OR mins threshold)
+        const LEVELS = [
+          { convs: 600, mins: 520, type: 'medal', count: 5 },
+          { convs: 500, mins: 460, type: 'medal', count: 4 },
+          { convs: 400, mins: 400, type: 'medal', count: 3 },
+          { convs: 300, mins: 360, type: 'medal', count: 2 },
+          { convs: 250, mins: 300, type: 'medal', count: 1 },
+          { convs: 100, mins: 240, type: 'star',  count: 5 },
+          { convs:  50, mins: 180, type: 'star',  count: 4 },
+          { convs:  30, mins: 120, type: 'star',  count: 3 },
+          { convs:  10, mins:  60, type: 'star',  count: 2 },
+          { convs:   5, mins:  30, type: 'star',  count: 1 },
+        ];
+        const level = LEVELS.find(l => totalConvs >= l.convs || totalMins >= l.mins);
+        if (level && achievementRow) {
+          if (level.type === 'star') {
+            const gold  = '★'.repeat(level.count);
+            const empty = '☆'.repeat(5 - level.count);
+            achievementRow.innerHTML =
+              `<span style="color:#FFD700;">${gold}</span><span style="color:#ddd;">${empty}</span>`;
+          } else {
+            const gold  = '🏅'.repeat(level.count);
+            const empty = '🔘'.repeat(5 - level.count);
+            achievementRow.innerHTML = gold + empty;
+          }
+          achievementRow.style.display = 'block';
+        }
+      }
       show('screenResume');
     } else { goSetup(); }
   } catch(e) { errEl.textContent = t('serverError'); errEl.style.display = 'block'; }

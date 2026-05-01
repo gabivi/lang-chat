@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <clipPath id="micCap">
+      <rect x="215" y="78" width="70" height="158" rx="35"/>
+    </clipPath>
+    <path id="textArc" d="M 70,390 A 228,228 0 0,1 430,390"/>
+  </defs>
+
+  <!-- Background -->
+  <rect width="500" height="500" fill="#ede8dd"/>
+
+  <!-- Outer circle -->
+  <circle cx="250" cy="250" r="228" fill="#ede8dd" stroke="#263248" stroke-width="3.5"/>
+
+  <!-- ═══════ HUMAN FACE PROFILE (left, facing right) ═══════ -->
+  <path d="
+    M 135,62
+    C 155,68 165,88 165,108
+    C 165,118 160,126 162,136
+    C 164,145 186,155 182,165
+    C 178,172 170,175 172,183
+    C 172,192 170,200 158,216
+    C 148,228 136,238 125,260
+    L 125,305
+    L 100,305
+    L 100,260
+    C 88,242 70,218 60,194
+    C 50,170 48,138 55,118
+    C 63,95 82,70 110,63
+    C 120,60 128,60 135,62 Z
+  " fill="none" stroke="#263248" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Eye -->
+  <path d="M 158,120 Q 164,114 170,117" fill="none" stroke="#263248" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Ear (small bump on back of head) -->
+  <path d="M 57,174 C 47,182 47,200 57,206 C 63,210 71,207 73,199" fill="none" stroke="#263248" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- ═══════ MICROPHONE (center) ═══════ -->
+  <!-- Capsule outline -->
+  <rect x="215" y="78" width="70" height="158" rx="35" fill="none" stroke="#263248" stroke-width="2.5"/>
+  <!-- Grille lines clipped to capsule -->
+  <g clip-path="url(#micCap)" stroke="#263248" stroke-width="2.2" stroke-linecap="round">
+    <line x1="210" y1="105" x2="290" y2="105"/>
+    <line x1="210" y1="122" x2="290" y2="122"/>
+    <line x1="210" y1="139" x2="290" y2="139"/>
+    <line x1="210" y1="156" x2="290" y2="156"/>
+    <line x1="210" y1="173" x2="290" y2="173"/>
+    <line x1="210" y1="190" x2="290" y2="190"/>
+    <line x1="210" y1="207" x2="290" y2="207"/>
+    <line x1="210" y1="224" x2="290" y2="224"/>
+  </g>
+  <!-- Neck taper below capsule -->
+  <line x1="228" y1="236" x2="220" y2="262" stroke="#263248" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="272" y1="236" x2="280" y2="262" stroke="#263248" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="220" y1="262" x2="280" y2="262" stroke="#263248" stroke-width="2.5"/>
+  <!-- Stand arms (curved out to base) -->
+  <path d="M 220,262 Q 186,318 186,372" fill="none" stroke="#263248" stroke-width="2.5"/>
+  <path d="M 280,262 Q 314,318 314,372" fill="none" stroke="#263248" stroke-width="2.5"/>
+  <!-- Base oval -->
+  <ellipse cx="250" cy="378" rx="72" ry="14" fill="none" stroke="#263248" stroke-width="2.5"/>
+
+  <!-- ═══════ AI ROBOT FACE (right) ═══════ -->
+  <!-- Head circle -->
+  <circle cx="368" cy="182" r="68" fill="none" stroke="#263248" stroke-width="2.5"/>
+  <!-- Left antenna -->
+  <line x1="350" y1="116" x2="340" y2="86" stroke="#263248" stroke-width="2.2"/>
+  <circle cx="338" cy="82" r="6" fill="none" stroke="#263248" stroke-width="2.2"/>
+  <!-- Right antenna -->
+  <line x1="386" y1="116" x2="398" y2="86" stroke="#263248" stroke-width="2.2"/>
+  <circle cx="400" cy="82" r="6" fill="none" stroke="#263248" stroke-width="2.2"/>
+  <!-- Left eye (large circle + pupil) -->
+  <circle cx="348" cy="175" r="19" fill="none" stroke="#263248" stroke-width="2.2"/>
+  <circle cx="348" cy="175" r="9" fill="#263248"/>
+  <!-- Right eye -->
+  <circle cx="388" cy="175" r="19" fill="none" stroke="#263248" stroke-width="2.2"/>
+  <circle cx="388" cy="175" r="9" fill="#263248"/>
+  <!-- Mouth grill (rounded rect with dividers) -->
+  <rect x="342" y="207" width="52" height="20" rx="7" fill="none" stroke="#263248" stroke-width="2.2"/>
+  <line x1="360" y1="207" x2="360" y2="227" stroke="#263248" stroke-width="1.8"/>
+  <line x1="376" y1="207" x2="376" y2="227" stroke="#263248" stroke-width="1.8"/>
+  <!-- Cheek circles -->
+  <circle cx="326" cy="197" r="9" fill="none" stroke="#263248" stroke-width="1.8" opacity="0.6"/>
+  <circle cx="410" cy="197" r="9" fill="none" stroke="#263248" stroke-width="1.8" opacity="0.6"/>
+
+  <!-- ═══════ BOTTOM TEXT ARC ═══════ -->
+  <text font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#263248" letter-spacing="5">
+    <textPath href="#textArc" startOffset="14%">CHITCHAT2GO</textPath>
+  </text>
+</svg>
