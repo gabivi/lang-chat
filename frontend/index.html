@@ -1380,11 +1380,14 @@ async function doIdentify() {
         ];
         const level = LEVELS.find(l => totalConvs >= l.convs || totalMins >= l.mins);
         if (level && achievementRow) {
+          // ︎ = text-presentation selector — prevents Android emoji font from
+          // replacing ★/☆ with coloured circle glyphs
+          const TX = '︎';
+          achievementRow.style.fontFamily = "'Segoe UI Symbol', 'Apple Symbols', Arial, sans-serif";
           if (level.type === 'star') {
-            const gold  = '★'.repeat(level.count);
-            const empty = '☆'.repeat(5 - level.count);
-            achievementRow.innerHTML =
-              `<span style="color:#FFD700;">${gold}</span><span style="color:#ddd;">${empty}</span>`;
+            const goldStar  = ('<span style="color:#FFD700;">★' + TX + '</span>').repeat(level.count);
+            const emptyStar = ('<span style="color:#ccc;">☆' + TX + '</span>').repeat(5 - level.count);
+            achievementRow.innerHTML = goldStar + emptyStar;
           } else {
             const gold  = '🏅'.repeat(level.count);
             const empty = '🔘'.repeat(5 - level.count);
