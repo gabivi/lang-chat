@@ -25,9 +25,8 @@ _HOL_HEB = {
     "Purim":             "פורים",
     "Shushan Purim":     "שושן פורים",
     "Pesach":            "פסח",
-    "Pesach Sheni":      "פסח שני",
     "Lag B'Omer":        'ל"ג בעומר',
-    "Shavuos":           "שבועות",
+    "Shavuot":           "שבועות",
     "Tisha B'Av":        "תשעה באב",
     "Rosh Chodesh":      "ראש חודש",
     # Israeli national holidays — pyluach handles yearly date shifts
