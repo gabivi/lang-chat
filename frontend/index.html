@@ -985,24 +985,26 @@ async function submitFeedback() {
 function buildFace(gender, lang) {
   const isFem = gender === 'female';
   const isHe  = lang === 'he';
+  const isAr  = lang === 'ar';
   const uid   = 'g' + (Date.now() % 9999);
 
-  // Skin palette [highlight, base, shadow, accent] — Hebrew: warm olive; others: light/peach
-  const sk = isHe
+  // Skin palette [highlight, base, shadow, accent]
+  // Hebrew/Arabic: warm brown-olive; others: light/peach
+  const sk = (isHe || isAr)
     ? (isFem ? ['#f8d4a0','#d8a060','#b07030','#c08040']
              : ['#f0c890','#c89050','#a06828','#b07838'])
     : (isFem ? ['#fff2e4','#fcd9b0','#dba870','#ecc080']
              : ['#fde8c4','#f0c898','#ccaa70','#ddb880']);
 
-  // Hair palette [base, dark, highlight]
-  const hr = isHe
+  // Hair palette [base, dark, highlight] — Hebrew/Arabic: black
+  const hr = (isHe || isAr)
     ? (isFem ? ['#100a06','#060402','#281808']
              : ['#180e06','#080404','#301808'])
     : (isFem ? ['#7c5c40','#4a3020','#b08860']
              : ['#504040','#2c2020','#8c7060']);
 
-  // Iris [light, mid, edge]
-  const ir = isHe
+  // Iris — Hebrew/Arabic: dark brown
+  const ir = (isHe || isAr)
     ? ['#a86828','#6a3810','#280e04']
     : (isFem ? ['#6ab0d0','#3478a0','#0e3060']
              : ['#7a9040','#485420','#1c2008']);
