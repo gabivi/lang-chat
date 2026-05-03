@@ -351,11 +351,6 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
     # Ensure text is properly decoded from URL
     text = unquote(text)
 
-    # Arabic TTS: if text has no Arabic characters (e.g. Hebrew transliteration fallback),
-    # switch to the Hebrew voice so the user hears audio matching what they see on screen.
-    if language == "ar" and not re.search(r'[\u0600-\u06FF]', text):
-        voice = "he-IL-HilaNeural" if gender == "female" else "he-IL-AvriNeural"
-    
     # Debug: log incoming text
     import sys
     print(f"[TTS DEBUG] Incoming text: {repr(text)}", file=sys.stderr)
