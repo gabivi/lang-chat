@@ -42,7 +42,11 @@ def _split_arabic(text: str) -> tuple[str, str | None]:
         arabic_tts = m.group(1).strip()
         display = text[:m.start()].strip()
         display = _AR.sub('', display).strip() or display
-        return display or text, arabic_tts or None
+        # Only use as TTS if it actually contains Arabic script — AI sometimes
+        # puts Hebrew transliteration inside <ar> by mistake, causing TTS silence
+        if not _AR.search(arabic_tts):
+            arabic_tts = None
+        return display or text, arabic_tts
 
     # 2. ||| separator (legacy)
     if "|||" in text:
@@ -343,8 +347,8 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female", 
         ("fr", "male"):   "fr-FR-HenriNeural",
         ("hu", "female"): "hu-HU-NoemiNeural",
         ("hu", "male"):   "hu-HU-TamasNeural",
-        ("ar", "female"): "ar-EG-SalmaNeural",
-        ("ar", "male"):   "ar-EG-ShakirNeural",
+        ("ar", "female"): "ar-SA-ZariyahNeural",
+        ("ar", "male"):   "ar-SA-HamedNeural",
     }
     voice = voices.get((language, gender), "en-US-JennyNeural")
 
