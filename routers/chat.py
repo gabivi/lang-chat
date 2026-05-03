@@ -26,42 +26,46 @@ def current_holiday():
     return {"holiday_en": en or "", "holiday_he": he or ""}
 
 
-_AR     = _re_top.compile(r'[\u0600-\u06FF]')          # Arabic Unicode block
-_AR_TAG = _re_top.compile(r'<ar>([\s\S]*?)</ar>', _re_top.IGNORECASE)  # TTS tag
+_AR        = _re_top.compile(r'[\u0600-\u06FF]')
+_PHONETIC  = _re_top.compile(r'<phonetic>([\s\S]*?)</phonetic>', _re_top.IGNORECASE)
+_ARABIC    = _re_top.compile(r'<arabic>([\s\S]*?)</arabic>',   _re_top.IGNORECASE)
+_AR_TAG    = _re_top.compile(r'<ar>([\s\S]*?)</ar>',           _re_top.IGNORECASE)  # legacy
 
 
 def _split_arabic(text: str) -> tuple[str, str | None]:
-    """Extract (display_hebrew, tts_arabic) from AI response.
+    """Extract (display_phonetic, tts_arabic) from Arabic AI response.
 
-    Preferred format: 'Hebrew transliteration <ar>Arabic script</ar>'
-    Legacy fallback: 'Hebrew ||| Arabic'
+    New format:  <phonetic>Hebrew-script phonetics</phonetic><arabic>Arabic script</arabic>
+    Legacy:      phonetics <ar>Arabic</ar>  or  phonetics ||| Arabic
     """
-    # 1. <ar>...</ar> tag (preferred)
+    # 1. New two-tag format
+    mp = _PHONETIC.search(text)
+    ma = _ARABIC.search(text)
+    if mp and ma:
+        phonetic = mp.group(1).strip()
+        arabic   = ma.group(1).strip()
+        if _AR.search(arabic):
+            return phonetic or text, arabic
+        return phonetic or text, None
+
+    # 2. Legacy <ar> tag
     m = _AR_TAG.search(text)
     if m:
         arabic_tts = m.group(1).strip()
-        display = text[:m.start()].strip()
-        display = _AR.sub('', display).strip() or display
-        # Only use as TTS if it actually contains Arabic script — AI sometimes
-        # puts Hebrew transliteration inside <ar> by mistake, causing TTS silence
+        display = _AR.sub(b''.decode(), text[:m.start()]).strip()
         if not _AR.search(arabic_tts):
             arabic_tts = None
         return display or text, arabic_tts
 
-    # 2. ||| separator (legacy)
+    # 3. ||| separator
     if "|||" in text:
         part_a, part_b = (p.strip() for p in text.split("|||", 1))
-        if bool(_AR.search(part_a)) and not bool(_AR.search(part_b)):
+        if _AR.search(part_a) and not _AR.search(part_b):
             part_a, part_b = part_b, part_a
-        display = _AR.sub('', part_a).strip()
-        tts = part_b if _AR.search(part_b) else None
-        return display or _AR.sub('', part_b).strip(), tts
+        return _AR.sub("", part_a).strip() or part_a, part_b if _AR.search(part_b) else None
 
-    # 3. No format — strip Arabic chars for display
-    display = _AR.sub('', text).strip()
-    tts = text if _AR.search(text) else None
-    return display or text, tts
-
+    # 4. Fallback
+    return _AR.sub("", text).strip() or text, None
 
 # ── Create conversation ───────────────────────────────────────────────────────
 
