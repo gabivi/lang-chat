@@ -1540,7 +1540,9 @@ async function startConversation() {
     showHolidayBadge(data.holiday_en, data.holiday_he);
     initTTS(language, avatarGender);
     addBubble('avatar', data.greeting);
-    speak(data.tts_text || data.greeting);
+    // Arabic: speak the Hebrew transliteration (what's on screen) via Hebrew voice —
+    // avoids latency of the Arabic TTS server. Backend auto-selects Hebrew voice for non-Arabic text.
+    speak(language === 'ar' ? data.greeting : (data.tts_text || data.greeting));
     setStatus(t('micLabel'));
   } catch(e) { setStatus(t('serverError')); }
 }
@@ -1638,7 +1640,8 @@ async function drainTTS() {
 
   const text = ttsQueue.shift();
   try {
-    const queryParams = new URLSearchParams({ text, language, gender: avatarGender, level: userLevel });
+    const ttsLang = language === 'ar' ? 'he' : language;
+    const queryParams = new URLSearchParams({ text, language: ttsLang, gender: avatarGender, level: userLevel });
     const player = _getOrCreateTTSPlayer();
     player.onended = () => { currentAudio = null; drainTTS(); };
     player.onerror = () => { currentAudio = null; drainTTS(); };
@@ -1811,7 +1814,7 @@ async function sendMessage(text) {
     const data = await res.json();
     if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
     addBubble('avatar', data.text);
-    if (conversationActive) speak(data.tts_text || data.text);
+    if (conversationActive) speak(language === 'ar' ? data.text : (data.tts_text || data.text));
     setStatus(t('micLabel'));
   } catch(e) { setStatus(t('serverError')); }
 }
