@@ -65,7 +65,17 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
         if c.updated_at and c.created_at
     ))
 
-    # Last 20 for the resume list (frontend shows 5 at a time with "show more")
+    # Per-language breakdown
+    stats_by_language: dict[str, dict[str, int]] = {}
+    for c in all_convs:
+        lang = c.language or "unknown"
+        entry = stats_by_language.setdefault(lang, {"conversations": 0, "minutes": 0})
+        entry["conversations"] += 1
+        if c.updated_at and c.created_at:
+            entry["minutes"] += int(min(60, max(0, (c.updated_at - c.created_at).total_seconds() / 60)))
+
+    # Last 20 resumable conversations (high-privacy chats can't be continued)
+    resumable = [c for c in all_convs if getattr(c, "privacy_mode", "basic") != "high"]
     conversations = [
         {
             "id":            c.id,
@@ -77,7 +87,7 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
             "message_count": db.query(Message).filter(Message.conversation_id == c.id).count(),
             "review":        c.review or "",
         }
-        for c in all_convs[:20]
+        for c in resumable[:20]
     ]
 
     return {
@@ -90,4 +100,5 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
         "conversations":      conversations,
         "total_conversations": total_conversations,
         "total_minutes":      total_minutes,
+        "stats_by_language":  stats_by_language,
     }

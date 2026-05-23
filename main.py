@@ -16,6 +16,7 @@ Base.metadata.create_all(bind=engine)
 with engine.connect() as _conn:
     for _col, _ddl in [
         ("review", "ALTER TABLE conversations ADD COLUMN review TEXT"),
+        ("privacy_mode", "ALTER TABLE conversations ADD COLUMN privacy_mode TEXT DEFAULT 'basic'"),
     ]:
         _cols = [r[1] for r in _conn.execute(text("PRAGMA table_info(conversations)"))]
         if _col not in _cols:

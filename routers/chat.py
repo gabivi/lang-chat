@@ -74,6 +74,7 @@ class NewConversationRequest(BaseModel):
     language:      str = "en"
     avatar_gender: str = "female"
     user_gender:   str = "unknown"   # "male" | "female" | "unknown"
+    privacy_mode:  str = "basic"     # "basic" | "high"
 
 
 @router.post("/conversations")
@@ -97,12 +98,15 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
     ).count()
     is_first_ever = existing_count == 0
 
+    privacy_mode = "high" if payload.privacy_mode == "high" else "basic"
+    title_prefix = "Private chat" if privacy_mode == "high" else "Conversation"
     conv = Conversation(
         user_id       = user.id,
         language      = payload.language,
         avatar_gender = payload.avatar_gender,
         avatar_name   = avatar_name,
-        title         = f"Conversation — {title_date}",
+        title         = f"{title_prefix} — {title_date}",
+        privacy_mode  = privacy_mode,
     )
     db.add(conv)
     db.commit()
@@ -238,12 +242,20 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
     db.add(Message(conversation_id=conv.id, speaker="avatar", text=display_text))
     conv.updated_at = datetime.now(timezone.utc)
 
-    # Update title after first real user message
-    if not is_command and conv.title.startswith("Conversation —") and len(conv.messages) <= 4:
+    # Update title after first real user message (skip in high-privacy mode)
+    if (not is_command
+            and getattr(conv, "privacy_mode", "basic") != "high"
+            and conv.title.startswith("Conversation —")
+            and len(conv.messages) <= 4):
         snippet = payload.text[:40]
         conv.title = snippet + ("…" if len(payload.text) > 40 else "")
 
     db.commit()
+
+    # In high-privacy mode, wipe the message content from DB once the chat ends.
+    if payload.text == "__END__" and getattr(conv, "privacy_mode", "basic") == "high":
+        db.query(Message).filter(Message.conversation_id == conv.id).delete()
+        db.commit()
 
     hol_en, hol_he = get_current_holiday()
     result = {"text": display_text, "avatar_name": conv.avatar_name,

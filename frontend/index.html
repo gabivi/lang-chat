@@ -307,7 +307,6 @@
     .face-root { animation:breathe 3.8s ease-in-out infinite; transform-origin:50% 55%; }
     .face-root.speaking { animation:headbob .38s ease-in-out infinite; }
     .eyelid   { transform-origin:50% 100%; transform:scaleY(0); animation:blink 4.2s ease-in-out infinite; }
-    .eyelid.r { }
     .mouth-open { transform-origin:50% 0%; transform:scaleY(.1); }
     .face-root.speaking .mouth-closed { opacity:0; }
     .face-root.speaking .mouth-open   { animation:mouththing .24s ease-in-out infinite alternate; }
@@ -572,6 +571,13 @@
       <img src="/static/logo-sketch-C1.jpg" alt="ChitChat2Go" style="width:50px;height:50px;object-fit:cover;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.15);display:block;"/>
       <span id="logoBadge" style="display:none;position:absolute;bottom:-5px;right:-8px;font-size:1.3rem;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35));cursor:default;"></span>
     </div>
+    <button id="privacyBtn" type="button" onclick="openPrivacyModal()"
+      style="position:absolute;top:14px;right:14px;background:#fff;border:1.5px solid var(--accent);color:var(--accent-dark);
+             border-radius:18px;padding:.32rem .75rem;font-size:.82rem;font-weight:600;cursor:pointer;
+             box-shadow:0 2px 6px rgba(91,127,166,.12);display:flex;align-items:center;gap:.32rem;">
+      <span>🔒</span>
+      <span><span data-i18n="privacyBtn">Privacy</span>: <span id="privacyBtnMode" data-i18n="privacyBasic">Basic</span></span>
+    </button>
     <div style="text-align:center;margin-bottom:.6rem;">
       <div class="lang-toggle" style="margin:0 auto .2rem;">
         <button class="lang-side" data-group="uilang" data-value="he" onclick="pickUILang(this)">🇮🇱 ע</button>
@@ -623,6 +629,40 @@
       <span id="feedbackMsg" style="font-size:.85rem;margin-inline-start:.6rem;color:green;"></span>
     </div>
     <div class="text-muted" style="font-size:0.8rem;margin-top:.8rem;opacity:0.7;text-align:center;" id="versionDisplay"></div>
+  </div>
+</div>
+
+<!-- Privacy modal -->
+<div id="privacyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(2px);">
+  <div style="background:#fff;border-radius:24px;padding:1.8rem 1.6rem;max-width:460px;width:92%;box-shadow:0 12px 48px rgba(91,127,166,.2);border:1px solid rgba(91,127,166,.1);animation:slideInUp .3s ease;">
+    <h5 class="fw-bold mb-3" data-i18n="privacyTitle" style="color:var(--accent-dark);font-size:1.3rem;">Privacy</h5>
+    <div class="choice-grid" style="grid-template-columns:1fr 1fr;margin-bottom:1rem;">
+      <div class="choice-btn" id="privacyOptBasic" onclick="selectPrivacy('basic')">
+        <div style="font-size:1.4rem;line-height:1.2;">🔓</div>
+        <div data-i18n="privacyBasic" style="font-weight:700;">Basic</div>
+        <div data-i18n="privacyBasicDesc" data-i18n-raw style="font-size:.78rem;color:#777;margin-top:.25rem;line-height:1.3;">Conversations are saved so you can continue them later.</div>
+      </div>
+      <div class="choice-btn" id="privacyOptHigh" onclick="selectPrivacy('high')">
+        <div style="font-size:1.4rem;line-height:1.2;">🔒</div>
+        <div data-i18n="privacyHigh" style="font-weight:700;">High</div>
+        <div data-i18n="privacyHighDesc" data-i18n-raw style="font-size:.78rem;color:#777;margin-top:.25rem;line-height:1.3;">Conversation content is not saved. No continuation possible.</div>
+      </div>
+    </div>
+    <div class="text-center mt-3">
+      <button class="btn btn-primary btn-big" onclick="closePrivacyModal()" data-i18n="closeBtn" style="width:auto;display:inline-block;padding:.55rem 1.8rem;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Privacy high-mode confirmation -->
+<div id="privacyConfirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(2px);">
+  <div style="background:#fff;border-radius:22px;padding:1.7rem 1.5rem;max-width:440px;width:92%;box-shadow:0 12px 48px rgba(91,127,166,.25);border:2px solid #ffc107;animation:slideInUp .3s ease;">
+    <h5 class="fw-bold mb-3" data-i18n="privacyHighConfirmTitle" style="color:#b07b00;font-size:1.2rem;">⚠️ High Privacy Mode</h5>
+    <p data-i18n="privacyHighConfirmText" data-i18n-raw style="font-size:.98rem;line-height:1.6;color:#444;margin-bottom:1.3rem;">In High Privacy mode, conversation content will not be saved, and no continuation will be possible. Only general details (time, language) will be recorded. Continue?</p>
+    <div class="text-center" style="display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-outline-secondary btn-big" onclick="cancelPrivacyHigh()" data-i18n="cancelBtn" style="width:auto;padding:.55rem 1.5rem;">Cancel</button>
+      <button class="btn btn-primary btn-big" onclick="confirmPrivacyHigh()" data-i18n="confirmBtn" style="width:auto;padding:.55rem 1.5rem;">Continue</button>
+    </div>
   </div>
 </div>
 
@@ -786,6 +826,16 @@ const T = {
     nameRequired:'Please enter your name.',
     hideConv:'Hide', restoreConv:'Restore',
     showHiddenLink:'Show hidden', hideHiddenLink:'Hide hidden',
+    privacyBtn:'Privacy',
+    privacyTitle:'Privacy mode',
+    privacyBasic:'Basic',
+    privacyBasicDesc:'Conversations are saved so you can continue them later. You also earn stars and medals, and get a review after each conversation.',
+    privacyHigh:'High',
+    privacyHighDesc:'Conversation content is not saved. No continuation and no review available.',
+    privacyHighConfirmTitle:'⚠️ High Privacy Mode',
+    privacyHighConfirmText:'In High Privacy mode, conversation content will not be saved. No continuation will be possible, and no end-of-chat review will be available. Only general details (time, language) will be recorded. Continue?',
+    cancelBtn:'Cancel',
+    confirmBtn:'Continue',
   },
   he: {
     appTitle:'ChitChat2Go(Beta)', appSubtitle:'שיחה חברית, רק בשבילך',
@@ -828,6 +878,16 @@ const T = {
     nameRequired:'אנא הכנס/י את שמך.',
     hideConv:'הסתר', restoreConv:'שחזר',
     showHiddenLink:'הצג מוסתרים', hideHiddenLink:'הסתר מוסתרים',
+    privacyBtn:'פרטיות',
+    privacyTitle:'מצב פרטיות',
+    privacyBasic:'רגיל',
+    privacyBasicDesc:'השיחות נשמרות כדי שתוכל/י להמשיך אותן בהמשך. בנוסף תזכה/י בכוכבים ובמדליות, ותקבל/י סקירה בסיום כל שיחה.',
+    privacyHigh:'גבוה',
+    privacyHighDesc:'תוכן השיחה לא יישמר. לא ניתן יהיה להמשיך שיחה ולא תוצג סקירה בסיומה.',
+    privacyHighConfirmTitle:'⚠️ מצב פרטיות גבוה',
+    privacyHighConfirmText:'במצב פרטיות גבוה תוכן השיחה לא יישמר. לא תוכל/י להמשיך את השיחה ולא תקבל/י סקירה בסיומה. רק פרטים כלליים (זמן, שפה) יתועדו. תרצה/י להמשיך?',
+    cancelBtn:'ביטול',
+    confirmBtn:'המשך',
   }
 };
 // ════════════════════════════════════════════════════
@@ -910,7 +970,7 @@ function applyUI() {
   document.documentElement.dir  = isHe ? 'rtl' : 'ltr';
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const v = (T[uiLang]||T.en)[el.dataset.i18n];
-    if (v) el.textContent = genderizeHe(v);
+    if (v) el.textContent = el.hasAttribute('data-i18n-raw') ? v : genderizeHe(v);
   });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     const v = (T[uiLang]||T.en)[el.dataset.i18nPh];
@@ -918,6 +978,7 @@ function applyUI() {
   });
   document.getElementById('versionDisplay').textContent = `v${APP_VERSION}`;
   setMicMode(micMode);
+  updatePrivacyUI();
 }
 
 function setMicMode(mode) {
@@ -947,6 +1008,58 @@ function setMicMode(mode) {
   }
   const lbl = document.getElementById('micLabel');
   if (lbl && !listening) lbl.textContent = mode === 'auto' ? t('micLabelAuto') : t('micLabel');
+}
+
+function updatePrivacyUI() {
+  const modeKey = privacyMode === 'high' ? 'privacyHigh' : 'privacyBasic';
+  const lbl = document.getElementById('privacyBtnMode');
+  if (lbl) {
+    lbl.textContent = t(modeKey);
+    lbl.dataset.i18n = modeKey;
+  }
+  const btn = document.getElementById('privacyBtn');
+  if (btn) {
+    if (privacyMode === 'high') {
+      btn.style.background = '#fff5e0';
+      btn.style.borderColor = '#d97700';
+      btn.style.color = '#a65500';
+      btn.firstElementChild.textContent = '🔒';
+    } else {
+      btn.style.background = '#fff';
+      btn.style.borderColor = 'var(--accent)';
+      btn.style.color = 'var(--accent-dark)';
+      btn.firstElementChild.textContent = '🔓';
+    }
+  }
+  document.querySelectorAll('#privacyOptBasic, #privacyOptHigh').forEach(el => el.classList.remove('selected'));
+  const sel = document.getElementById(privacyMode === 'high' ? 'privacyOptHigh' : 'privacyOptBasic');
+  if (sel) sel.classList.add('selected');
+}
+
+function openPrivacyModal() {
+  updatePrivacyUI();
+  document.getElementById('privacyModal').style.display = 'flex';
+}
+function closePrivacyModal() {
+  document.getElementById('privacyModal').style.display = 'none';
+}
+function selectPrivacy(mode) {
+  if (mode === 'high' && privacyMode !== 'high') {
+    document.getElementById('privacyConfirmModal').style.display = 'flex';
+    return;
+  }
+  privacyMode = mode;
+  localStorage.setItem('cc_privacyMode', mode);
+  updatePrivacyUI();
+}
+function confirmPrivacyHigh() {
+  privacyMode = 'high';
+  localStorage.setItem('cc_privacyMode', 'high');
+  document.getElementById('privacyConfirmModal').style.display = 'none';
+  updatePrivacyUI();
+}
+function cancelPrivacyHigh() {
+  document.getElementById('privacyConfirmModal').style.display = 'none';
 }
 
 function showAbout() {
@@ -1166,7 +1279,7 @@ ${stubbleSVG}
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
-const APP_VERSION = '0.71.6';
+const APP_VERSION = '0.72';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
@@ -1182,6 +1295,7 @@ let ttsVoice        = null;
 let ttsGenderMatch  = true;
 let listening       = false;
 let micMode         = localStorage.getItem('cc_micMode') || 'hold';
+let privacyMode     = localStorage.getItem('cc_privacyMode') || 'basic'; // "basic" | "high"
 let silenceTimer    = null;
 let audioCtx        = null;
 let ttsQueue        = [];
@@ -1356,22 +1470,26 @@ async function doIdentify() {
       document.getElementById('resumeName').textContent = data.name;
       renderConvList(data.conversations);
       // Stats bar
-      const totalConvs = data.total_conversations || 0;
-      const totalMins  = data.total_minutes || 0;
+      // Per-language stats — show stats for the language the user just selected
+      const statsByLang = data.stats_by_language || {};
+      const langStats   = statsByLang[practiceLanguage] || {conversations:0, minutes:0};
+      const langConvs   = langStats.conversations || 0;
+      const langMins    = langStats.minutes || 0;
+      const langFlag    = (LANG_FLAGS && LANG_FLAGS[practiceLanguage]) || '';
       const statsBar        = document.getElementById('userStatsBar');
       const statsText       = document.getElementById('userStatsText');
       const achievementRow  = document.getElementById('userAchievementRow');
-      if (statsBar && totalConvs > 0) {
-        const timeStr = totalMins >= 60
-          ? `${Math.floor(totalMins/60)}h ${totalMins % 60}m`
-          : `${totalMins} min`;
-        statsText.textContent = `${totalConvs} 💬 · ${timeStr} 🎙️`;
+      if (statsBar && langConvs > 0) {
+        const timeStr = langMins >= 60
+          ? `${Math.floor(langMins/60)}h ${langMins % 60}m`
+          : `${langMins} min`;
+        statsText.textContent = `${langFlag} ${langConvs} 💬 · ${timeStr} 🎙️`;
         statsBar.style.display = 'block';
-        // Star count (0-5) and medal count (0-5) are independent
+        // Star count (0-5) and medal count (0-5) are independent — based on per-language stats
         const STAR_L  = [{convs:100,mins:240,n:5},{convs:50,mins:180,n:4},{convs:30,mins:120,n:3},{convs:10,mins:60,n:2},{convs:5,mins:30,n:1}];
         const MEDAL_L = [{convs:600,mins:520,n:5},{convs:500,mins:460,n:4},{convs:400,mins:400,n:3},{convs:300,mins:360,n:2},{convs:250,mins:300,n:1}];
-        const stars  = (STAR_L.find(l  => totalConvs >= l.convs || totalMins >= l.mins) || {n:0}).n;
-        const medals = (MEDAL_L.find(l => totalConvs >= l.convs || totalMins >= l.mins) || {n:0}).n;
+        const stars  = (STAR_L.find(l  => langConvs >= l.convs || langMins >= l.mins) || {n:0}).n;
+        const medals = (MEDAL_L.find(l => langConvs >= l.convs || langMins >= l.mins) || {n:0}).n;
         if (achievementRow) {
           achievementRow.style.fontFamily = "'Segoe UI Symbol','Apple Symbols','DejaVu Sans',Arial,sans-serif";
           achievementRow.style.lineHeight = '1.6';
@@ -1533,6 +1651,7 @@ async function startConversation() {
       body: JSON.stringify({
         user_id: userId, language, avatar_gender: avatarGender,
         user_gender: userGender,
+        privacy_mode: privacyMode,
       }),
     });
     const data = await res.json();
@@ -1862,6 +1981,15 @@ function endConversation() {
     // Only display the goodbye message, don't speak it - user wants immediate stop
     if (data.text) { addBubble('avatar', data.text); }
   }).catch(() => {});
+
+  if (privacyMode === 'high') {
+    titleEl.textContent = t('reviewTitle');
+    bodyEl.textContent  = t('privacyHighDesc');
+    saveBtnEl.style.display = 'none';
+    closeBtnEl.disabled = false;
+    cancelBtnEl.style.display = 'none';
+    return;
+  }
 
   _reviewAbortController = new AbortController();
   fetch(`/conversations/${convId}/review?ui_lang=${uiLang}`, { signal: _reviewAbortController.signal })
