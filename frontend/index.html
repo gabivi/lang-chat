@@ -1378,7 +1378,17 @@ async function startListening() {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { autoGainControl: false, echoCancellation: false, noiseSuppression: false }
     });
-    mediaRecorder = new MediaRecorder(stream);
+    let options = {};
+    if (typeof MediaRecorder.isTypeSupported === 'function') {
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        options = { mimeType: 'audio/webm;codecs=opus' };
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        options = { mimeType: 'audio/webm' };
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        options = { mimeType: 'audio/mp4' };
+      }
+    }
+    mediaRecorder = new MediaRecorder(stream, options);
     audioChunks = [];
 
     mediaRecorder.ondataavailable = e => {
@@ -1389,7 +1399,14 @@ async function startListening() {
       document.getElementById('micBtn').classList.remove('listening');
       document.getElementById('micLabel').textContent = t('micLabel');
 
-      const mimeType = mediaRecorder.mimeType || 'audio/webm';
+      let mimeType = mediaRecorder.mimeType;
+      if (!mimeType) {
+        if (typeof MediaRecorder.isTypeSupported === 'function' && !MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = 'audio/mp4';
+        } else {
+          mimeType = 'audio/webm';
+        }
+      }
       const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
       const audioBlob = new Blob(audioChunks, { type: mimeType });
       stream.getTracks().forEach(track => track.stop());

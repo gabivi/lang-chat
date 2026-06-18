@@ -222,6 +222,27 @@ def get_conversation_review(conversation_id: int, ui_lang: str = "en", db: Sessi
 
 # ── Speech-to-Text (STT) ──────────────────────────────────────────────────────
 
+def detect_audio_extension(data: bytes, default_ext: str) -> str:
+    if len(data) < 12:
+        return default_ext
+    # WebM: EBML header
+    if data.startswith(b'\x1a\x45\xdf\xa3'):
+        return "webm"
+    # MP4/M4A: ftyp atom at offset 4
+    if data[4:8] == b'ftyp':
+        return "mp4"
+    # Ogg
+    if data.startswith(b'OggS'):
+        return "ogg"
+    # WAV
+    if data.startswith(b'RIFF') and data[8:12] == b'WAVE':
+        return "wav"
+    # MP3
+    if data.startswith(b'ID3') or (data[0] == 0xff and (data[1] & 0xe0) == 0xe0):
+        return "mp3"
+    return default_ext
+
+
 @router.post("/stt")
 async def stt_endpoint(file: UploadFile = File(...), language: str = "he"):
     if "GROQ_API_KEY" not in os.environ:
@@ -238,7 +259,12 @@ async def stt_endpoint(file: UploadFile = File(...), language: str = "he"):
     try:
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
         audio_data = await file.read()
-        file_tuple = (file.filename, audio_data)
+        
+        orig_ext = file.filename.split(".")[-1].lower() if file.filename and "." in file.filename else ""
+        detected_ext = detect_audio_extension(audio_data, orig_ext or "webm")
+        filename = f"recording.{detected_ext}"
+        
+        file_tuple = (filename, audio_data)
         transcription = client.audio.transcriptions.create(
             file=file_tuple,
             model="whisper-large-v3",
