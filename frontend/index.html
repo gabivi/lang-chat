@@ -1837,7 +1837,7 @@ async function startListening() {
           mimeType = 'audio/webm';
         }
       }
-      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+      const ext = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('ogg') ? 'ogg' : 'webm';
       const audioBlob = new Blob(audioChunks, { type: mimeType });
 
       setStatus(t('thinking'));

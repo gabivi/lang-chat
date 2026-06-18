@@ -317,7 +317,7 @@ def detect_audio_extension(data: bytes, default_ext: str) -> str:
         return "webm"
     # MP4/M4A: ftyp atom at offset 4
     if data[4:8] == b'ftyp':
-        return "mp4"
+        return "m4a"
     # Ogg
     if data.startswith(b'OggS'):
         return "ogg"
