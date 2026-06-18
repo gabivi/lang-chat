@@ -118,7 +118,7 @@ def fetch_weather(location: str) -> str:
     try:
         encoded = urllib.parse.quote(location)
         url = f"https://wttr.in/{encoded}?format=j1"
-        req = urllib.request.Request(url, headers={"User-Agent": "companion-chat/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "lang-chat/1.0"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read())
         current = data["current_condition"][0]

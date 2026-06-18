@@ -115,4 +115,4 @@ Based on everything in this conversation, here is the full list of requirements 
     - Start command for Render: uvicorn main:app --host 0.0.0.0 --port $PORT
     - runtime.txt: 3.12.9
     - ANTHROPIC_API_KEY set as environment variable on Render
-    - GitHub repo: https://github.com/gabivi/companion-chat
+    - GitHub repo: https://github.com/gabivi/lang-chat
