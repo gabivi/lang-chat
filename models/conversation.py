@@ -14,6 +14,7 @@ class Conversation(Base):
     avatar_name   = Column(String, nullable=False)
     title         = Column(String, default="New conversation")
     review        = Column(Text, nullable=True)
+    privacy_mode  = Column(String, default="basic")    # "basic" | "high"
     created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))

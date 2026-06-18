@@ -1,9 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from datetime import timezone, timedelta
 from database import get_db
 from models.user import User
 from models.conversation import Conversation, Message
+
+try:
+    from zoneinfo import ZoneInfo
+    _IL_TZ = ZoneInfo("Asia/Jerusalem")
+except Exception:
+    _IL_TZ = timezone(timedelta(hours=3))
+
+def _il(dt):
+    if dt is None: return None
+    if dt.tzinfo is None: dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(_IL_TZ)
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -39,14 +51,31 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
             user.level = payload.level
         db.commit()
 
-    # Last 5 conversations with message count
-    convs = (
+    # All conversations for aggregate stats
+    all_convs = (
         db.query(Conversation)
         .filter(Conversation.user_id == user.id)
         .order_by(Conversation.updated_at.desc())
-        .limit(5)
         .all()
     )
+    total_conversations = len(all_convs)
+    total_minutes = int(sum(
+        min(60, max(0, (c.updated_at - c.created_at).total_seconds() / 60))
+        for c in all_convs
+        if c.updated_at and c.created_at
+    ))
+
+    # Per-language breakdown
+    stats_by_language: dict[str, dict[str, int]] = {}
+    for c in all_convs:
+        lang = c.language or "unknown"
+        entry = stats_by_language.setdefault(lang, {"conversations": 0, "minutes": 0})
+        entry["conversations"] += 1
+        if c.updated_at and c.created_at:
+            entry["minutes"] += int(min(60, max(0, (c.updated_at - c.created_at).total_seconds() / 60)))
+
+    # Last 20 resumable conversations (high-privacy chats can't be continued)
+    resumable = [c for c in all_convs if getattr(c, "privacy_mode", "basic") != "high"]
     conversations = [
         {
             "id":            c.id,
@@ -54,19 +83,22 @@ def identify_user(payload: IdentifyRequest, db: Session = Depends(get_db)):
             "language":      c.language,
             "avatar_name":   c.avatar_name,
             "avatar_gender": c.avatar_gender,
-            "updated_at":    c.updated_at.strftime("%Y-%m-%d %H:%M") if c.updated_at else "",
+            "updated_at":    _il(c.updated_at).strftime("%Y-%m-%d %H:%M") if c.updated_at else "",
             "message_count": db.query(Message).filter(Message.conversation_id == c.id).count(),
             "review":        c.review or "",
         }
-        for c in convs
+        for c in resumable[:20]
     ]
 
     return {
-        "id":            user.id,
-        "name":          user.name,
-        "gender":        user.gender,
-        "language":      user.language,
-        "level":         user.level,
-        "is_new":        is_new,
-        "conversations": conversations,
+        "id":                 user.id,
+        "name":               user.name,
+        "gender":             user.gender,
+        "language":           user.language,
+        "level":              user.level,
+        "is_new":             is_new,
+        "conversations":      conversations,
+        "total_conversations": total_conversations,
+        "total_minutes":      total_minutes,
+        "stats_by_language":  stats_by_language,
     }

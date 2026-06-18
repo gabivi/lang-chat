@@ -2,9 +2,22 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pathlib import Path
+from datetime import timezone, timedelta
 from database import get_db
 from models.conversation import Conversation, Message
 from models.user import User
+from models.feedback import Feedback
+
+try:
+    from zoneinfo import ZoneInfo
+    _IL_TZ = ZoneInfo("Asia/Jerusalem")
+except Exception:
+    _IL_TZ = timezone(timedelta(hours=3))
+
+def _il(dt):
+    if dt is None: return None
+    if dt.tzinfo is None: dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(_IL_TZ)
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -37,7 +50,7 @@ def all_conversations(
             {
                 "speaker":   m.speaker,
                 "text":      m.text,
-                "timestamp": m.timestamp.strftime("%Y-%m-%d %H:%M:%S") if m.timestamp else "",
+                "timestamp": _il(m.timestamp).strftime("%Y-%m-%d %H:%M:%S") if m.timestamp else "",
             }
             for m in conv.messages
         ]
@@ -49,10 +62,29 @@ def all_conversations(
             "avatar_gender":   conv.avatar_gender,
             "language":        conv.language,
             "title":           conv.title,
-            "created_at":      conv.created_at.strftime("%Y-%m-%d %H:%M") if conv.created_at else "",
-            "updated_at":      conv.updated_at.strftime("%Y-%m-%d %H:%M") if conv.updated_at else "",
+            "created_at":      _il(conv.created_at).strftime("%Y-%m-%d %H:%M") if conv.created_at else "",
+            "updated_at":      _il(conv.updated_at).strftime("%Y-%m-%d %H:%M") if conv.updated_at else "",
             "message_count":   len(messages),
             "messages":        messages,
             "review":          conv.review or "",
         })
     return result
+
+
+@router.get("/feedback")
+def all_feedback(
+    db: Session = Depends(get_db),
+    x_admin_password: str = Header(default=None),
+):
+    if x_admin_password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    entries = db.query(Feedback).order_by(Feedback.created_at.desc()).all()
+    return [
+        {
+            "id":         fb.id,
+            "user_name":  fb.user_name or "—",
+            "text":       fb.text,
+            "created_at": _il(fb.created_at).strftime("%Y-%m-%d %H:%M") if fb.created_at else "",
+        }
+        for fb in entries
+    ]

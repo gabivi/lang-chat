@@ -1,10 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Response
 from fastapi.responses import StreamingResponse
 import os
+import re as _re_top
 from groq import Groq
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+
+try:
+    from zoneinfo import ZoneInfo as _ZI
+    _IL_TZ = _ZI("Asia/Jerusalem")
+except Exception:
+    _IL_TZ = timezone(timedelta(hours=3))
 from database import get_db
 from models.conversation import Conversation, Message
 from models.user import User
@@ -13,6 +20,53 @@ from services.ai import chat, get_avatar_name, get_client, get_current_holiday, 
 router = APIRouter(tags=["Chat"])
 
 
+@router.get("/holiday")
+def current_holiday():
+    en, he = get_current_holiday()
+    return {"holiday_en": en or "", "holiday_he": he or ""}
+
+
+_AR        = _re_top.compile(r'[\u0600-\u06FF]')
+_PHONETIC  = _re_top.compile(r'<phonetic>([\s\S]*?)</phonetic>', _re_top.IGNORECASE)
+_ARABIC    = _re_top.compile(r'<arabic>([\s\S]*?)</arabic>',   _re_top.IGNORECASE)
+_AR_TAG    = _re_top.compile(r'<ar>([\s\S]*?)</ar>',           _re_top.IGNORECASE)  # legacy
+
+
+def _split_arabic(text: str) -> tuple[str, str | None]:
+    """Extract (display_phonetic, tts_arabic) from Arabic AI response.
+
+    New format:  <phonetic>Hebrew-script phonetics</phonetic><arabic>Arabic script</arabic>
+    Legacy:      phonetics <ar>Arabic</ar>  or  phonetics ||| Arabic
+    """
+    # 1. New two-tag format
+    mp = _PHONETIC.search(text)
+    ma = _ARABIC.search(text)
+    if mp and ma:
+        phonetic = mp.group(1).strip()
+        arabic   = ma.group(1).strip()
+        if _AR.search(arabic):
+            return phonetic or text, arabic
+        return phonetic or text, None
+
+    # 2. Legacy <ar> tag
+    m = _AR_TAG.search(text)
+    if m:
+        arabic_tts = m.group(1).strip()
+        display = _AR.sub(b''.decode(), text[:m.start()]).strip()
+        if not _AR.search(arabic_tts):
+            arabic_tts = None
+        return display or text, arabic_tts
+
+    # 3. ||| separator
+    if "|||" in text:
+        part_a, part_b = (p.strip() for p in text.split("|||", 1))
+        if _AR.search(part_a) and not _AR.search(part_b):
+            part_a, part_b = part_b, part_a
+        return _AR.sub("", part_a).strip() or part_a, part_b if _AR.search(part_b) else None
+
+    # 4. Fallback
+    return _AR.sub("", text).strip() or text, None
+
 # ── Create conversation ───────────────────────────────────────────────────────
 
 class NewConversationRequest(BaseModel):
@@ -20,6 +74,7 @@ class NewConversationRequest(BaseModel):
     language:      str = "en"
     avatar_gender: str = "female"
     user_gender:   str = "unknown"   # "male" | "female" | "unknown"
+    privacy_mode:  str = "basic"     # "basic" | "high"
 
 
 @router.post("/conversations")
@@ -35,7 +90,7 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
         )
 
     avatar_name = get_avatar_name(payload.language, payload.avatar_gender)
-    title_date  = datetime.now(timezone.utc).strftime("%d/%m/%Y")
+    title_date  = datetime.now(_IL_TZ).strftime("%d/%m/%Y")
 
     # Check if this is the user's very first conversation
     existing_count = db.query(Conversation).filter(
@@ -43,12 +98,15 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
     ).count()
     is_first_ever = existing_count == 0
 
+    privacy_mode = "high" if payload.privacy_mode == "high" else "basic"
+    title_prefix = "Private chat" if privacy_mode == "high" else "Conversation"
     conv = Conversation(
         user_id       = user.id,
         language      = payload.language,
         avatar_gender = payload.avatar_gender,
         avatar_name   = avatar_name,
-        title         = f"Conversation — {title_date}",
+        title         = f"{title_prefix} — {title_date}",
+        privacy_mode  = privacy_mode,
     )
     db.add(conv)
     db.commit()
@@ -58,6 +116,16 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
     start_msg = f"__START__ My name is {user.name}."
     if is_first_ever:
         start_msg += " FIRST_TIME"
+    else:
+        prior_convs = db.query(Conversation).filter(
+            Conversation.user_id == user.id,
+            Conversation.id != conv.id,
+        ).all()
+        total_mins = int(sum(
+            min(60, max(0, (c.updated_at - c.created_at).total_seconds() / 60))
+            for c in prior_convs if c.updated_at and c.created_at
+        ))
+        start_msg += f" RETURNING({existing_count} conversations, {total_mins} min)"
 
     greeting = chat(
         user_name   = user.name,
@@ -68,21 +136,25 @@ def create_conversation(payload: NewConversationRequest, db: Session = Depends(g
         history     = [{"role": "user", "content": start_msg}],
     )
 
-    msg = Message(conversation_id=conv.id, speaker="avatar", text=greeting)
+    greeting_display, greeting_tts = _split_arabic(greeting)
+    msg = Message(conversation_id=conv.id, speaker="avatar", text=greeting_display)
     db.add(msg)
     conv.updated_at = datetime.now(timezone.utc)
     db.commit()
 
     hol_en, hol_he = get_current_holiday()
-    return {
+    result = {
         "conversation_id": conv.id,
         "avatar_name":     avatar_name,
         "avatar_gender":   payload.avatar_gender,
         "language":        payload.language,
-        "greeting":        greeting,
+        "greeting":        greeting_display,
         "holiday_en":      hol_en,
         "holiday_he":      hol_he,
     }
+    if greeting_tts:
+        result["tts_text"] = greeting_tts
+    return result
 
 
 # ── Load conversation history ─────────────────────────────────────────────────
@@ -163,20 +235,34 @@ def send_message(conversation_id: int, payload: ChatRequest, db: Session = Depen
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    # Save avatar response
-    db.add(Message(conversation_id=conv.id, speaker="avatar", text=response_text))
+    # Parse Arabic dual-format response (display ||| tts)
+    display_text, tts_arabic = _split_arabic(response_text)
+
+    # Save only the display text (Hebrew transliteration) to DB
+    db.add(Message(conversation_id=conv.id, speaker="avatar", text=display_text))
     conv.updated_at = datetime.now(timezone.utc)
 
-    # Update title after first real user message
-    if not is_command and conv.title.startswith("Conversation —") and len(conv.messages) <= 4:
+    # Update title after first real user message (skip in high-privacy mode)
+    if (not is_command
+            and getattr(conv, "privacy_mode", "basic") != "high"
+            and conv.title.startswith("Conversation —")
+            and len(conv.messages) <= 4):
         snippet = payload.text[:40]
         conv.title = snippet + ("…" if len(payload.text) > 40 else "")
 
     db.commit()
 
+    # In high-privacy mode, wipe the message content from DB once the chat ends.
+    if payload.text == "__END__" and getattr(conv, "privacy_mode", "basic") == "high":
+        db.query(Message).filter(Message.conversation_id == conv.id).delete()
+        db.commit()
+
     hol_en, hol_he = get_current_holiday()
-    return {"text": response_text, "avatar_name": conv.avatar_name,
-            "holiday_en": hol_en, "holiday_he": hol_he}
+    result = {"text": display_text, "avatar_name": conv.avatar_name,
+              "holiday_en": hol_en, "holiday_he": hol_he}
+    if tts_arabic:
+        result["tts_text"] = tts_arabic
+    return result
 
 
 # ── Get conversation review ───────────────────────────────────────────────────
@@ -217,6 +303,7 @@ def get_conversation_review(conversation_id: int, ui_lang: str = "en", db: Sessi
         "conversation_id": conv.id,
         "review": review_text,
         "language": conv.language,
+        "created_at": conv.created_at.isoformat() if conv.created_at else None,
     }
 
 
@@ -252,8 +339,13 @@ async def stt_endpoint(file: UploadFile = File(...), language: str = "he"):
         )
 
     prompts = {
-        "he": "שלום", "en": "Hello", "de": "Hallo",
-        "es": "Hola",  "fr": "Bonjour", "hu": "Szia",
+        "he": "שלום, מה שלומך? כן, לא, תודה, בסדר, אני, אתה, את, הוא, היא, יופי, מעניין, נכון",
+        "en": "Hello, how are you? Yes, no, thank you, okay, I, you, he, she, great, interesting, right",
+        "de": "Hallo, wie geht es dir? Ja, nein, danke, okay, ich, du, er, sie, gut, interessant",
+        "es": "Hola, ¿cómo estás? Sí, no, gracias, bien, yo, tú, él, ella, genial, interesante",
+        "fr": "Bonjour, comment ça va? Oui, non, merci, bien, je, tu, il, elle, super, intéressant",
+        "hu": "Szia, hogy vagy? Igen, nem, köszönöm, rendben, én, te, ő, jó, érdekes",
+        "ar": "أهلاً، كيف حالك؟ نعم، لا، شكراً، بخير، أنا، أنت، هو، هي، رائع، ممتاز",
     }
 
     try:
@@ -278,8 +370,11 @@ async def stt_endpoint(file: UploadFile = File(...), language: str = "he"):
 
 
 @router.get("/tts")
-async def generate_tts(text: str, language: str = "he", gender: str = "female"):
+async def generate_tts(text: str, language: str = "he", gender: str = "female", level: str = "intermediate"):
     import edge_tts
+    import xml.sax.saxutils
+    import re
+    from urllib.parse import unquote
 
     voices = {
         ("en", "female"): "en-US-JennyNeural",
@@ -294,9 +389,51 @@ async def generate_tts(text: str, language: str = "he", gender: str = "female"):
         ("fr", "male"):   "fr-FR-HenriNeural",
         ("hu", "female"): "hu-HU-NoemiNeural",
         ("hu", "male"):   "hu-HU-TamasNeural",
+        ("ar", "female"): "ar-SA-ZariyahNeural",
+        ("ar", "male"):   "ar-SA-HamedNeural",
     }
     voice = voices.get((language, gender), "en-US-JennyNeural")
 
+    # Ensure text is properly decoded from URL
+    text = unquote(text)
+
+    # Debug: log incoming text
+    import sys
+    print(f"[TTS DEBUG] Incoming text: {repr(text)}", file=sys.stderr)
+
+    # Adjust speaking rate based on proficiency level using SSML
+    # Use named rate values instead of decimals to avoid number artifacts
+    rate_map = {"beginner": "slow", "intermediate": "medium", "advanced": "fast"}
+    rate = rate_map.get(level, "medium")
+    # Note: We're not using SSML rate control anymore as it was causing edge_tts to speak the rate value
+
+    # Comprehensive sanitization for TTS to prevent misinterpretation
+    # Remove HTML-like tags first
+    text = re.sub(r'<[^>]*>', ' ', text)  # remove HTML/XML tags
+    text = text.replace("<", " less than ")  # remaining < chars
+    text = text.replace(">", " greater than ")  # remaining > chars
+    # Remove/replace problematic characters that edge_tts might mispronounce
+    text = text.replace("—", " - ")     # em-dash
+    text = text.replace("–", "-")       # en-dash
+    text = text.replace("…", "...")     # ellipsis
+    text = text.replace("“", '"')    # left smart quote
+    text = text.replace("”", '"')    # right smart quote
+    text = text.replace("‘", "'")    # left smart apostrophe
+    text = text.replace("’", "'")    # right smart apostrophe
+    text = text.replace("«", '"')    # left guillemet
+    text = text.replace("»", '"')    # right guillemet
+    # Remove zero-width characters
+    text = re.sub(r'[\u200b\u200c\u200d\u200e\u200f]', '', text)
+    # Remove soft hyphens and other control characters
+    text = re.sub(r'[\u00ad\u061b]', '', text)
+    # Remove ANY decimal/float numbers (0.75, 1.0, 1.25, any X.Y pattern)
+    text = re.sub(r'\d+\.\d+', '', text)
+    # Remove bracketed/parenthesized numbers
+    text = re.sub(r'[\[\(]\d+[\]\)]', '', text)
+    # Normalize whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    # Send plain text to edge_tts without SSML (SSML may be causing the rate value to be spoken)
     communicate = edge_tts.Communicate(text, voice)
 
     async def audio_generator():

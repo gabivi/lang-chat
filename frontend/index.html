@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ChitChat2Go v0.74</title>
+  <link rel="icon" type="image/jpeg" href="/static/logo-sketch-C1.jpg"/>
+  <link rel="apple-touch-icon" href="/static/logo-sketch-C1.jpg"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <style>
     :root { 
@@ -152,6 +154,29 @@
     }
     .conv-title { font-weight:700; font-size:.95rem; color:#1a2a40; }
     .conv-meta  { font-size:.8rem; color:#999; margin-top:.3rem; }
+    .conv-hide-btn {
+      flex-shrink:0;
+      background:none;
+      border:none;
+      color:#ccc;
+      font-size:.95rem;
+      cursor:pointer;
+      padding:.2rem .5rem;
+      border-radius:6px;
+      transition:color .15s;
+    }
+    .conv-hide-btn:hover { color:#e05a5a; }
+    .conv-item.hidden-conv { opacity:.45; }
+    .conv-item.hidden-conv .conv-title { text-decoration:line-through; }
+    #convHiddenToggle {
+      display:none;
+      text-align:center;
+      margin-bottom:.5rem;
+      font-size:.82rem;
+      color:var(--accent);
+      cursor:pointer;
+      text-decoration:underline;
+    }
 
     .choice-grid {
       display:grid;
@@ -282,7 +307,6 @@
     .face-root { animation:breathe 3.8s ease-in-out infinite; transform-origin:50% 55%; }
     .face-root.speaking { animation:headbob .38s ease-in-out infinite; }
     .eyelid   { transform-origin:50% 100%; transform:scaleY(0); animation:blink 4.2s ease-in-out infinite; }
-    .eyelid.r { }
     .mouth-open { transform-origin:50% 0%; transform:scaleY(.1); }
     .face-root.speaking .mouth-closed { opacity:0; }
     .face-root.speaking .mouth-open   { animation:mouththing .24s ease-in-out infinite alternate; }
@@ -379,6 +403,52 @@
       min-height:1.5em;
       font-weight:500;
     }
+    #micModeToggle {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:.45rem;
+      margin:.3rem auto .2rem;
+      font-size:.78rem;
+      color:#999;
+      font-weight:500;
+      user-select:none;
+    }
+    #micModeToggle span {
+      transition:color .2s;
+    }
+    #micModeToggle span.active {
+      color:var(--accent-dark);
+      font-weight:700;
+    }
+    .mic-toggle-switch {
+      position:relative;
+      display:inline-block;
+      width:36px;
+      height:20px;
+    }
+    .mic-toggle-switch input { opacity:0; width:0; height:0; }
+    .mic-toggle-slider {
+      position:absolute;
+      inset:0;
+      background:#ccc;
+      border-radius:20px;
+      cursor:pointer;
+      transition:background .2s;
+    }
+    .mic-toggle-slider:before {
+      content:'';
+      position:absolute;
+      width:14px;
+      height:14px;
+      left:3px;
+      top:3px;
+      background:#fff;
+      border-radius:50%;
+      transition:transform .2s;
+    }
+    .mic-toggle-switch input:checked + .mic-toggle-slider { background:var(--accent); }
+    .mic-toggle-switch input:checked + .mic-toggle-slider:before { transform:translateX(16px); }
     #statusBar {
       text-align:center;
       font-size:.9rem;
@@ -496,11 +566,22 @@
 
 <!-- ══════════  SCREEN 1 — Welcome  ══════════ -->
 <div id="screenWelcome" class="screen active">
-  <div class="card-main">
+  <div class="card-main" style="position:relative;">
+    <div style="position:absolute;top:10px;left:10px;width:50px;height:50px;">
+      <img src="/static/logo-sketch-C1.jpg" alt="ChitChat2Go" style="width:50px;height:50px;object-fit:cover;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.15);display:block;"/>
+      <span id="logoBadge" style="display:none;position:absolute;bottom:-5px;right:-8px;font-size:1.3rem;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35));cursor:default;"></span>
+    </div>
+    <button id="privacyBtn" type="button" onclick="openPrivacyModal()"
+      style="position:absolute;top:14px;right:14px;background:#fff;border:1.5px solid var(--accent);color:var(--accent-dark);
+             border-radius:18px;padding:.32rem .75rem;font-size:.82rem;font-weight:600;cursor:pointer;
+             box-shadow:0 2px 6px rgba(91,127,166,.12);display:flex;align-items:center;gap:.32rem;">
+      <span>🔒</span>
+      <span><span data-i18n="privacyBtn">Privacy</span>: <span id="privacyBtnMode" data-i18n="privacyBasic">Basic</span></span>
+    </button>
     <div style="text-align:center;margin-bottom:.6rem;">
-      <div class="choice-grid" style="max-width:200px;margin:0 auto;">
-        <div class="choice-btn" data-group="uilang" data-value="en" onclick="pickUILang(this)">🇬🇧 English</div>
-        <div class="choice-btn selected" data-group="uilang" data-value="he" onclick="pickUILang(this)">🇮🇱 עברית</div>
+      <div class="lang-toggle" style="margin:0 auto .2rem;">
+        <button class="lang-side" data-group="uilang" data-value="he" onclick="pickUILang(this)">🇮🇱 ע</button>
+        <button class="lang-side" data-group="uilang" data-value="en" onclick="pickUILang(this)">🇬🇧 E</button>
       </div>
     </div>
 
@@ -526,6 +607,7 @@
       <div class="choice-btn"          data-group="plang" data-value="es" onclick="pickPracticeLang(this)">🇪🇸 Spanish</div>
       <div class="choice-btn"          data-group="plang" data-value="fr" onclick="pickPracticeLang(this)">🇫🇷 French</div>
       <div class="choice-btn"          data-group="plang" data-value="hu" onclick="pickPracticeLang(this)">🇭🇺 Hungarian</div>
+      <div class="choice-btn"          data-group="plang" data-value="ar" onclick="pickPracticeLang(this)">🗣️ Arabic <span style="background:#e05a5a;color:#fff;font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:6px;vertical-align:middle;letter-spacing:.03em;">NEW</span></div>
     </div>
 
     <p class="fw-semibold mb-2" data-i18n="levelLabel">What is your level?</p>
@@ -537,8 +619,49 @@
 
     <button class="btn btn-primary btn-big" onclick="doIdentify()" data-i18n="continueBtn">Continue →</button>
     <div id="welcomeError" class="text-danger text-center mt-2" style="display:none;"></div>
-    <div class="text-center mt-3">
+    <div class="text-center mt-3" style="display:flex;justify-content:center;gap:1.2rem;flex-wrap:wrap;">
       <button class="btn btn-link btn-sm text-muted" onclick="showAbout()" data-i18n="aboutBtn">ℹ️ About this app</button>
+      <button class="btn btn-link btn-sm text-muted" onclick="toggleFeedback()">💬 <span data-i18n="feedbackBtn">Feedback</span></button>
+    </div>
+    <div id="feedbackBox" style="display:none;margin-top:.8rem;">
+      <textarea id="feedbackText" rows="2" class="form-control mb-2" style="font-size:.9rem;resize:none;" data-i18n-ph="feedbackPlaceholder" placeholder="Share your thoughts…"></textarea>
+      <button class="btn btn-sm btn-primary" onclick="submitFeedback()" data-i18n="feedbackSend">Send</button>
+      <span id="feedbackMsg" style="font-size:.85rem;margin-inline-start:.6rem;color:green;"></span>
+    </div>
+    <div class="text-muted" style="font-size:0.8rem;margin-top:.8rem;opacity:0.7;text-align:center;" id="versionDisplay"></div>
+  </div>
+</div>
+
+<!-- Privacy modal -->
+<div id="privacyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(2px);">
+  <div style="background:#fff;border-radius:24px;padding:1.8rem 1.6rem;max-width:460px;width:92%;box-shadow:0 12px 48px rgba(91,127,166,.2);border:1px solid rgba(91,127,166,.1);animation:slideInUp .3s ease;">
+    <h5 class="fw-bold mb-3" data-i18n="privacyTitle" style="color:var(--accent-dark);font-size:1.3rem;">Privacy</h5>
+    <div class="choice-grid" style="grid-template-columns:1fr 1fr;margin-bottom:1rem;">
+      <div class="choice-btn" id="privacyOptBasic" onclick="selectPrivacy('basic')">
+        <div style="font-size:1.4rem;line-height:1.2;">🔓</div>
+        <div data-i18n="privacyBasic" style="font-weight:700;">Basic</div>
+        <div data-i18n="privacyBasicDesc" data-i18n-raw style="font-size:.78rem;color:#777;margin-top:.25rem;line-height:1.3;">Conversations are saved so you can continue them later.</div>
+      </div>
+      <div class="choice-btn" id="privacyOptHigh" onclick="selectPrivacy('high')">
+        <div style="font-size:1.4rem;line-height:1.2;">🔒</div>
+        <div data-i18n="privacyHigh" style="font-weight:700;">High</div>
+        <div data-i18n="privacyHighDesc" data-i18n-raw style="font-size:.78rem;color:#777;margin-top:.25rem;line-height:1.3;">Conversation content is not saved. No continuation possible.</div>
+      </div>
+    </div>
+    <div class="text-center mt-3">
+      <button class="btn btn-primary btn-big" onclick="closePrivacyModal()" data-i18n="closeBtn" style="width:auto;display:inline-block;padding:.55rem 1.8rem;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Privacy high-mode confirmation -->
+<div id="privacyConfirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(2px);">
+  <div style="background:#fff;border-radius:22px;padding:1.7rem 1.5rem;max-width:440px;width:92%;box-shadow:0 12px 48px rgba(91,127,166,.25);border:2px solid #ffc107;animation:slideInUp .3s ease;">
+    <h5 class="fw-bold mb-3" data-i18n="privacyHighConfirmTitle" style="color:#b07b00;font-size:1.2rem;">⚠️ High Privacy Mode</h5>
+    <p data-i18n="privacyHighConfirmText" data-i18n-raw style="font-size:.98rem;line-height:1.6;color:#444;margin-bottom:1.3rem;">In High Privacy mode, conversation content will not be saved, and no continuation will be possible. Only general details (time, language) will be recorded. Continue?</p>
+    <div class="text-center" style="display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-outline-secondary btn-big" onclick="cancelPrivacyHigh()" data-i18n="cancelBtn" style="width:auto;padding:.55rem 1.5rem;">Cancel</button>
+      <button class="btn btn-primary btn-big" onclick="confirmPrivacyHigh()" data-i18n="confirmBtn" style="width:auto;padding:.55rem 1.5rem;">Continue</button>
     </div>
   </div>
 </div>
@@ -566,6 +689,17 @@
     vertical-align:middle; margin-inline-end:6px;
   }
   @keyframes spin { to { transform:rotate(360deg); } }
+  .lang-toggle {
+    display:inline-flex; background:#ddd8f0; border-radius:22px; padding:3px; gap:0;
+  }
+  .lang-side {
+    border:none; background:transparent; padding:5px 13px; border-radius:19px;
+    cursor:pointer; font-size:.95rem; transition:background .2s, box-shadow .2s;
+    color:#666; font-weight:500; line-height:1.3;
+  }
+  .lang-side.selected {
+    background:white; color:#333; box-shadow:0 1px 4px rgba(0,0,0,.18);
+  }
 </style>
 
 <!-- Review modal -->
@@ -585,7 +719,12 @@
 <div id="screenResume" class="screen">
   <div class="card-main">
     <div class="app-title"><span data-i18n="welcomeBack">Welcome back</span>, <span id="resumeName"></span>!</div>
+    <div id="userStatsBar" style="display:none;text-align:center;margin:-.2rem 0 .6rem;">
+      <span id="userStatsText" style="font-size:.82rem;color:#777;"></span>
+      <div id="userAchievementRow" style="display:none;font-size:1.4rem;letter-spacing:4px;line-height:1.5;"></div>
+    </div>
     <p class="text-center text-muted mb-3" data-i18n="resumePrompt">Would you like to continue a previous conversation?</p>
+    <div id="convHiddenToggle"></div>
     <div id="convList" class="mb-3"></div>
     <hr/>
     <button class="btn btn-primary btn-big"         onclick="goSetup()"   data-i18n="newConvBtn">+ Start a new conversation</button>
@@ -622,9 +761,16 @@
     <div id="avatarName">…</div>
     <div id="transcript"></div>
     <div id="micLabel" data-i18n="micLabel">Hold the microphone to speak</div>
-    <button id="micBtn"
-      onmousedown="startListening()" onmouseup="stopListening()" onmouseleave="stopListening()"
-      ontouchstart="event.preventDefault();startListening()" ontouchend="stopListening()">🎤</button>
+    <button id="micBtn">🎤</button>
+    <div id="micModeToggle">
+      <span id="micModeHoldLabel"></span>
+      <label class="mic-toggle-switch" title="">
+        <input type="checkbox" id="micModeCheck" onchange="setMicMode(this.checked?'auto':'hold')">
+        <span class="mic-toggle-slider"></span>
+      </label>
+      <span id="micModeAutoLabel"></span>
+    </div>
+    <div id="micModeDesc" style="font-size:0.72rem;color:#888;text-align:center;margin-top:2px;padding:0 8px;"></div>
     <button id="stopBtn" onclick="stopSpeaking()">⏹ <span data-i18n="stopBtn">Stop</span></button>
     <div id="statusBar">&nbsp;</div>
     <div class="action-btns">
@@ -651,7 +797,11 @@ const T = {
     female:'Female', male:'Male',
     voiceLabel:'Speaking voice:', startBtn:'Start Chatting', backBtn:'← Back',
     switchBtn:'Switch to English avatar',
-    micLabel:'Hold the microphone to speak', listening:'Listening…', thinking:'Thinking…',
+    micLabel:'Hold the microphone to speak', micLabelAuto:'Click mic to speak',
+    micModeHold:'Hold', micModeAuto:'Auto',
+    micModeHoldDesc:'Press & hold the mic button while speaking — release to send',
+    micModeAutoDesc:'Tap the mic once — it stops automatically when you go silent',
+    listening:'Listening…', listeningAuto:'Listening… (release when done)', thinking:'Thinking…',
     stopBtn:'Stop', suggestBtn:'Skip small talk and suggest topics', endBtn:'End chat',
     noSpeech:'No speech detected. Try again.', serverError:'Could not connect to server.',
     starting:'Starting…',
@@ -659,17 +809,33 @@ const T = {
     noVoiceWarning:'No Hebrew voice found on this device.',
     aboutBtn:'ℹ️ About this app',
     aboutTitle:'About ChitChat2Go v0.74',
-    aboutText:'ChitChat2Go v0.74 is an AI-powered voice companion designed for elderly people who enjoy friendly conversation. Simply press the microphone and start talking — your companion will listen, respond, and suggest topics. The app is free, runs in Israel, and works in both Hebrew and English.',
+    aboutText:'ChitChat2Go v0.74 is an AI-powered voice companion for anyone who enjoys friendly conversation and language practice. Press the microphone and start talking — your companion listens, responds, suggests topics, tells jokes, and asks riddles. The app is free (for now), runs in Israel, and supports Hebrew, English, and more languages. Created by Gabi V.',
     closeBtn:'Close',
     levelLabel:'What is your level?',
     beginner:'🌱 Beginner', intermediate:'📖 Intermediate', advanced:'🎓 Advanced',
     reviewTitle:'Conversation Review',
     reviewLoading:'Analyzing your conversation…',
+    reviewWait:'This takes a few seconds — please wait.',
     reviewCancel:'Cancel',
     reviewNone:'Great job — no significant mistakes found!',
     reviewClose:'Close',
     reviewSave:'Save as file',
     viewReviewBtn:'View Review',
+    feedbackBtn:'Feedback', feedbackPlaceholder:'Share your thoughts…',
+    feedbackSend:'Send', feedbackSent:'Thank you!',
+    nameRequired:'Please enter your name.',
+    hideConv:'Hide', restoreConv:'Restore',
+    showHiddenLink:'Show hidden', hideHiddenLink:'Hide hidden',
+    privacyBtn:'Privacy',
+    privacyTitle:'Privacy mode',
+    privacyBasic:'Basic',
+    privacyBasicDesc:'Conversations are saved so you can continue them later. You also earn stars and medals, and get a review after each conversation.',
+    privacyHigh:'High',
+    privacyHighDesc:'Conversation content is not saved. No continuation and no review available.',
+    privacyHighConfirmTitle:'⚠️ High Privacy Mode',
+    privacyHighConfirmText:'In High Privacy mode, conversation content will not be saved. No continuation will be possible, and no end-of-chat review will be available. Only general details (time, language) will be recorded. Continue?',
+    cancelBtn:'Cancel',
+    confirmBtn:'Continue',
   },
   he: {
     appTitle:'ChitChat2Go v0.74', appSubtitle:'שיחה חברית, רק בשבילך',
@@ -683,7 +849,11 @@ const T = {
     female:'נקבה', male:'זכר',
     voiceLabel:'קול הדובר:', startBtn:'התחל/י לשוחח', backBtn:'חזור ←',
     switchBtn:'מעבר לאווטאר אנגלי',
-    micLabel:'לחץ/י לחיצה ממושכת על המיקרופון לדיבור', listening:'מקשיב/ה…', thinking:'חושב/ת…',
+    micLabel:'לחץ/י לחיצה ממושכת על המיקרופון לדיבור', micLabelAuto:'לחץ/י על המיקרופון לדיבור',
+    micModeHold:'לחיצה', micModeAuto:'אוטו',
+    micModeHoldDesc:'לחץ/י ממושכות בזמן הדיבור — שחרר/י לשליחה',
+    micModeAutoDesc:'לחץ/י פעם אחת — עוצר אוטומטית עם סיום הדיבור',
+    listening:'מקשיב/ה…', listeningAuto:'מקשיב/ה… (עוצר אוטומטית)', thinking:'חושב/ת…',
     stopBtn:'עצור', suggestBtn:'דלג/י על שיחת חולין והצע/י נושאים', endBtn:'סיום שיחה',
     noSpeech:'לא זוהה דיבור. נסה/י שוב.', serverError:'לא ניתן להתחבר לשרת.',
     starting:'מתחיל/ה…',
@@ -691,17 +861,33 @@ const T = {
     noVoiceWarning:'לא נמצא קול עברי במכשיר זה.',
     aboutBtn:'ℹ️ אודות האפליקציה',
     aboutTitle:'אודות ChitChat2Go v0.74',
-    aboutText:'ChitChat2Go v0.74 היא מלווה שיחה קולי מבוסס בינה מלאכותית, מיועד לאנשים מבוגרים הנהנים משיחות חבריות. פשוט לחצו על המיקרופון והתחילו לדבר — המלווה יקשיב, יענה, ויציע נושאים לשיחה. האפליקציה חינמית, פועלת בישראל, ועובדת בעברית ובאנגלית.',
+    aboutText:'ChitChat2Go v0.74 היא מלווה שיחה קולי מבוסס בינה מלאכותית, לכל מי שנהנה משיחה חברית ותרגול שפה. לחצו על המיקרופון והתחילו לדבר — המלווה מקשיב, עונה, מציע נושאים, מספר בדיחות ושואל חידות. האפליקציה חינמית (לעת עתה), פועלת בישראל, ותומכת בעברית, אנגלית ושפות נוספות. נוצר על ידי גבי ו.',
     closeBtn:'סגירה',
     levelLabel:'מה רמת השפה שלך?',
     beginner:'🌱 מתחיל/ת', intermediate:'📖 בינוני/ת', advanced:'🎓 מתקדם/ת',
     reviewTitle:'סקירת השיחה',
     reviewLoading:'מנתח/ת את השיחה שלך…',
+    reviewWait:'זה לוקח כמה שניות — אנא המתן/י.',
     reviewCancel:'ביטול',
     reviewNone:'כל הכבוד — לא נמצאו טעויות משמעותיות!',
     reviewClose:'סגירה',
     reviewSave:'שמירה כקובץ',
     viewReviewBtn:'צפייה בסיכום',
+    feedbackBtn:'משוב', feedbackPlaceholder:'שתף/י את דעתך…',
+    feedbackSend:'שלח/י', feedbackSent:'תודה!',
+    nameRequired:'אנא הכנס/י את שמך.',
+    hideConv:'הסתר', restoreConv:'שחזר',
+    showHiddenLink:'הצג מוסתרים', hideHiddenLink:'הסתר מוסתרים',
+    privacyBtn:'פרטיות',
+    privacyTitle:'מצב פרטיות',
+    privacyBasic:'רגיל',
+    privacyBasicDesc:'השיחות נשמרות כדי שתוכל/י להמשיך אותן בהמשך. בנוסף תזכה/י בכוכבים ובמדליות, ותקבל/י סקירה בסיום כל שיחה.',
+    privacyHigh:'גבוה',
+    privacyHighDesc:'תוכן השיחה לא יישמר. לא ניתן יהיה להמשיך שיחה ולא תוצג סקירה בסיומה.',
+    privacyHighConfirmTitle:'⚠️ מצב פרטיות גבוה',
+    privacyHighConfirmText:'במצב פרטיות גבוה תוכן השיחה לא יישמר. לא תוכל/י להמשיך את השיחה ולא תקבל/י סקירה בסיומה. רק פרטים כלליים (זמן, שפה) יתועדו. תרצה/י להמשיך?',
+    cancelBtn:'ביטול',
+    confirmBtn:'המשך',
   }
 };
 // ════════════════════════════════════════════════════
@@ -722,9 +908,10 @@ const HOLIDAY_SYMBOLS = {
   "שבועות":"📖","Shavuos":"📖",
   "תשעה באב":"🕯️","Tisha B'Av":"🕯️",
   "ראש חודש":"🌙","Rosh Chodesh":"🌙",
-  "יום השואה":"🕯️","Yom HaShoah":"🕯️",
-  "יום הזיכרון":"🕯️","Yom HaZikaron":"🕯️",
-  "יום העצמאות":"🇮🇱","Yom HaAtzmaut":"🇮🇱",
+  "יום השואה":"🕯️","Yom HaShoah":"🕯️","Yom Hashoah":"🕯️",
+  "יום הזיכרון":"🕯️","Yom HaZikaron":"🕯️","Yom Hazikaron":"🕯️",
+  "יום העצמאות":"🇮🇱","Yom HaAtzmaut":"🇮🇱","Yom Haatzmaut":"🇮🇱",
+  "יום ירושלים":"🕍","Yom Yerushalayim":"🕍",
 };
 
 function showHolidayBadge(holEn, holHe) {
@@ -738,6 +925,23 @@ function showHolidayBadge(holEn, holHe) {
   } else {
     badge.style.display = 'none';
   }
+}
+
+async function loadHolidayBadge() {
+  try {
+    const r = await fetch('/holiday');
+    const d = await r.json();
+    const symbol = HOLIDAY_SYMBOLS[d.holiday_he] || HOLIDAY_SYMBOLS[d.holiday_en] || '';
+    const badge = document.getElementById('logoBadge');
+    if (!badge) return;
+    if (symbol) {
+      badge.textContent = symbol;
+      badge.title = d.holiday_he || d.holiday_en || '';
+      badge.style.display = 'inline';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(e) {}
 }
 
 // Resolve gendered Hebrew text: "התחל/י" → "התחל" (male) / "התחלי" (female)
@@ -766,12 +970,96 @@ function applyUI() {
   document.documentElement.dir  = isHe ? 'rtl' : 'ltr';
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const v = (T[uiLang]||T.en)[el.dataset.i18n];
-    if (v) el.textContent = genderizeHe(v);
+    if (v) el.textContent = el.hasAttribute('data-i18n-raw') ? v : genderizeHe(v);
   });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     const v = (T[uiLang]||T.en)[el.dataset.i18nPh];
     if (v) el.placeholder = genderizeHe(v);
   });
+  document.getElementById('versionDisplay').textContent = `v${APP_VERSION}`;
+  setMicMode(micMode);
+  updatePrivacyUI();
+}
+
+function setMicMode(mode) {
+  micMode = mode;
+  localStorage.setItem('cc_micMode', mode);
+  const check = document.getElementById('micModeCheck');
+  if (check) check.checked = (mode === 'auto');
+  const holdLbl = document.getElementById('micModeHoldLabel');
+  const autoLbl = document.getElementById('micModeAutoLabel');
+  if (holdLbl) { holdLbl.textContent = t('micModeHold'); holdLbl.classList.toggle('active', mode === 'hold'); }
+  if (autoLbl) { autoLbl.textContent = t('micModeAuto'); autoLbl.classList.toggle('active', mode === 'auto'); }
+  const descEl = document.getElementById('micModeDesc');
+  if (descEl) descEl.textContent = mode === 'hold' ? t('micModeHoldDesc') : t('micModeAutoDesc');
+  const btn = document.getElementById('micBtn');
+  if (!btn) return;
+  btn.onmousedown = null; btn.onmouseup = null; btn.onmouseleave = null;
+  btn.ontouchstart = null; btn.ontouchend = null; btn.onclick = null;
+  if (mode === 'hold') {
+    btn.onmousedown  = () => startListening();
+    btn.onmouseup    = () => stopListening();
+    btn.onmouseleave = () => stopListening();
+    btn.ontouchstart = (e) => { e.preventDefault(); startListening(); };
+    btn.ontouchend   = () => stopListening();
+  } else {
+    btn.onclick    = () => { if (listening) stopListening(); else startListening(); };
+    btn.ontouchend = (e) => { e.preventDefault(); if (listening) stopListening(); else startListening(); };
+  }
+  const lbl = document.getElementById('micLabel');
+  if (lbl && !listening) lbl.textContent = mode === 'auto' ? t('micLabelAuto') : t('micLabel');
+}
+
+function updatePrivacyUI() {
+  const modeKey = privacyMode === 'high' ? 'privacyHigh' : 'privacyBasic';
+  const lbl = document.getElementById('privacyBtnMode');
+  if (lbl) {
+    lbl.textContent = t(modeKey);
+    lbl.dataset.i18n = modeKey;
+  }
+  const btn = document.getElementById('privacyBtn');
+  if (btn) {
+    if (privacyMode === 'high') {
+      btn.style.background = '#fff5e0';
+      btn.style.borderColor = '#d97700';
+      btn.style.color = '#a65500';
+      btn.firstElementChild.textContent = '🔒';
+    } else {
+      btn.style.background = '#fff';
+      btn.style.borderColor = 'var(--accent)';
+      btn.style.color = 'var(--accent-dark)';
+      btn.firstElementChild.textContent = '🔓';
+    }
+  }
+  document.querySelectorAll('#privacyOptBasic, #privacyOptHigh').forEach(el => el.classList.remove('selected'));
+  const sel = document.getElementById(privacyMode === 'high' ? 'privacyOptHigh' : 'privacyOptBasic');
+  if (sel) sel.classList.add('selected');
+}
+
+function openPrivacyModal() {
+  updatePrivacyUI();
+  document.getElementById('privacyModal').style.display = 'flex';
+}
+function closePrivacyModal() {
+  document.getElementById('privacyModal').style.display = 'none';
+}
+function selectPrivacy(mode) {
+  if (mode === 'high' && privacyMode !== 'high') {
+    document.getElementById('privacyConfirmModal').style.display = 'flex';
+    return;
+  }
+  privacyMode = mode;
+  localStorage.setItem('cc_privacyMode', mode);
+  updatePrivacyUI();
+}
+function confirmPrivacyHigh() {
+  privacyMode = 'high';
+  localStorage.setItem('cc_privacyMode', 'high');
+  document.getElementById('privacyConfirmModal').style.display = 'none';
+  updatePrivacyUI();
+}
+function cancelPrivacyHigh() {
+  document.getElementById('privacyConfirmModal').style.display = 'none';
 }
 
 function showAbout() {
@@ -781,6 +1069,28 @@ function showAbout() {
 function hideAbout() {
   document.getElementById('aboutModal').style.display = 'none';
 }
+function toggleFeedback() {
+  const box = document.getElementById('feedbackBox');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  if (box.style.display === 'block') document.getElementById('feedbackText').focus();
+}
+async function submitFeedback() {
+  const text = document.getElementById('feedbackText').value.trim();
+  const msgEl = document.getElementById('feedbackMsg');
+  if (!text) return;
+  try {
+    await fetch('/feedback', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: userId || null, user_name: userName || null, text}),
+    });
+    msgEl.textContent = t('feedbackSent');
+    document.getElementById('feedbackText').value = '';
+    setTimeout(() => {
+      document.getElementById('feedbackBox').style.display = 'none';
+      msgEl.textContent = '';
+    }, 2000);
+  } catch(e) { msgEl.textContent = t('serverError'); }
+}
 
 // ════════════════════════════════════════════════════
 //  Realistic SVG face builder
@@ -788,102 +1098,93 @@ function hideAbout() {
 function buildFace(gender, lang) {
   const isFem = gender === 'female';
   const isHe  = lang === 'he';
-  const uid   = 'g' + (Date.now() % 9999);   // unique gradient IDs
+  const isAr  = lang === 'ar';
+  const uid   = 'g' + (Date.now() % 9999);
 
   // Skin palette [highlight, base, shadow, accent]
-  const sk = isHe
-    ? (isFem ? ['#f0c090','#d09068','#a86030','#b87040'] : ['#e0a870','#c07848','#904820','#a05828'])
-    : (isFem ? ['#feecd8','#f5c898','#d89060','#e0a870'] : ['#f0c898','#d8a060','#b07838','#c08848']);
+  // Hebrew/Arabic: warm brown-olive; others: light/peach
+  const sk = (isHe || isAr)
+    ? (isFem ? ['#f8d4a0','#d8a060','#b07030','#c08040']
+             : ['#f0c890','#c89050','#a06828','#b07838'])
+    : (isFem ? ['#fff2e4','#fcd9b0','#dba870','#ecc080']
+             : ['#fde8c4','#f0c898','#ccaa70','#ddb880']);
 
-  // Hair palette [base, shadow, highlight]
-  const hr = isHe
-    ? (isFem ? ['#1a1008','#0c0806','#3a2818'] : ['#2a2018','#141008','#4a3828'])
-    : (isFem ? ['#807060','#504030','#c0a888'] : ['#9a9898','#606060','#d0ccc8']);
+  // Hair palette [base, dark, highlight] — Hebrew/Arabic: black
+  const hr = (isHe || isAr)
+    ? (isFem ? ['#100a06','#060402','#281808']
+             : ['#180e06','#080404','#301808'])
+    : (isFem ? ['#7c5c40','#4a3020','#b08860']
+             : ['#504040','#2c2020','#8c7060']);
 
-  // Iris [inner, outer, edge]
-  const ir = isHe
-    ? ['#5a3018','#2a1008','#0c0806']
-    : (isFem ? ['#90b8d0','#3a7090','#0a2840'] : ['#808840','#484820','#202010']);
+  // Iris — Hebrew/Arabic: dark brown
+  const ir = (isHe || isAr)
+    ? ['#a86828','#6a3810','#280e04']
+    : (isFem ? ['#6ab0d0','#3478a0','#0e3060']
+             : ['#7a9040','#485420','#1c2008']);
 
-  const lip = isFem ? '#c86878' : '#a85858';
-  const liH = isFem ? '#e08898' : '#c07070';
+  const lip  = isFem ? '#cc6878' : '#b06060';
+  const lipH = isFem ? '#e890a0' : '#c87878';
 
-  // Female hair (long afro) vs male (short)
+  // Female: large full afro; Male: short neat hair
   const hairSVG = isFem ? `
-    <!-- Afro main puff -->
-    <ellipse cx="80" cy="46" rx="62" ry="56" fill="${hr[0]}"/>
-    <!-- Wide side volume -->
-    <ellipse cx="16" cy="86" rx="22" ry="34" fill="${hr[0]}"/>
-    <ellipse cx="144" cy="86" rx="22" ry="34" fill="${hr[0]}"/>
-    <!-- Curly bumps top/sides for texture -->
-    <ellipse cx="42" cy="18" rx="17" ry="15" fill="${hr[0]}"/>
-    <ellipse cx="62" cy="8"  rx="15" ry="14" fill="${hr[0]}"/>
-    <ellipse cx="80" cy="4"  rx="17" ry="15" fill="${hr[0]}"/>
-    <ellipse cx="98" cy="8"  rx="15" ry="14" fill="${hr[0]}"/>
-    <ellipse cx="118" cy="18" rx="17" ry="15" fill="${hr[0]}"/>
-    <ellipse cx="28" cy="38" rx="15" ry="14" fill="${hr[0]}"/>
-    <ellipse cx="132" cy="38" rx="15" ry="14" fill="${hr[0]}"/>
-    <!-- Volume highlights -->
-    <ellipse cx="65" cy="28" rx="20" ry="16" fill="${hr[2]}" opacity=".28"/>
-    <ellipse cx="95" cy="22" rx="16" ry="12" fill="${hr[2]}" opacity=".22"/>
-    <ellipse cx="80" cy="18" rx="24" ry="10" fill="${hr[2]}" opacity=".18"/>
+    <ellipse cx="80" cy="48" rx="70" ry="66" fill="${hr[0]}"/>
+    <ellipse cx="16" cy="90" rx="26" ry="42" fill="${hr[0]}"/>
+    <ellipse cx="144" cy="90" rx="26" ry="42" fill="${hr[0]}"/>
+    <ellipse cx="48" cy="14" rx="20" ry="18" fill="${hr[0]}"/>
+    <ellipse cx="68" cy="6"  rx="18" ry="16" fill="${hr[0]}"/>
+    <ellipse cx="88" cy="4"  rx="18" ry="16" fill="${hr[0]}"/>
+    <ellipse cx="108" cy="10" rx="19" ry="17" fill="${hr[0]}"/>
+    <ellipse cx="128" cy="28" rx="18" ry="17" fill="${hr[0]}"/>
+    <ellipse cx="32" cy="28"  rx="18" ry="17" fill="${hr[0]}"/>
+    <ellipse cx="66" cy="28" rx="22" ry="18" fill="${hr[2]}" opacity=".22"/>
+    <ellipse cx="94" cy="22" rx="18" ry="14" fill="${hr[2]}" opacity=".16"/>
   ` : `
-    <path d="M20,82 Q24,42 46,26 Q64,14 80,12 Q96,14 114,26 Q136,42 140,82
-             Q122,62 96,55 Q88,52 80,52 Q72,52 64,55 Q38,62 20,82Z" fill="${hr[0]}"/>
-    <path d="M38,58 Q46,44 60,38" stroke="${sk[0]}" stroke-width="7" fill="none" stroke-linecap="round" opacity=".55"/>
-    <path d="M122,58 Q114,44 100,38" stroke="${sk[0]}" stroke-width="7" fill="none" stroke-linecap="round" opacity=".55"/>
-    <path d="M58,16 Q80,10 102,16 Q88,26 80,26 Q72,26 58,16Z" fill="${hr[2]}" opacity=".45"/>
-    <path d="M22,80 Q22,90 26,105" stroke="#c8c0b8" stroke-width="6" fill="none" opacity=".45"/>
-    <path d="M138,80 Q138,90 134,105" stroke="#c8c0b8" stroke-width="6" fill="none" opacity=".45"/>
+    <ellipse cx="80" cy="46" rx="62" ry="46" fill="${hr[0]}"/>
+    <path d="M18,86 Q22,46 50,28 Q64,18 80,16 Q96,18 110,28 Q138,46 142,86
+             Q128,64 100,56 Q90,52 80,52 Q70,52 60,56 Q32,64 18,86Z" fill="${hr[1]}"/>
+    <ellipse cx="74" cy="32" rx="26" ry="16" fill="${hr[2]}" opacity=".38"/>
+    <path d="M20,86 Q17,100 20,120" stroke="${sk[1]}" stroke-width="10" fill="none" stroke-linecap="round" opacity=".65"/>
+    <path d="M140,86 Q143,100 140,120" stroke="${sk[1]}" stroke-width="10" fill="none" stroke-linecap="round" opacity=".65"/>
   `;
 
-  // Eyebrows
   const browSVG = isFem ? `
-    <path d="M44,80 Q58,72 72,77" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-    <path d="M88,77 Q102,72 116,80" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-    <path d="M46,79 Q60,73 70,76" stroke="${hr[2]}" stroke-width="1" fill="none" opacity=".4"/>
-    <path d="M90,76 Q100,73 114,79" stroke="${hr[2]}" stroke-width="1" fill="none" opacity=".4"/>
+    <path d="M44,82 Q58,74 72,79" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <path d="M88,79 Q102,74 116,82" stroke="${hr[1]}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
   ` : `
-    <path d="M42,80 Q58,73 74,77" stroke="${hr[1]}" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <path d="M86,77 Q102,73 118,80" stroke="${hr[1]}" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <path d="M44,78 Q60,73 72,76" stroke="${hr[2]}" stroke-width="1.2" fill="none" opacity=".4"/>
-    <path d="M88,76 Q100,73 116,78" stroke="${hr[2]}" stroke-width="1.2" fill="none" opacity=".4"/>
+    <path d="M42,82 Q58,74 74,79" stroke="${hr[1]}" stroke-width="4.2" fill="none" stroke-linecap="round"/>
+    <path d="M86,79 Q102,74 118,82" stroke="${hr[1]}" stroke-width="4.2" fill="none" stroke-linecap="round"/>
   `;
 
-  // Eyelashes (female only)
   const lashSVG = isFem ? `
-    <line x1="46" y1="91" x2="43" y2="85" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="50" y1="88" x2="48" y2="83" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="55" y1="87" x2="54" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="60" y1="87" x2="60" y2="81" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="65" y1="87" x2="66" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="70" y1="89" x2="72" y2="84" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="74" y1="91" x2="77" y2="86" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="86" y1="91" x2="83" y2="86" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="90" y1="89" x2="88" y2="84" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="95" y1="87" x2="94" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="100" y1="87" x2="100" y2="81" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="105" y1="87" x2="106" y2="82" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="110" y1="88" x2="112" y2="83" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="114" y1="91" x2="117" y2="86" stroke="#1a1010" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="46" y1="92" x2="43" y2="86" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="52" y1="89" x2="50" y2="83" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="59" y1="88" x2="58" y2="82" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="66" y1="88" x2="66" y2="82" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="73" y1="89" x2="75" y2="83" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="87" y1="89" x2="85" y2="83" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="94" y1="88" x2="94" y2="82" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="101" y1="88" x2="102" y2="82" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="108" y1="89" x2="110" y2="83" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="114" y1="92" x2="117" y2="86" stroke="${hr[1]}" stroke-width="1.5" stroke-linecap="round"/>
   ` : '';
 
-  // Stubble (male only)
   const stubbleSVG = !isFem ? `
-    <path d="M52,155 Q80,163 108,155" stroke="${sk[2]}" stroke-width="4.5" fill="none" opacity=".14" stroke-dasharray="1.5,2.2"/>
-    <path d="M60,164 Q80,170 100,164" stroke="${sk[2]}" stroke-width="3.5" fill="none" opacity=".11" stroke-dasharray="1,2"/>
+    <ellipse cx="80" cy="162" rx="30" ry="14" fill="${sk[2]}" opacity=".16" filter="url(#${uid}blur)"/>
+    <path d="M52,156 Q80,166 108,156" stroke="${sk[2]}" stroke-width="5" fill="none" opacity=".13" stroke-dasharray="1.5,2.5"/>
+    <path d="M60,165 Q80,172 100,165" stroke="${sk[2]}" stroke-width="3.5" fill="none" opacity=".10" stroke-dasharray="1,2.2"/>
   ` : '';
 
-  // Face outline (female=oval, male=squarer jaw)
   const faceD = isFem
-    ? 'M22,88 Q16,115 18,142 Q22,168 42,180 Q58,190 80,191 Q102,190 118,180 Q138,168 142,142 Q144,115 138,88'
-    : 'M20,88 Q14,118 16,146 Q18,166 36,178 Q52,188 80,190 Q108,188 124,178 Q142,166 144,146 Q146,118 140,88';
+    ? 'M22,90 Q15,118 17,146 Q20,170 42,182 Q58,192 80,193 Q102,192 118,182 Q140,170 143,146 Q145,118 138,90'
+    : 'M20,90 Q13,120 15,150 Q17,170 36,182 Q52,192 80,193 Q108,192 124,182 Q143,170 145,150 Q147,120 140,90';
+
+  const shirtColor = isFem ? '#8eb8d8' : '#5878a8';
 
   return `<svg id="avatarFace" class="face-root" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
 <defs>
-  <radialGradient id="${uid}s" cx="38%" cy="26%" r="72%" gradientUnits="objectBoundingBox">
+  <radialGradient id="${uid}s" cx="36%" cy="24%" r="74%" gradientUnits="objectBoundingBox">
     <stop offset="0%"   stop-color="${sk[0]}"/>
-    <stop offset="48%"  stop-color="${sk[1]}"/>
+    <stop offset="50%"  stop-color="${sk[1]}"/>
     <stop offset="100%" stop-color="${sk[2]}"/>
   </radialGradient>
   <radialGradient id="${uid}i" cx="30%" cy="26%" r="70%">
@@ -892,140 +1193,100 @@ function buildFace(gender, lang) {
     <stop offset="100%" stop-color="${ir[2]}"/>
   </radialGradient>
   <radialGradient id="${uid}lip" cx="50%" cy="30%" r="70%">
-    <stop offset="0%"   stop-color="${liH}"/>
+    <stop offset="0%"   stop-color="${lipH}"/>
     <stop offset="100%" stop-color="${lip}"/>
   </radialGradient>
-  <filter id="${uid}blur"><feGaussianBlur stdDeviation=".55"/></filter>
+  <filter id="${uid}blur"><feGaussianBlur stdDeviation=".65"/></filter>
 </defs>
 
-<!-- Ground shadow -->
-<ellipse cx="80" cy="198" rx="46" ry="4.5" fill="rgba(0,0,0,.17)"/>
+<ellipse cx="80" cy="198" rx="48" ry="5" fill="rgba(0,0,0,.15)"/>
 
-<!-- Neck -->
-<path d="M56,170 Q58,185 68,190 Q80,195 92,190 Q102,185 104,170 Q94,178 80,179 Q66,178 56,170Z"
-      fill="url(#${uid}s)"/>
+<path d="M58,172 Q60,188 70,194 Q80,198 90,194 Q100,188 102,172 Q92,180 80,181 Q68,180 58,172Z" fill="url(#${uid}s)"/>
+<path d="M8,200 Q36,182 58,172 Q68,180 80,181 Q92,180 102,172 Q124,182 152,200Z" fill="${shirtColor}" opacity=".88"/>
 
-<!-- Shoulders -->
-<path d="M8,200 Q36,180 56,170 Q68,175 80,176 Q92,175 104,170 Q124,180 152,200Z"
-      fill="${sk[2]}" opacity=".5"/>
+${isFem ? `<ellipse cx="80" cy="168" rx="70" ry="82" fill="${hr[0]}"/>` : ''}
 
-<!-- Hair (back layer) -->
-<ellipse cx="80" cy="74" rx="64" ry="66" fill="${hr[0]}"/>
-
-<!-- Face shape -->
-<path d="${faceD} Q20,88 20,88Z" fill="url(#${uid}s)"/>
+<path d="${faceD} Q20,90 20,90Z" fill="url(#${uid}s)"/>
 
 ${hairSVG}
 
-<!-- Ears -->
-<path d="M18,106 Q10,115 10,126 Q10,137 18,143 Q22,132 22,120 Q22,108 18,106Z" fill="${sk[1]}"/>
-<path d="M18,109 Q14,116 14,125 Q14,134 18,140" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".5"/>
-<path d="M142,106 Q150,115 150,126 Q150,137 142,143 Q138,132 138,120 Q138,108 142,106Z" fill="${sk[1]}"/>
-<path d="M142,109 Q146,116 146,125 Q146,134 142,140" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".5"/>
+<path d="M17,108 Q9,118 9,129 Q9,140 17,146 Q21,135 21,122 Q21,109 17,108Z" fill="${sk[1]}"/>
+<path d="M17,111 Q13,119 13,128 Q13,137 17,143" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".42"/>
+<path d="M143,108 Q151,118 151,129 Q151,140 143,146 Q139,135 139,122 Q139,109 143,108Z" fill="${sk[1]}"/>
+<path d="M143,111 Q147,119 147,128 Q147,137 143,143" stroke="${sk[2]}" stroke-width="1.2" fill="none" opacity=".42"/>
 
 ${browSVG}
 
-<!-- Eye area shadows (depth) -->
-<ellipse cx="60" cy="94" rx="18" ry="12" fill="${sk[3]}" opacity=".2" filter="url(#${uid}blur)"/>
-<ellipse cx="100" cy="94" rx="18" ry="12" fill="${sk[3]}" opacity=".2" filter="url(#${uid}blur)"/>
+<ellipse cx="60" cy="96" rx="18" ry="12" fill="${sk[3]}" opacity=".16" filter="url(#${uid}blur)"/>
+<ellipse cx="100" cy="96" rx="18" ry="12" fill="${sk[3]}" opacity=".16" filter="url(#${uid}blur)"/>
 
-<!-- Sclera (eye whites) -->
-<ellipse cx="60" cy="96" rx="15" ry="10" fill="#fafaf8"/>
-<ellipse cx="100" cy="96" rx="15" ry="10" fill="#fafaf8"/>
+<ellipse cx="60" cy="97" rx="15" ry="10" fill="#fafaf8"/>
+<ellipse cx="100" cy="97" rx="15" ry="10" fill="#fafaf8"/>
 
-<!-- Eyelid crease shadow -->
-<path d="M45,90 Q60,85 75,90 Q60,96 45,90Z" fill="${sk[3]}" opacity=".28"/>
-<path d="M85,90 Q100,85 115,90 Q100,96 85,90Z" fill="${sk[3]}" opacity=".28"/>
+<path d="M45,91 Q60,86 75,91 Q60,97 45,91Z" fill="${sk[3]}" opacity=".22"/>
+<path d="M85,91 Q100,86 115,91 Q100,97 85,91Z" fill="${sk[3]}" opacity=".22"/>
 
-<!-- Iris -->
-<circle cx="60" cy="96" r="7.5" fill="url(#${uid}i)"/>
-<circle cx="100" cy="96" r="7.5" fill="url(#${uid}i)"/>
-<!-- Iris limbal ring -->
-<circle cx="60" cy="96" r="7.5" fill="none" stroke="${ir[2]}" stroke-width="1" opacity=".6"/>
-<circle cx="100" cy="96" r="7.5" fill="none" stroke="${ir[2]}" stroke-width="1" opacity=".6"/>
+<circle cx="60" cy="97" r="7.5" fill="url(#${uid}i)"/>
+<circle cx="100" cy="97" r="7.5" fill="url(#${uid}i)"/>
+<circle cx="60" cy="97" r="7.5" fill="none" stroke="${ir[2]}" stroke-width=".9" opacity=".55"/>
+<circle cx="100" cy="97" r="7.5" fill="none" stroke="${ir[2]}" stroke-width=".9" opacity=".55"/>
 
-<!-- Pupils -->
-<circle cx="60" cy="96" r="3.8" fill="#060810"/>
-<circle cx="100" cy="96" r="3.8" fill="#060810"/>
+<circle cx="60" cy="97" r="3.8" fill="#050810"/>
+<circle cx="100" cy="97" r="3.8" fill="#050810"/>
 
-<!-- Corneal highlights -->
-<ellipse cx="57" cy="93" rx="2.2" ry="1.7" fill="white"/>
-<circle  cx="63" cy="99" r=".8"  fill="white" opacity=".55"/>
-<ellipse cx="97" cy="93" rx="2.2" ry="1.7" fill="white"/>
-<circle  cx="103" cy="99" r=".8" fill="white" opacity=".55"/>
+<ellipse cx="57" cy="94" rx="2.2" ry="1.7" fill="white"/>
+<circle  cx="63" cy="100" r=".8" fill="white" opacity=".55"/>
+<ellipse cx="97" cy="94" rx="2.2" ry="1.7" fill="white"/>
+<circle  cx="103" cy="100" r=".8" fill="white" opacity=".55"/>
 
-<!-- Upper eyelid line -->
-<path d="M45,93 Q60,87 75,93" stroke="#1a1010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-<path d="M85,93 Q100,87 115,93" stroke="#1a1010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M45,94 Q60,88 75,94" stroke="${hr[1]}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M85,94 Q100,88 115,94" stroke="${hr[1]}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
 
 ${lashSVG}
 
-<!-- Lower eyelid -->
-<path d="M46,103 Q60,108 74,103" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".5"/>
-<path d="M86,103 Q100,108 114,103" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".5"/>
+<path d="M46,104 Q60,110 74,104" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".4"/>
+<path d="M86,104 Q100,110 114,104" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".4"/>
 
-<!-- Blink eyelids -->
-<ellipse class="eyelid"   cx="60"  cy="93" rx="15" ry="11" fill="${sk[1]}"/>
-<ellipse class="eyelid r" cx="100" cy="93" rx="15" ry="11" fill="${sk[1]}"/>
+<ellipse class="eyelid"   cx="60"  cy="94" rx="15" ry="11" fill="${sk[1]}"/>
+<ellipse class="eyelid r" cx="100" cy="94" rx="15" ry="11" fill="${sk[1]}"/>
 
-<!-- NOSE -->
-<path d="M80,108 Q76,122 76,128 Q80,133 84,128 Q84,122 80,108Z" fill="${sk[2]}" opacity=".3"/>
-<ellipse cx="73" cy="128" rx="7"   ry="4.5" fill="${sk[2]}" opacity=".22"/>
-<ellipse cx="87" cy="128" rx="7"   ry="4.5" fill="${sk[2]}" opacity=".22"/>
-<path d="M68,127 Q76,132 80,130 Q84,132 92,127" stroke="${sk[2]}" stroke-width="1.6" fill="none" opacity=".48"/>
-<!-- Nose bridge highlight -->
-<path d="M80,108 Q82,115 81,122" stroke="white" stroke-width="1.2" fill="none" opacity=".18"/>
+<path d="M80,110 Q76,123 77,130 Q80,135 83,130 Q84,123 80,110Z" fill="${sk[2]}" opacity=".26"/>
+<ellipse cx="74" cy="130" rx="6.5" ry="4.2" fill="${sk[2]}" opacity=".18"/>
+<ellipse cx="86" cy="130" rx="6.5" ry="4.2" fill="${sk[2]}" opacity=".18"/>
+<path d="M68,129 Q77,134 80,131 Q83,134 92,129" stroke="${sk[2]}" stroke-width="1.5" fill="none" opacity=".42"/>
 
-<!-- MOUTH -->
+<ellipse cx="32" cy="120" rx="18" ry="12" fill="#ff8878" opacity="${isFem ? '.09' : '.05'}" filter="url(#${uid}blur)"/>
+<ellipse cx="128" cy="120" rx="18" ry="12" fill="#ff8878" opacity="${isFem ? '.09' : '.05'}" filter="url(#${uid}blur)"/>
+
 <g class="mouth-closed">
-  <path d="M56,147 Q67,139 80,140 Q93,139 104,147 Q93,152 80,153 Q67,152 56,147Z"
-        fill="url(#${uid}lip)"/>
-  <path d="M64,141 Q75,136 80,140 Q85,136 96,141"
-        stroke="${liH}" stroke-width=".9" fill="none" opacity=".5"/>
-  <path d="M56,147 Q80,144 104,147 Q80,144 56,147"
-        fill="none" stroke="#803848" stroke-width=".8"/>
-  <path d="M56,147 Q67,158 80,160 Q93,158 104,147 Q93,152 80,153 Q67,152 56,147Z"
-        fill="${lip}" opacity=".9"/>
-  <path d="M66,155 Q80,159 94,155" stroke="white" stroke-width="1.5" fill="none" opacity=".18"/>
+  <path d="M57,148 Q67,140 80,141 Q93,140 103,148 Q93,153 80,154 Q67,153 57,148Z" fill="url(#${uid}lip)"/>
+  <path d="M65,142 Q75,137 80,141 Q85,137 95,142" stroke="${lipH}" stroke-width=".8" fill="none" opacity=".45"/>
+  <path d="M57,148 Q80,145 103,148" fill="none" stroke="#803040" stroke-width=".8"/>
+  <path d="M57,148 Q67,159 80,161 Q93,159 103,148 Q93,153 80,154 Q67,153 57,148Z" fill="${lip}" opacity=".88"/>
+  <path d="M66,157 Q80,161 94,157" stroke="white" stroke-width="1.3" fill="none" opacity=".14"/>
 </g>
 <g class="mouth-open" style="transform-box:fill-box;transform-origin:50% 0%">
-  <path d="M58,145 Q68,138 80,139 Q92,138 102,145" stroke="#803040" stroke-width="1.1" fill="none"/>
-  <path d="M58,145 Q66,162 80,164 Q94,162 102,145 Q92,150 80,150 Q68,150 58,145Z" fill="#68101e"/>
-  <path d="M62,145 Q80,142 98,145 Q80,149 62,145Z" fill="#f0eeec"/>
-  <ellipse cx="80" cy="159" rx="11" ry="5" fill="#c04050" opacity=".85"/>
+  <path d="M59,146 Q68,139 80,140 Q92,139 101,146" stroke="#803040" stroke-width="1.1" fill="none"/>
+  <path d="M59,146 Q67,163 80,165 Q93,163 101,146 Q92,151 80,151 Q68,151 59,146Z" fill="#68101e"/>
+  <path d="M63,146 Q80,143 97,146 Q80,150 63,146Z" fill="#f0eeec"/>
+  <ellipse cx="80" cy="160" rx="11" ry="5" fill="#c04050" opacity=".82"/>
 </g>
 
 ${stubbleSVG}
-
-<!-- Cheek blush -->
-<ellipse cx="33" cy="120" rx="17" ry="11" fill="#ff8070" opacity="${isFem ? '.11' : '.07'}"
-         filter="url(#${uid}blur)"/>
-<ellipse cx="127" cy="120" rx="17" ry="11" fill="#ff8070" opacity="${isFem ? '.11' : '.07'}"
-         filter="url(#${uid}blur)"/>
-
-<!-- Nasolabial folds (age character) -->
-<path d="M38,114 Q36,126 40,138" stroke="${sk[2]}" stroke-width="1.3" fill="none" opacity=".26"/>
-<path d="M122,114 Q124,126 120,138" stroke="${sk[2]}" stroke-width="1.3" fill="none" opacity=".26"/>
-
-<!-- Under-eye lines -->
-<path d="M45,105 Q60,111 75,105" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".2"/>
-<path d="M85,105 Q100,111 115,105" stroke="${sk[2]}" stroke-width="1" fill="none" opacity=".2"/>
-
-<!-- Forehead lines -->
-<path d="M46,62 Q80,56 114,62" stroke="${sk[2]}" stroke-width=".9" fill="none" opacity=".18"/>
-<path d="M52,54 Q80,48 108,54" stroke="${sk[2]}" stroke-width=".7" fill="none" opacity=".14"/>
 </svg>`;
 }
 
 // ════════════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════════════
+const APP_VERSION = '0.72';
 let userId          = null;
 let userName        = '';
 let userGender      = localStorage.getItem('cc_userGender')   || 'female';
 let practiceLanguage = localStorage.getItem('cc_practiceLanguage') || 'he';
 let userLevel       = localStorage.getItem('cc_userLevel')    || 'intermediate';
 let conversationId  = null;
+let conversationActive = false;
 let uiLang          = localStorage.getItem('cc_uiLang') || localStorage.getItem('cc_language') || 'he';
 let language        = localStorage.getItem('cc_language')     || 'he'; // TTS / conversation language
 let avatarGender    = localStorage.getItem('cc_avatarGender') || 'female';
@@ -1033,6 +1294,10 @@ let recognition     = null;
 let ttsVoice        = null;
 let ttsGenderMatch  = true;
 let listening       = false;
+let micMode         = localStorage.getItem('cc_micMode') || 'hold';
+let privacyMode     = localStorage.getItem('cc_privacyMode') || 'basic'; // "basic" | "high"
+let silenceTimer    = null;
+let audioCtx        = null;
 let ttsQueue        = [];
 let ttsBusy         = false;
 let finalTranscript = '';
@@ -1072,6 +1337,7 @@ const AVATAR_NAMES_FE = {
   es: { female:'Maria',  male:'Carlos' },
   fr: { female:'Chloé',  male:'Antoine'},
   hu: { female:'Zsófi',  male:'Péter'  },
+  ar: { female:'לַיְלַא', male:'סַאמִי' },
 };
 
 function updateAvatarButtons() {
@@ -1146,17 +1412,23 @@ function goWelcome() {
   document.getElementById('nameInput').value = localStorage.getItem('cc_userName') || '';
   const badge = document.getElementById('holidayBadge');
   if (badge) badge.style.display = 'none';
-  // Sync buttons to current saved settings
+  // Clear all selections first, then sync buttons to current saved settings
+  document.querySelectorAll('[data-group="ugender"], [data-group="plang"], [data-group="level"]').forEach(b => b.classList.remove('selected'));
   document.querySelectorAll('[data-group="ugender"]').forEach(b =>
     b.classList.toggle('selected', b.dataset.value === userGender));
   document.querySelectorAll('[data-group="plang"]').forEach(b =>
     b.classList.toggle('selected', b.dataset.value === practiceLanguage));
   document.querySelectorAll('[data-group="level"]').forEach(b =>
     b.classList.toggle('selected', b.dataset.value === userLevel));
+  document.getElementById('versionDisplay').textContent = `v${APP_VERSION}`;
+  // Update avatar buttons to match current practice language
+  updateAvatarButtons();
   show('screenWelcome');
+  loadHolidayBadge();
 }
 function goSetup() {
-  // Sync gender button to current JS state before showing the screen
+  language = practiceLanguage;  // Always use welcome-screen selection, not last resumed conversation
+  updateAvatarButtons();
   document.querySelectorAll('[data-group="gender"]').forEach(b =>
     b.classList.toggle('selected', b.dataset.value === avatarGender));
   show('screenSetup');
@@ -1175,7 +1447,7 @@ async function doIdentify() {
   const name  = document.getElementById('nameInput').value.trim();
   const errEl = document.getElementById('welcomeError');
   errEl.style.display = 'none';
-  if (!name) { errEl.textContent = t('nameLabel'); errEl.style.display = 'block'; return; }
+  if (!name) { errEl.textContent = t('nameRequired'); errEl.style.display = 'block'; document.getElementById('nameInput').focus(); return; }
   try {
     const res  = await fetch('/users/identify', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -1189,8 +1461,7 @@ async function doIdentify() {
     const data = await res.json();
     userId = data.id; userName = data.name;
     localStorage.setItem('cc_userName', data.name);
-    // Load saved settings from user profile
-    if (data.language) practiceLanguage = data.language;
+    // Load saved settings from user profile, but don't overwrite language (user selects on welcome screen)
     if (data.level) userLevel = data.level;
     if (data.gender) userGender = data.gender;
     language = practiceLanguage;  // Set conversation language to the chosen practice language
@@ -1198,6 +1469,39 @@ async function doIdentify() {
     if (!data.is_new && data.conversations.length > 0) {
       document.getElementById('resumeName').textContent = data.name;
       renderConvList(data.conversations);
+      // Stats bar
+      // Per-language stats — show stats for the language the user just selected
+      const statsByLang = data.stats_by_language || {};
+      const langStats   = statsByLang[practiceLanguage] || {conversations:0, minutes:0};
+      const langConvs   = langStats.conversations || 0;
+      const langMins    = langStats.minutes || 0;
+      const langFlag    = (LANG_FLAGS && LANG_FLAGS[practiceLanguage]) || '';
+      const statsBar        = document.getElementById('userStatsBar');
+      const statsText       = document.getElementById('userStatsText');
+      const achievementRow  = document.getElementById('userAchievementRow');
+      if (statsBar && langConvs > 0) {
+        const timeStr = langMins >= 60
+          ? `${Math.floor(langMins/60)}h ${langMins % 60}m`
+          : `${langMins} min`;
+        statsText.textContent = `${langFlag} ${langConvs} 💬 · ${timeStr} 🎙️`;
+        statsBar.style.display = 'block';
+        // Star count (0-5) and medal count (0-5) are independent — based on per-language stats
+        const STAR_L  = [{convs:100,mins:240,n:5},{convs:50,mins:180,n:4},{convs:30,mins:120,n:3},{convs:10,mins:60,n:2},{convs:5,mins:30,n:1}];
+        const MEDAL_L = [{convs:600,mins:520,n:5},{convs:500,mins:460,n:4},{convs:400,mins:400,n:3},{convs:300,mins:360,n:2},{convs:250,mins:300,n:1}];
+        const stars  = (STAR_L.find(l  => langConvs >= l.convs || langMins >= l.mins) || {n:0}).n;
+        const medals = (MEDAL_L.find(l => langConvs >= l.convs || langMins >= l.mins) || {n:0}).n;
+        if (achievementRow) {
+          achievementRow.style.fontFamily = "'Segoe UI Symbol','Apple Symbols','DejaVu Sans',Arial,sans-serif";
+          achievementRow.style.lineHeight = '1.6';
+          let sRow = '', mRow = '';
+          for (let i = 0; i < 5; i++) {
+            sRow += `<span style="color:${i<stars?'#FFD700':'#ccc'};font-variant-emoji:text;">${i<stars?'★':'☆'}&#xFE0E;</span>`;
+            mRow += i < medals ? '🏅' : '<span style="filter:grayscale(1);opacity:0.25;">🏅</span>';
+          }
+          achievementRow.innerHTML = `<div>${sRow}</div><div>${mRow}</div>`;
+          achievementRow.style.display = 'block';
+        }
+      }
       show('screenResume');
     } else { goSetup(); }
   } catch(e) { errEl.textContent = t('serverError'); errEl.style.display = 'block'; }
@@ -1206,12 +1510,57 @@ async function doIdentify() {
 // ════════════════════════════════════════════════════
 //  Screen 2 — Resume
 // ════════════════════════════════════════════════════
-function renderConvList(convs) {
-  const el = document.getElementById('convList');
-  el.innerHTML = '';
+let _cachedConvs     = [];
+let _showHiddenConvs = false;
+
+function getHiddenConvs() {
+  try { return new Set(JSON.parse(localStorage.getItem('cc_hiddenConvs') || '[]')); }
+  catch(e) { return new Set(); }
+}
+function _saveHiddenConvs(set) {
+  localStorage.setItem('cc_hiddenConvs', JSON.stringify([...set]));
+}
+function hideConv(id) {
+  const s = getHiddenConvs(); s.add(id); _saveHiddenConvs(s);
+}
+function unhideConv(id) {
+  const s = getHiddenConvs(); s.delete(id); _saveHiddenConvs(s);
+}
+
+function toggleShowHidden() {
+  _showHiddenConvs = !_showHiddenConvs;
+  renderConvList(_cachedConvs);
+}
+
+const CONV_PAGE = 5;
+let _convVisible = CONV_PAGE;
+
+function renderConvList(convs, resetPage) {
+  _cachedConvs = convs;
+  if (resetPage) _convVisible = CONV_PAGE;
+  const hidden  = getHiddenConvs();
+  const el      = document.getElementById('convList');
+  const toggle  = document.getElementById('convHiddenToggle');
+  el.innerHTML  = '';
+
+  const hiddenCount = convs.filter(c => hidden.has(c.id)).length;
+  if (toggle) {
+    toggle.style.display = hiddenCount > 0 ? 'block' : 'none';
+    toggle.textContent   = _showHiddenConvs
+      ? t('hideHiddenLink')
+      : `${t('showHiddenLink')} (${hiddenCount})`;
+    toggle.onclick = toggleShowHidden;
+  }
+
+  let shown = 0;
   convs.forEach(c => {
+    const isHidden = hidden.has(c.id);
+    if (isHidden && !_showHiddenConvs) return;
+    if (!isHidden && shown >= _convVisible) return;
+    if (!isHidden) shown++;
+
     const d = document.createElement('div');
-    d.className = 'conv-item';
+    d.className = isHidden ? 'conv-item hidden-conv' : 'conv-item';
     d.style.cssText = 'display:flex;align-items:center;gap:.6rem;';
 
     const info = document.createElement('div');
@@ -1219,10 +1568,10 @@ function renderConvList(convs) {
     info.style.cursor = 'pointer';
     info.innerHTML = `<div class="conv-title">${c.title}</div>
       <div class="conv-meta">${c.avatar_name} &bull; ${c.message_count} msgs &bull; ${c.updated_at}</div>`;
-    info.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
+    if (!isHidden) info.onclick = () => resumeConversation(c.id, c.avatar_name, c.avatar_gender, c.language);
     d.appendChild(info);
 
-    if (c.review) {
+    if (c.review && !isHidden) {
       const btn = document.createElement('button');
       btn.className = 'btn btn-outline-secondary';
       btn.style.cssText = 'font-size:.78rem;padding:.3rem .7rem;white-space:nowrap;flex-shrink:0;';
@@ -1231,8 +1580,32 @@ function renderConvList(convs) {
       d.appendChild(btn);
     }
 
+    const actionBtn = document.createElement('button');
+    actionBtn.className = 'conv-hide-btn';
+    actionBtn.title = isHidden ? t('restoreConv') : t('hideConv');
+    actionBtn.textContent = isHidden ? '↩' : '✕';
+    actionBtn.onclick = e => {
+      e.stopPropagation();
+      if (isHidden) unhideConv(c.id); else hideConv(c.id);
+      if (!isHidden) _showHiddenConvs = false;
+      renderConvList(_cachedConvs);
+    };
+    d.appendChild(actionBtn);
+
     el.appendChild(d);
   });
+
+  // "Show more" button if there are more visible convs to show
+  const visibleTotal = convs.filter(c => !hidden.has(c.id)).length;
+  if (visibleTotal > _convVisible) {
+    const more = document.createElement('button');
+    more.className = 'btn btn-link btn-sm';
+    more.style.cssText = 'width:100%;margin-top:.3rem;color:#888;font-size:.85rem;';
+    const remaining = visibleTotal - _convVisible;
+    more.textContent = `▼ ${t('showMore') || 'Show more'} (${remaining})`;
+    more.onclick = () => { _convVisible += CONV_PAGE; renderConvList(_cachedConvs); };
+    el.appendChild(more);
+  }
 }
 
 async function resumeConversation(convId, avatarName, gender, lang) {
@@ -1247,6 +1620,7 @@ async function resumeConversation(convId, avatarName, gender, lang) {
     d.messages.forEach(m => addBubble(m.speaker === 'user' ? 'user' : 'avatar', m.text));
   } catch(e) {}
   initTTS(lang, gender);
+  conversationActive = true;
   show('screenChat');
   setStatus(t('starting'));
   try {
@@ -1264,10 +1638,12 @@ async function resumeConversation(convId, avatarName, gender, lang) {
 //  Screen 3 → 4 — Start new conversation
 // ════════════════════════════════════════════════════
 async function startConversation() {
+  _unlockAudio();
   applyUI(); setDir(language); updateChatInfoBar();
   document.getElementById('avatarWrap').innerHTML = buildFace(avatarGender, language);
   document.getElementById('avatarName').textContent = '…';
   document.getElementById('transcript').innerHTML = '';
+  conversationActive = true;
   show('screenChat'); setStatus(t('starting'));
   try {
     const res  = await fetch('/conversations', {
@@ -1275,6 +1651,7 @@ async function startConversation() {
       body: JSON.stringify({
         user_id: userId, language, avatar_gender: avatarGender,
         user_gender: userGender,
+        privacy_mode: privacyMode,
       }),
     });
     const data = await res.json();
@@ -1284,7 +1661,7 @@ async function startConversation() {
     showHolidayBadge(data.holiday_en, data.holiday_he);
     initTTS(language, avatarGender);
     addBubble('avatar', data.greeting);
-    speak(data.greeting);
+    speak(data.tts_text || data.greeting);
     setStatus(t('micLabel'));
   } catch(e) { setStatus(t('serverError')); }
 }
@@ -1298,39 +1675,74 @@ function initTTS(lang, gender) {
   avatarGender = gender;
   ttsQueue = [];
   ttsBusy = false;
-  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (currentAudio) { try { currentAudio.pause(); } catch(e) {} currentAudio = null; }
 }
 
 function stripForTTS(text) {
   return text
+    // Remove markdown formatting
     .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold**
     .replace(/\*(.+?)\*/g, '$1')        // *italic*
     .replace(/^#{1,6}\s+/gm, '')        // # headings
     .replace(/^[-*]\s+/gm, '')          // - list items
     .replace(/^\d+\.\s+/gm, '')         // 1. numbered lists
-    .replace(/,(?=\s+[a-zäöüàâéèêëïîôùûüç])/g, '') // comma before lowercase (natural TTS pause fix)
+    // Remove HTML-like tags and angle brackets
+    .replace(/<[^>]*>/g, ' ')           // remove HTML tags
+    .replace(/</g, ' less than ')       // convert remaining < to 'less than'
+    .replace(/>/g, ' greater than ')    // convert remaining > to 'greater than'
+    // Remove problematic punctuation and special characters
+    .replace(/[\u2014\u2013\u2026]/g, ' ') // em-dash, en-dash, ellipsis to space
+    .replace(/[\u201C\u201D]/g, '"')   // smart quotes to regular quotes
+    .replace(/[\u2018\u2019]/g, "'")   // smart apostrophes to regular apostrophes
+    .replace(/[\xAB\xBB]/g, '"')       // french quotes to regular quotes
+    .replace(/\s*[\[\(][-\w.]+[\]\)]\s*/g, ' ') // [reference] links
+    .replace(/,(?=\s+[a-zäöüàâéèêëïîôùûüç])/g, '') // comma before lowercase
+    // Remove ALL decimal numbers (0.75, 1.0, 1.25, any X.Y numeric pattern)
+    .replace(/\d+\.\d+/g, ' ') // remove any decimal/float numbers
+    .replace(/[\[\(]\d+[\]\)]/g, ' ') // remove bracketed/parenthesized numbers
+    // Remove emojis and variation selectors
     .replace(/\p{Emoji_Presentation}/gu, '')
     .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
     .replace(/\u{200D}/gu, '')
+    // Remove other control characters
+    .replace(/[\u200B\u200C\u200D\u200E\u200F]/g, '') // zero-width characters
+    .replace(/[\u00AD]/g, '') // soft hyphen
+    // Normalize whitespace
     .replace(/\s+/g, ' ').trim();
 }
 
 let currentAudio = null;
 
+// Single persistent audio element, pre-activated on first user gesture.
+// Reusing one element (instead of new Audio() each time) lets iOS/Android
+// play audio after async STT+AI round-trips without hitting autoplay blocks.
+// Using direct streaming URL (not blob) so audio starts immediately.
+let _ttsPlayer = null;
+function _getOrCreateTTSPlayer() {
+  if (!_ttsPlayer) { _ttsPlayer = new Audio(); _ttsPlayer.preload = 'none'; }
+  return _ttsPlayer;
+}
+function _unlockAudio() {
+  // Play a 0-sample silent WAV during user gesture — activates the element
+  // without pausing (pause() after play() can leave iOS in a bad state).
+  const p = _getOrCreateTTSPlayer();
+  p.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+  p.play().catch(() => {});
+}
+
 async function speak(text) {
   if (!text) return;
+  const originalText = text;
   text = stripForTTS(text);
   if (!text) return;
+  console.log('[TTS Debug]', {original: originalText, sanitized: text});
   ttsQueue.push(text);
   if (!ttsBusy) drainTTS();
 }
 
 function stopSpeaking() {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
-  }
-  ttsQueue = []; 
+  if (currentAudio) { try { currentAudio.pause(); } catch(e) {} currentAudio = null; }
+  ttsQueue = [];
   ttsBusy = false;
   document.getElementById('stopBtn').style.display = 'none';
   setAvatarSpeaking(false);
@@ -1344,51 +1756,61 @@ async function drainTTS() {
     return;
   }
   ttsBusy = true;
-  document.getElementById('stopBtn').style.display = 'block';
-  setAvatarSpeaking(true);
-  
+
   const text = ttsQueue.shift();
   try {
-    const queryParams = new URLSearchParams({ text, language, gender: avatarGender }).toString();
-    const url = `/tts?${queryParams}`;
-    currentAudio = new Audio(url);
-    currentAudio.onended = () => { currentAudio = null; drainTTS(); };
-    currentAudio.onerror = () => { currentAudio = null; drainTTS(); };
-    currentAudio.play().catch(e => { console.error("Audio playback prevented:", e); drainTTS(); });
+    const queryParams = new URLSearchParams({ text, language, gender: avatarGender, level: userLevel });
+    const player = _getOrCreateTTSPlayer();
+    player.onended = () => { currentAudio = null; drainTTS(); };
+    player.onerror = () => { currentAudio = null; drainTTS(); };
+    player.src = `/tts?${queryParams}`;
+    try {
+      await player.play();
+      // Audio is streaming and audible — show speaking state now
+      document.getElementById('stopBtn').style.display = 'block';
+      setAvatarSpeaking(true);
+      currentAudio = player;
+    } catch(e) {
+      console.error('TTS play error:', e);
+      currentAudio = null; drainTTS();
+    }
   } catch (err) {
     console.error("TTS error:", err);
+    currentAudio = null;
     drainTTS();
   }
 }
 
 // ════════════════════════════════════════════════════
-//  STT  (press-and-hold to speak, Whisper via /stt)
+//  STT  (hold-to-talk or single-click auto-stop mode)
 // ════════════════════════════════════════════════════
 let mediaRecorder = null;
 let audioChunks = [];
 
+const SILENCE_THRESHOLD = 8;   // RMS below this = silence
+const SILENCE_DURATION  = 2000; // ms of continuous silence before auto-stop
+const MAX_RECORD_MS     = 30000; // safety cap
+const MIN_AUDIO_BYTES   = 2000; // blobs smaller than this are noise/silence
+
 async function startListening() {
   if (listening) return;
+  _unlockAudio();
   stopSpeaking();
-  document.getElementById('micLabel').textContent = t('listening');
+  document.getElementById('micLabel').textContent = micMode === 'auto' ? t('listeningAuto') : t('listening');
   document.getElementById('micBtn').classList.add('listening');
   listening = true;
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { autoGainControl: false, echoCancellation: false, noiseSuppression: false }
+      audio: { autoGainControl: true, echoCancellation: true, noiseSuppression: true }
     });
-    let options = {};
+    let selectedMime = '';
     if (typeof MediaRecorder.isTypeSupported === 'function') {
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-        options = { mimeType: 'audio/webm;codecs=opus' };
-      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-        options = { mimeType: 'audio/webm' };
-      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        options = { mimeType: 'audio/mp4' };
-      }
+      const preferredMimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+      selectedMime = preferredMimes.find(m => MediaRecorder.isTypeSupported(m)) || '';
     }
-    mediaRecorder = new MediaRecorder(stream, options);
+    mediaRecorder = selectedMime ? new MediaRecorder(stream, { mimeType: selectedMime })
+                                 : new MediaRecorder(stream);
     audioChunks = [];
 
     mediaRecorder.ondataavailable = e => {
@@ -1396,8 +1818,16 @@ async function startListening() {
     };
 
     mediaRecorder.onstop = async () => {
+      _cleanupSilenceDetection();
       document.getElementById('micBtn').classList.remove('listening');
-      document.getElementById('micLabel').textContent = t('micLabel');
+      document.getElementById('micLabel').textContent = micMode === 'auto' ? t('micLabelAuto') : t('micLabel');
+
+      stream.getTracks().forEach(track => track.stop());
+
+      const totalBytes = audioChunks.reduce((s, c) => s + c.size, 0);
+      if (audioChunks.length === 0 || totalBytes < MIN_AUDIO_BYTES) {
+        setStatus(t('noSpeech')); return;
+      }
 
       let mimeType = mediaRecorder.mimeType;
       if (!mimeType) {
@@ -1409,15 +1839,12 @@ async function startListening() {
       }
       const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
       const audioBlob = new Blob(audioChunks, { type: mimeType });
-      stream.getTracks().forEach(track => track.stop());
-
-      if (audioChunks.length === 0) { setStatus(t('noSpeech')); return; }
 
       setStatus(t('thinking'));
       try {
         const formData = new FormData();
         formData.append("file", audioBlob, `recording.${ext}`);
-        const res = await fetch(`/stt?language=${language}`, { method: 'POST', body: formData });
+        const res  = await fetch(`/stt?language=${language}`, { method: 'POST', body: formData });
         const data = await res.json();
         if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
         if (data.text && data.text.trim()) sendMessage(data.text);
@@ -1427,18 +1854,76 @@ async function startListening() {
       }
     };
 
-    mediaRecorder.start();
+    // timeslice=100ms: flushes audio chunks every 100ms so the final
+    // ondataavailable fires reliably on mobile (without timeslice, some
+    // browsers drop the last seconds of audio on stop).
+    mediaRecorder.start(100);
+
+    if (micMode === 'auto') {
+      _startSilenceDetection(stream);
+    }
   } catch (err) {
     listening = false;
     document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('micLabel').textContent = t('micLabel');
+    document.getElementById('micLabel').textContent = micMode === 'auto' ? t('micLabelAuto') : t('micLabel');
     setStatus("Microphone permission denied.");
   }
+}
+
+function _startSilenceDetection(stream) {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.resume();
+    const source   = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+    // Route through a muted gain node to destination so the browser processes audio
+    const mute = audioCtx.createGain();
+    mute.gain.value = 0;
+    source.connect(mute);
+    mute.connect(audioCtx.destination);
+
+    const buf       = new Uint8Array(analyser.fftSize);
+    const startedAt = Date.now();
+    const GRACE_MS  = 2000; // don't auto-stop in first 2s
+    let silenceStart = null;
+    const maxTimer  = setTimeout(() => stopListening(), MAX_RECORD_MS);
+
+    silenceTimer = setInterval(() => {
+      if (!listening) { clearInterval(silenceTimer); clearTimeout(maxTimer); return; }
+      analyser.getByteTimeDomainData(buf);
+      let sum = 0;
+      for (let i = 0; i < buf.length; i++) sum += Math.abs(buf[i] - 128);
+      const rms = sum / buf.length;
+
+      if (Date.now() - startedAt < GRACE_MS) return; // within grace period
+
+      if (rms >= SILENCE_THRESHOLD) {
+        silenceStart = null; // speech — reset silence timer
+      } else {
+        if (!silenceStart) silenceStart = Date.now();
+        else if (Date.now() - silenceStart >= SILENCE_DURATION) {
+          clearInterval(silenceTimer);
+          clearTimeout(maxTimer);
+          stopListening();
+        }
+      }
+    }, 50);
+  } catch (e) {
+    // Web Audio API unavailable — user can click again to stop
+  }
+}
+
+function _cleanupSilenceDetection() {
+  if (silenceTimer) { clearInterval(silenceTimer); silenceTimer = null; }
+  if (audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
 }
 
 function stopListening() {
   if (!listening) return;
   listening = false;
+  _cleanupSilenceDetection();
   if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
 }
 
@@ -1454,7 +1939,9 @@ async function sendMessage(text) {
     });
     const data = await res.json();
     if (!res.ok) { setStatus(data.detail || t('serverError')); return; }
-    addBubble('avatar', data.text); speak(data.text); setStatus(t('micLabel'));
+    addBubble('avatar', data.text);
+    if (conversationActive) speak(data.tts_text || data.text);
+    setStatus(t('micLabel'));
   } catch(e) { setStatus(t('serverError')); }
 }
 
@@ -1463,6 +1950,7 @@ async function suggestTopics() { stopSpeaking(); await sendMessage('__CHANGE_TOP
 let _reviewAbortController = null;
 
 function endConversation() {
+  conversationActive = false;
   stopSpeaking();
   if (listening) stopListening();
   document.getElementById('micBtn').disabled = true;
@@ -1475,15 +1963,19 @@ function endConversation() {
   const cancelBtnEl  = document.getElementById('reviewCancelBtn');
   const saveBtnEl    = document.getElementById('reviewSaveBtn');
 
-  const convDate = new Date().toLocaleDateString(uiLang === 'he' ? 'he-IL' : 'en-GB');
-  titleEl.textContent      = `${t('reviewTitle')} — ${convDate}`;
-  bodyEl.innerHTML         = `<span class="review-spinner"></span> ${t('reviewLoading')}`;
-  saveBtnEl.style.display  = 'none';
-  saveBtnEl.textContent    = t('reviewSave');
-  closeBtnEl.textContent   = t('reviewClose');
-  closeBtnEl.disabled      = true;
-  cancelBtnEl.textContent  = t('reviewCancel');
-  cancelBtnEl.style.display = 'inline-block';
+  titleEl.textContent      = `${t('reviewTitle')} — ${t('reviewLoading')}`;
+  bodyEl.innerHTML         = `<div style="text-align:center;padding:.8rem 0">
+    <span class="review-spinner"></span>
+    <div style="margin-top:.7rem;font-size:1.05rem;color:#555">${t('reviewLoading')}</div>
+    <div style="margin-top:.4rem;font-size:.9rem;color:#999">${t('reviewWait')}</div>
+  </div>`;
+  saveBtnEl.style.display   = 'none';
+  saveBtnEl.textContent     = t('reviewSave');
+  closeBtnEl.textContent    = t('reviewClose');
+  closeBtnEl.disabled       = true;
+  cancelBtnEl.textContent   = t('reviewCancel');
+  cancelBtnEl.style.display = 'none';
+  setTimeout(() => { if (_reviewAbortController) cancelBtnEl.style.display = 'inline-block'; }, 8000);
   modal.querySelector('div').style.direction = uiLang === 'he' ? 'rtl' : 'ltr';
   modal.dataset.closeTo    = 'welcome';
   modal.style.display      = 'flex';
@@ -1494,14 +1986,31 @@ function endConversation() {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({text: '__END__'}),
   }).then(r => r.json()).then(data => {
-    if (data.text) { addBubble('avatar', data.text); speak(data.text); }
+    // Only display the goodbye message, don't speak it - user wants immediate stop
+    if (data.text) { addBubble('avatar', data.text); }
   }).catch(() => {});
+
+  if (privacyMode === 'high') {
+    titleEl.textContent = t('reviewTitle');
+    bodyEl.textContent  = t('privacyHighDesc');
+    saveBtnEl.style.display = 'none';
+    closeBtnEl.disabled = false;
+    cancelBtnEl.style.display = 'none';
+    return;
+  }
 
   _reviewAbortController = new AbortController();
   fetch(`/conversations/${convId}/review?ui_lang=${uiLang}`, { signal: _reviewAbortController.signal })
     .then(r => r.json())
     .then(data => {
+      // Only display the review, don't speak it
       bodyEl.textContent = data.review || t('reviewNone');
+      if (data.created_at) {
+        const createdDate = new Date(data.created_at);
+        const dateStr = createdDate.toLocaleDateString(uiLang === 'he' ? 'he-IL' : 'en-GB');
+        const timeStr = createdDate.toLocaleTimeString(uiLang === 'he' ? 'he-IL' : 'en-GB', {hour: '2-digit', minute: '2-digit'});
+        titleEl.textContent = `${t('reviewTitle')} — ${dateStr} ${timeStr}`;
+      }
     })
     .catch(err => {
       if (err.name !== 'AbortError') bodyEl.textContent = t('reviewNone');
@@ -1515,6 +2024,7 @@ function endConversation() {
 }
 
 function cancelReview() {
+  stopSpeaking();  // Stop any audio playback when canceling
   if (_reviewAbortController) {
     _reviewAbortController.abort();
     _reviewAbortController = null;
@@ -1588,17 +2098,19 @@ function updateChatInfoBar() {
   const flag = LANG_FLAGS[language] || '';
   const name = (LANG_NAMES_UI[language] || {})[uiLang] || language;
   const level = t(userLevel);
-  document.getElementById('chatInfoBar').textContent = `ChitChat2Go · ${flag} ${name} · ${level}`;
+  document.getElementById('chatInfoBar').textContent = `ChitChat2Go · ${flag} ${name} · ${level} · v${APP_VERSION}`;
 }
 
 // ════════════════════════════════════════════════════
 //  Init
 // ════════════════════════════════════════════════════
 // Sync all button groups to loaded/default state
-['uilang','lang','gender','ugender'].forEach(group => {
+['uilang','lang','gender','ugender','plang','level'].forEach(group => {
   const match = group === 'uilang' ? uiLang
               : group === 'lang'   ? language
               : group === 'gender' ? avatarGender
+              : group === 'plang'  ? practiceLanguage
+              : group === 'level'  ? userLevel
               : userGender;
   document.querySelectorAll(`[data-group="${group}"]`).forEach(b =>
     b.classList.toggle('selected', b.dataset.value === match));
@@ -1608,6 +2120,7 @@ document.getElementById('nameInput').addEventListener('keydown', e => { if (e.ke
 document.getElementById('nameInput').value = localStorage.getItem('cc_userName') || '';
 updateAvatarButtons();
 applyUI();
+loadHolidayBadge();
 </script>
 </body>
 </html>

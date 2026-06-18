@@ -1,0 +1,19 @@
+GENERAL :
+  sign-up, sign-in with email
+
+AGENTS :
+ High value:
+  - Mistake Analysis Agent — at end of conversation, reviews all messages, identifies grammar/vocabulary     
+  errors, and generates a structured correction report 
+  - Level Assessment Agent — periodically evaluates the user's language level based on their recent          
+  conversations and suggests level adjustments                                                               
+  - Conversation Summary Agent — generates a short title + key topics + vocabulary learned for each session  
+  (stored in DB)                                                                                             
+                                                                                                             
+  Medium value:
+  - Topic Suggestion Agent — given the user's history and level, suggests personalized conversation topics
+  - Progress Report Agent — weekly/monthly summary of improvement trends across conversations
+
+  Best immediate fit: The Mistake Analysis Agent — it aligns directly with your core concept ("at the end of
+  the conversation will show them their mistakes") and could run after the user clicks "End Conversation,"
+  analyzing the full transcript and returning structured feedback.
